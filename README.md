@@ -1,143 +1,49 @@
-# Infosys Social Value RFP Response Builder — Frontend
+# Social Value RFP Response Builder
 
-[![React](https://img.shields.io/badge/React-19.2-blue?logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-8.3-646CFF?logo=vite)](https://vitejs.dev/)
-[![Oxlint](https://img.shields.io/badge/Oxlint-Passing-10b981)](https://oxc.rs/)
-[![National TOMs](https://img.shields.io/badge/Framework-National%20TOMs%202024-purple)](https://socialvalueportal.com/)
-[![Compliance](https://img.shields.io/badge/PPN%2006%2F20-Compliant-emerald)](https://www.gov.uk/government/publications/procurement-policy-note-0620-taking-account-of-social-value-in-the-award-of-central-government-contracts)
+Frontend for a social value bid-response and planning tool. The application is built with React, TypeScript, and Vite.
 
-An enterprise-grade, modular decision-support frontend engineered for **Infosys UK Public Sector Bid Teams**. This platform automates tender Social Value response formulation under the **National TOMs (Themes, Outcomes, and Measures)** framework, pairing **Retrieval-Augmented Generation (RAG)** with **strict deterministic financial calculation layers** to eliminate AI hallucinations.
+## Getting started
 
----
+### Prerequisites
 
-## 🏛️ System Architecture & Workflow
+- Node.js `^20.19.0` or `>=22.12.0`
+- npm (included with Node.js)
 
-```text
-       ┌────────────────────────────────────────────────────────┐
-       │   RFP Opportunity Criteria (Client, £ Value, %, Ward)   │
-       └───────────────────────────┬────────────────────────────┘
-                                   │
-                                   ▼
-       ┌────────────────────────────────────────────────────────┐
-       │   Semantic Vector Retrieval (pgvector 1536-dim chunks)  │
-       └───────────────────────────┬────────────────────────────┘
-                                   │
-                                   ▼
-       ┌────────────────────────────────────────────────────────┐
-       │   AI Structuring (Gemini 1.5 / GPT-4o JSON mode)       │
-       │   • 1. Core Package (Low-risk baseline)                │
-       │   • 2. Enhanced Package (Competitive score maximizer)   │
-       │   • 3. Localised Package (Ward-level supply chain)     │
-       └───────────────────────────┬────────────────────────────┘
-                                   │
-                                   ▼
-       ┌────────────────────────────────────────────────────────┐
-       │   Deterministic Math Engine (NO LLM ARITHMETIC)        │
-       │   Total £ = Annual Volume × Years × Proxy Unit Value   │
-       └───────────────────────────┬────────────────────────────┘
-                                   │
-                                   ▼
-       ┌────────────────────────────────────────────────────────┐
-       │   Client-Ready Response + Audit Trail + Pre-Submission │
-       └────────────────────────────────────────────────────────┘
-```
+### Install and run
 
----
-
-## ⚡ Quickstart (Zero-Config)
-
-### 1. Prerequisites
-- **Node.js**: v20+ or v22+
-- **Package Manager**: `npm`
-
-### 2. Installation & Launch
 ```bash
-# Navigate to the frontend directory
-cd Frontend-Social-value
-
-# Install dependencies
-npm install
-
-# Start development server
+git clone <repository-url>
+cd <repository-directory>
+npm ci
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+Open the local URL printed by Vite (normally `http://localhost:5173`).
 
-> [!NOTE]
-> **Intelligent Local Fallback**: If the FastAPI backend is not running, the application automatically engages a high-fidelity local engine so UI/UX designers and evaluators can interact with all 3 packages, simulation sliders, and documents with zero setup.
+For complete setup, backend, troubleshooting, and validation instructions, see the [developer quickstart](./docs/DEVELOPER_QUICKSTART.md). Before making changes, review [contribution guidelines](./CONTRIBUTING.md).
 
----
+## Available commands
 
-## 📁 Clean, Minimalist Codebase Architecture (Aligned 1-to-1 with Backend)
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Starts the Vite development server. |
+| `npm run lint` | Runs Oxlint. |
+| `npm run build` | Runs the TypeScript project build and creates the production bundle in `dist/`. |
+| `npm run preview` | Serves the production bundle locally for review. |
 
-The frontend is strictly organized into simple, single-responsibility components matching the FastAPI backend API:
+## Backend and demonstration behavior
 
-```text
-src/
-├── api/
-│   └── client.ts             # Direct client connecting to FastAPI backend (/responses, /documents, /search)
-├── components/               # Pure, lightweight components (Dark & Light support)
-│   ├── Sidebar.tsx           # Sidebar with New Prompt, navigation & Dark/Light theme switch
-│   ├── PromptStudio.tsx      # ChatGPT-style prompt bar & clean 3-package template response view
-│   ├── Tuner.tsx             # Clean volume tuning simulation matching /calculations/package
-│   ├── Documents.tsx         # Document dropzone & repository viewer matching /documents
-│   └── Search.tsx            # Semantic vector retrieval explorer matching /search
-├── constants/
-│   ├── theme.ts              # SINGLE CENTRAL SOURCE OF TRUTH for all colors & fonts (Dark/Light)
-│   ├── defaults.ts           # Preset tender profiles (Birmingham, Manchester, etc.)
-│   └── promptPresets.ts      # Prompt templates
-├── hooks/
-│   ├── useTheme.ts           # Dynamic Dark/Light mode toggle hook
-│   ├── useBackendHealth.ts   # Backend status polling & connection state
-│   ├── useOpportunityGenerator.ts # Response generation state
-│   ├── useDocumentManager.ts # Ingestion & document deletion
-│   └── useTomsSimulation.ts  # Volume recalculation logic
-├── types/
-│   └── index.ts              # 1-to-1 TypeScript types matching backend Pydantic schemas
-├── utils/
-│   ├── promptParser.ts       # Natural language tender prompt parser
-│   ├── formatters.ts         # Currency (£), percentage, date helpers
-│   └── export.ts             # Clean JSON export utility
-├── App.tsx                   # Clean, high-level coordinator
-├── index.css                 # CSS variable definitions and global typography
-└── main.tsx                  # React entry point with theme initialization
-```
+The frontend API client currently calls `http://127.0.0.1:8000`. The API base URL is defined in [`src/api/client.ts`](./src/api/client.ts); it is not currently configurable through an environment variable.
 
----
+Some API client methods return sample data or simulate successful operations when the backend is unavailable. These responses are intended for local interface development only. Simulated uploads and deletions are not persisted, and sample data must not be represented as verified client evidence or production results. See the [developer quickstart](./docs/DEVELOPER_QUICKSTART.md) and [API integration specification](./docs/API_INTEGRATION_SPEC.md).
 
-## 📚 Complete Documentation Suite
+## Project documentation
 
-All specifications, guidelines, and roadmaps are located in [`docs/`](file:///f:/New%20folder/Frontend-Social-value/docs):
-
-| Document | Purpose |
-| :--- | :--- |
-| [**DEVELOPER_ONBOARDING_GUIDE.md**](file:///f:/New%20folder/Frontend-Social-value/docs/DEVELOPER_ONBOARDING_GUIDE.md) | 10-minute quickstart, architectural rules, and how to build components. |
-| [**UI_UX_DESIGN_SYSTEM.md**](file:///f:/New%20folder/Frontend-Social-value/docs/UI_UX_DESIGN_SYSTEM.md) | Design tokens, color palette, typography, glassmorphism, and accessibility. |
-| [**COMPONENT_CATALOG.md**](file:///f:/New%20folder/Frontend-Social-value/docs/COMPONENT_CATALOG.md) | Detailed props, interfaces, and copy-paste examples for every UI primitive. |
-| [**API_INTEGRATION_SPEC.md**](file:///f:/New%20folder/Frontend-Social-value/docs/API_INTEGRATION_SPEC.md) | FastAPI endpoint contracts, request/response JSON schemas, and error models. |
-| [**DEVELOPER_TASKS_ROADMAP.md**](file:///f:/New%20folder/Frontend-Social-value/docs/DEVELOPER_TASKS_ROADMAP.md) | Prioritized backlog of UI/UX tickets for incoming developers to build rapidly. |
-| [**DOCUMENTATION_POLICY_AND_PR_TEMPLATE.md**](file:///f:/New%20folder/Frontend-Social-value/docs/DOCUMENTATION_POLICY_AND_PR_TEMPLATE.md) | Strict documentation rules and pull request checklist for all contributors. |
-| [**CLIENT_HANDOVER_CHECKLIST.md**](file:///f:/New%20folder/Frontend-Social-value/docs/CLIENT_HANDOVER_CHECKLIST.md) | Comprehensive QA matrix, demo script, and formal client sign-off sheet. |
-
----
-
-## 🛠️ Available Scripts
-
-| Command | Action |
-| :--- | :--- |
-| `npm run dev` | Starts the local Vite development server with HMR at `http://localhost:5173`. |
-| `npm run build` | Compiles TypeScript (`tsc -b`) and bundles for production into `dist/`. |
-| `npm run lint` | Runs `oxlint` across all files to ensure 0 errors and 0 warnings. |
-| `npm run preview` | Previews the production build locally. |
-
----
-
-## 🛡️ Key Commercial Principles
-
-1. **Deterministic Calculations Only**: Financial impact is computed using standard UK National TOMs formulas ($Total = Volume \times Years \times Unit Value$). LLMs are never allowed to invent or calculate numbers.
-2. **Anti-Hallucination Guardrails**: If an approved delivery partner is not found in the verified knowledge base, the system assigns `Partner Unassigned` and tags pre-submission action items.
-3. **Audit Trail Transparency**: Every proposed initiative displays an explicit formula string for scrutiny by council and NHS evaluators.
-#   f r o n t e n d - s o c i a l - v a l u e - t o o l  
- 
+- [Developer quickstart](./docs/DEVELOPER_QUICKSTART.md): clone, install, run, backend setup, and troubleshooting.
+- [Developer onboarding guide](./docs/DEVELOPER_ONBOARDING_GUIDE.md): architecture and development conventions.
+- [API integration specification](./docs/API_INTEGRATION_SPEC.md): frontend API endpoints and expected data shapes.
+- [Component catalog](./docs/COMPONENT_CATALOG.md): component responsibilities and usage.
+- [UI/UX design system](./docs/UI_UX_DESIGN_SYSTEM.md): theme tokens and interface conventions.
+- [Documentation policy and pull request template](./docs/DOCUMENTATION_POLICY_AND_PR_TEMPLATE.md): contribution and review checklist.
+- [Client handover checklist](./docs/CLIENT_HANDOVER_CHECKLIST.md): pre-delivery validation checklist.
+- [Developer task roadmap](./docs/DEVELOPER_TASKS_ROADMAP.md): proposed frontend work items.

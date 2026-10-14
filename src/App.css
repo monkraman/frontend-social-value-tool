@@ -1,0 +1,14 @@
+/**
+ * Application Shell Styles & Layout Refinements
+ * All master design tokens are maintained in src/index.css
+ */
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-container {
+  flex: 1;
+}
