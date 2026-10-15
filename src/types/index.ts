@@ -6,6 +6,7 @@ export interface OpportunityRequest {
   location: string;
   priorities: string[];
   top_k?: number;
+  raw_prompt?: string;
 }
 
 export interface InitiativeItem {

@@ -374,8 +374,8 @@ function getRealisticFallbackResponse(request: OpportunityRequest): ResponseGene
         target_beneficiaries: 'Unemployed citizens and senior residents',
         annual_volume: 4.0,
         toms_metric_code: 'NT8',
-        partner: `${request.location} City Libraries`,
-        evidence_source: 'Infosys_Birmingham_Digital_Inclusion.docx',
+        partner: `${request.location} Community Support`,
+        evidence_source: request.location.toLowerCase() === 'birmingham' ? 'Infosys_Birmingham_Digital_Inclusion.docx' : 'Standard Local Tender Framework',
         is_from_knowledge_base: true
       },
       {
@@ -535,7 +535,7 @@ function getRealisticFallbackResponse(request: OpportunityRequest): ResponseGene
         annual_volume: localSpend,
         toms_metric_code: 'NT31',
         partner: `${request.location} Chamber of Commerce`,
-        evidence_source: 'Infosys_Birmingham_Digital_Inclusion.docx',
+        evidence_source: request.location.toLowerCase() === 'birmingham' ? 'Infosys_Birmingham_Digital_Inclusion.docx' : 'Local Procurement Policy',
         is_from_knowledge_base: true
       }
     ],
@@ -591,7 +591,10 @@ function getRealisticFallbackResponse(request: OpportunityRequest): ResponseGene
     ],
     retrieved_evidence_chunks: 5,
     grounding_summary: {
-      matched_documents: ['Infosys_Birmingham_Digital_Inclusion.docx', 'National_TOMs_Rate_Card_v2024.xlsx'],
+      matched_documents: [
+        request.location.toLowerCase() === 'birmingham' ? 'Infosys_Birmingham_Digital_Inclusion.docx' : `${request.location}_Social_Value_Priorities.docx`,
+        'National_TOMs_Rate_Card_v2024.xlsx'
+      ],
       top_similarity: 0.942
     },
     is_mock: true

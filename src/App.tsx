@@ -19,6 +19,11 @@ const AppContent: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('prompt');
   const [currentPrompt, setCurrentPrompt] = useState<string>(DEFAULT_INITIAL_PROMPT);
+  const [promptFeedback, setPromptFeedback] = useState<{
+    type: 'non_rfp' | 'navigated';
+    message: string;
+    prompt: string;
+  } | null>(null);
 
   const { theme, toggleTheme } = useTheme();
   const { online: backendOnline } = useBackendHealth();
@@ -51,12 +56,42 @@ const AppContent: React.FC = () => {
   const handleSendPrompt = async (promptText: string) => {
     setCurrentPrompt(promptText);
     const parsed = parseRfpPrompt(promptText);
+
+    // Intent 1: View Documents
+    if (parsed.intent === 'navigation_documents') {
+      setPromptFeedback(null);
+      setActiveTab('documents');
+      return;
+    }
+
+    // Intent 2: Vector Search
+    if (parsed.intent === 'navigation_search') {
+      setPromptFeedback(null);
+      setActiveTab('search');
+      return;
+    }
+
+    // Intent 3: Non-RFP Query or Missing Requirements
+    if (!parsed.isRfpPrompt || !parsed.request) {
+      setPromptFeedback({
+        type: 'non_rfp',
+        message: parsed.explanation || 'No tender specifications detected in this prompt.',
+        prompt: promptText
+      });
+      setResult(null);
+      setActiveTab('prompt');
+      return;
+    }
+
+    // Valid RFP Specification: Generate response
+    setPromptFeedback(null);
     await generate(parsed.request);
     setActiveTab('prompt');
   };
 
   const handleReset = () => {
     setCurrentPrompt('');
+    setPromptFeedback(null);
     setResult(null);
   };
 
@@ -81,6 +116,9 @@ const AppContent: React.FC = () => {
             isLoading={isLoading}
             result={result}
             targetAmount={targetAmount}
+            promptFeedback={promptFeedback}
+            onNavigateTab={setActiveTab}
+            onClearFeedback={() => setPromptFeedback(null)}
             onExportJson={exportResponse}
             onReset={handleReset}
           />

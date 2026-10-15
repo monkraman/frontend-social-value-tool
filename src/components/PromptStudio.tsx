@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import type { ResponseGenerationResult } from '../types';
-import { Send, CornerDownLeft, Download, RotateCcw } from 'lucide-react';
+import { Send, CornerDownLeft, Download, RotateCcw, AlertCircle, FileText, Search } from 'lucide-react';
 import { formatGbp, formatPercent } from '../utils/formatters';
+
+export interface PromptFeedback {
+  type: 'non_rfp' | 'navigated';
+  message: string;
+  prompt: string;
+}
 
 export interface PromptStudioProps {
   currentPrompt: string;
@@ -9,6 +15,9 @@ export interface PromptStudioProps {
   isLoading: boolean;
   result: ResponseGenerationResult | null;
   targetAmount: number;
+  promptFeedback?: PromptFeedback | null;
+  onNavigateTab?: (tab: 'prompt' | 'tuner' | 'documents' | 'search') => void;
+  onClearFeedback?: () => void;
   onExportJson?: () => void;
   onReset: () => void;
 }
@@ -22,6 +31,9 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
   isLoading,
   result,
   targetAmount,
+  promptFeedback,
+  onNavigateTab,
+  onClearFeedback,
   onExportJson,
   onReset
 }) => {
@@ -64,8 +76,65 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
 
   return (
     <div style={{ maxWidth: '960px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
-      {/* If No Result Generated Yet: Empty State */}
-      {!result && !isLoading && (
+      {/* Feedback State: Non-RFP Prompt or Guidance */}
+      {promptFeedback && !result && !isLoading && (
+        <div
+          style={{
+            padding: '1.25rem 1.5rem',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-md)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
+            marginTop: '1rem'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+            <AlertCircle size={16} />
+            <span>Non-Tender Query Detected</span>
+          </div>
+          <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', fontStyle: 'italic', padding: '0.5rem 0.75rem', backgroundColor: 'var(--bg-muted)', borderRadius: 'var(--radius-sm)' }}>
+            "{promptFeedback.prompt}"
+          </div>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', margin: 0 }}>
+            {promptFeedback.message}
+          </p>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+            <button
+              onClick={() => {
+                setInputText(DEFAULT_SAMPLE_PROMPT);
+                onClearFeedback?.();
+              }}
+              className="btn-primary"
+              style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem' }}
+            >
+              Insert Client RFP Template
+            </button>
+            {onNavigateTab && (
+              <button
+                onClick={() => onNavigateTab('documents')}
+                className="btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem' }}
+              >
+                <FileText size={12} /> Open Knowledge Documents
+              </button>
+            )}
+            {onNavigateTab && (
+              <button
+                onClick={() => onNavigateTab('search')}
+                className="btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem' }}
+              >
+                <Search size={12} /> Open Vector Search
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* If No Result Generated Yet and No Feedback: Empty State */}
+      {!result && !isLoading && !promptFeedback && (
         <div style={{ textAlign: 'center', padding: '4rem 1rem 2rem 1rem' }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
             Social Value RFP Prompt Studio
@@ -98,7 +167,7 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
       {/* Render Response Result */}
       {result && !isLoading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* User Prompt Message */}
+          {/* User Prompt Message with Dynamic Extracted Badges */}
           <div
             style={{
               padding: '1rem 1.25rem',
@@ -107,11 +176,26 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
               borderRadius: 'var(--radius-md)'
             }}
           >
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>
-              Submitted Prompt
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                Submitted Prompt
+              </span>
+              <span className="tag-mono" style={{ fontSize: '0.7rem' }}>
+                Grounded in RFP Intent
+              </span>
             </div>
-            <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: '0.6rem' }}>
               "{currentPrompt}"
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', fontSize: '0.75rem' }}>
+              <span className="tag-mono">Client: {result.opportunity.client}</span>
+              <span className="tag-mono">Location: {result.opportunity.location}</span>
+              <span className="tag-mono">Value: {formatGbp(result.opportunity.contract_value_gbp)}</span>
+              <span className="tag-mono">Duration: {result.opportunity.duration_years} Yrs</span>
+              <span className="tag-mono">Weighting: {result.opportunity.social_value_weighting_percent}%</span>
+              {result.opportunity.priorities && result.opportunity.priorities.length > 0 && (
+                <span className="tag-mono">Themes: {result.opportunity.priorities.join(', ')}</span>
+              )}
             </div>
           </div>
 
