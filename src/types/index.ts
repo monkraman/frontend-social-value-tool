@@ -109,3 +109,28 @@ export interface SearchResponse {
   total_results: number;
   results: SearchResultItem[];
 }
+
+export type UserRole = 'superadmin' | 'bid_author' | 'reviewer';
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole | string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface AuthTokenResponse {
+  access_token: string;
+  token_type: string;
+  user: UserProfile;
+}
+
+export interface AuthStatusResponse {
+  auth_enabled: boolean;
+  rbac_active: boolean;
+  default_superadmin_available: boolean;
+  default_superadmin_email: string;
+  active_roles: string[];
+}

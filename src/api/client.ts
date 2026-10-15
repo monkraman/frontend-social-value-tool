@@ -4,10 +4,113 @@ import type {
   DocumentItem,
   TOMsMetric,
   SearchResponse,
-  PackageCalculation
+  PackageCalculation,
+  UserProfile,
+  AuthTokenResponse,
+  AuthStatusResponse
 } from '../types';
 
-const API_BASE_URL = 'http://127.0.0.1:8000';
+export const API_BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://127.0.0.1:8000';
+
+const TOKEN_KEY = 'social_value_jwt_token';
+
+export function getStoredToken(): string | null {
+  if (typeof localStorage === 'undefined') return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setStoredToken(token: string): void {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+}
+
+export function clearStoredToken(): void {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+}
+
+export function getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
+  const token = getStoredToken();
+  const headers: Record<string, string> = { ...extraHeaders };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+export async function loginUser(email: string, password: string): Promise<AuthTokenResponse> {
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ detail: 'Authentication failed' }));
+    throw new Error(errorData.detail || `Login error (${res.status})`);
+  }
+
+  const data: AuthTokenResponse = await res.json();
+  setStoredToken(data.access_token);
+  return data;
+}
+
+export async function registerUser(
+  name: string,
+  email: string,
+  password: string,
+  role = 'superadmin'
+): Promise<AuthTokenResponse> {
+  const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password, role })
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ detail: 'Registration failed' }));
+    throw new Error(errorData.detail || `Registration error (${res.status})`);
+  }
+
+  const data: AuthTokenResponse = await res.json();
+  setStoredToken(data.access_token);
+  return data;
+}
+
+export async function getCurrentUserProfile(): Promise<UserProfile | null> {
+  const token = getStoredToken();
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+
+    if (!res.ok) {
+      if (res.status === 401) {
+        clearStoredToken();
+      }
+      return null;
+    }
+
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function checkAuthStatus(): Promise<AuthStatusResponse | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/status`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
 
 export async function checkBackendHealth(): Promise<{ online: boolean; message: string; data?: any }> {
   try {
@@ -24,7 +127,7 @@ export async function generateRfpResponse(request: OpportunityRequest): Promise<
   try {
     const res = await fetch(`${API_BASE_URL}/responses/generate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(request)
     });
 
@@ -42,7 +145,9 @@ export async function generateRfpResponse(request: OpportunityRequest): Promise<
 
 export async function fetchDocuments(): Promise<DocumentItem[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/documents`);
+    const res = await fetch(`${API_BASE_URL}/documents`, {
+      headers: getAuthHeaders()
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch {
@@ -82,6 +187,7 @@ export async function uploadDocumentFile(file: File): Promise<{ success: boolean
 
     const res = await fetch(`${API_BASE_URL}/documents/ingest`, {
       method: 'POST',
+      headers: getAuthHeaders(),
       body: formData
     });
 
@@ -98,7 +204,10 @@ export async function uploadDocumentFile(file: File): Promise<{ success: boolean
 
 export async function deleteDocumentById(id: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE_URL}/documents/${id}`, { method: 'DELETE' });
+    const res = await fetch(`${API_BASE_URL}/documents/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
     return res.ok;
   } catch {
     return true;
@@ -107,7 +216,9 @@ export async function deleteDocumentById(id: string): Promise<boolean> {
 
 export async function fetchTomsMetrics(): Promise<TOMsMetric[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/calculations/metrics`);
+    const res = await fetch(`${API_BASE_URL}/calculations/metrics`, {
+      headers: getAuthHeaders()
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch {
@@ -132,7 +243,7 @@ export async function calculatePackageSimulation(
   try {
     const res = await fetch(`${API_BASE_URL}/calculations/package`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         package_name: packageName,
         contract_value_gbp: contractValueGbp,
@@ -200,7 +311,7 @@ export async function searchVectorKnowledge(query: string, top_k = 4): Promise<S
   try {
     const res = await fetch(`${API_BASE_URL}/search`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ query, top_k })
     });
     if (!res.ok) throw new Error(await res.text());

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Plus, MessageSquare, Sliders, Database, Search, Sun, Moon } from 'lucide-react';
+import { Plus, MessageSquare, Sliders, Database, Search, Sun, Moon, LogIn, LogOut } from 'lucide-react';
 import type { ThemeMode } from '../constants/theme';
+import { useAuth } from '../context/AuthContext';
 
 export type ActiveTab = 'prompt' | 'tuner' | 'documents' | 'search';
 
@@ -21,12 +22,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
   theme,
   onToggleTheme
 }) => {
+  const { user, isAuthenticated, logout, openAuthModal } = useAuth();
+
   const navItems: Array<{ id: ActiveTab; label: string; icon: React.ReactNode }> = [
     { id: 'prompt', label: 'Prompt Studio', icon: <MessageSquare size={16} /> },
     { id: 'tuner', label: 'Interactive Tuner', icon: <Sliders size={16} /> },
     { id: 'documents', label: 'Knowledge Documents', icon: <Database size={16} /> },
     { id: 'search', label: 'Vector Search', icon: <Search size={16} /> }
   ];
+
+  const getInitials = (name?: string) => {
+    if (!name) return 'U';
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+  };
 
   return (
     <aside
@@ -44,11 +57,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
     >
       {/* Brand Header */}
       <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-subtle)' }}>
-        <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-          Social Value
-        </div>
-        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-          RFP Response Engine
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              Social Value
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              RFP Response Engine
+            </div>
+          </div>
+          <span
+            style={{
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              padding: '0.15rem 0.45rem',
+              borderRadius: 'var(--radius-sm)',
+              backgroundColor: 'var(--bg-muted)',
+              color: 'var(--text-secondary)',
+              letterSpacing: '0.04em'
+            }}
+          >
+            v1.0
+          </span>
         </div>
       </div>
 
@@ -94,6 +124,104 @@ export const Sidebar: React.FC<SidebarProps> = ({
           );
         })}
       </nav>
+
+      {/* User Authentication Card */}
+      <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid var(--border-subtle)' }}>
+        {isAuthenticated && user ? (
+          <div
+            style={{
+              padding: '0.65rem 0.75rem',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.5rem'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
+              <div
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--text-primary)',
+                  color: 'var(--text-inverse)',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                {getInitials(user.name)}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: '0.8125rem',
+                    fontWeight: 600,
+                    color: 'var(--text-primary)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                  title={user.name}
+                >
+                  {user.name}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span
+                    style={{
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      padding: '0.05rem 0.35rem',
+                      borderRadius: 'var(--radius-sm)',
+                      backgroundColor: 'var(--bg-muted)',
+                      color: 'var(--text-secondary)'
+                    }}
+                  >
+                    {user.role}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={logout}
+              className="btn-secondary"
+              style={{
+                padding: '0.35rem',
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--text-muted)',
+                cursor: 'pointer'
+              }}
+              title="Sign Out"
+            >
+              <LogOut size={15} />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={openAuthModal}
+            className="btn-secondary"
+            style={{
+              width: '100%',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              padding: '0.55rem 0.75rem',
+              fontSize: '0.8125rem',
+              fontWeight: 600
+            }}
+          >
+            <LogIn size={15} />
+            <span>Sign In / Demo Login</span>
+          </button>
+        )}
+      </div>
 
       {/* Theme Switcher */}
       <div
