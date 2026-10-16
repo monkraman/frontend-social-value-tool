@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import type { OpportunityRequest, ResponseGenerationResult } from '../types';
-import { generateRfpResponse } from '../api/client';
+import type { OpportunityRequest, ResponseGenerationResult, PromptSubmissionResponse } from '../types';
+import { generateRfpResponse, submitPromptToBackend } from '../api/client';
 import { exportAsJson } from '../utils/export';
 
 export function useOpportunityGenerator() {
@@ -25,6 +25,23 @@ export function useOpportunityGenerator() {
     }
   }, []);
 
+  const submitPrompt = useCallback(async (promptText: string): Promise<PromptSubmissionResponse | null> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await submitPromptToBackend(promptText);
+      if (data.is_rfp_prompt && data.result) {
+        setResult(data.result);
+      }
+      return data;
+    } catch (err: any) {
+      console.warn('Backend prompt submission failed:', err);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const exportResponse = useCallback(() => {
     if (!result) return;
     const clientSanitized = result.opportunity.client.replace(/[^a-zA-Z0-9]/g, '_');
@@ -42,7 +59,9 @@ export function useOpportunityGenerator() {
     result,
     targetAmount,
     generate,
+    submitPrompt,
     exportResponse,
-    setResult
+    setResult,
+    setIsLoading
   };
 }

@@ -27,7 +27,7 @@ const AppContent: React.FC = () => {
 
   const { theme, toggleTheme } = useTheme();
   const { online: backendOnline } = useBackendHealth();
-  const { isLoading, result, targetAmount, generate, exportResponse, setResult } = useOpportunityGenerator();
+  const { isLoading, result, targetAmount, generate, submitPrompt, exportResponse, setResult } = useOpportunityGenerator();
 
   // Show minimal loader while verifying existing session token
   if (authLoading) {
@@ -55,6 +55,44 @@ const AppContent: React.FC = () => {
   // 2. WORKSPACE: If authenticated, render full application
   const handleSendPrompt = async (promptText: string) => {
     setCurrentPrompt(promptText);
+
+    // Try backend prompt interpretation & history logging first
+    try {
+      const data = await submitPrompt(promptText);
+      if (data) {
+        if (data.intent === 'navigation_documents') {
+          setPromptFeedback(null);
+          setActiveTab('documents');
+          return;
+        }
+
+        if (data.intent === 'navigation_search') {
+          setPromptFeedback(null);
+          setActiveTab('search');
+          return;
+        }
+
+        if (!data.is_rfp_prompt || !data.result) {
+          setPromptFeedback({
+            type: 'non_rfp',
+            message: data.explanation || 'No tender specifications detected in this prompt.',
+            prompt: promptText
+          });
+          setResult(null);
+          setActiveTab('prompt');
+          return;
+        }
+
+        // Successfully generated via backend
+        setPromptFeedback(null);
+        setActiveTab('prompt');
+        return;
+      }
+    } catch (err) {
+      console.warn('Backend prompt processing failed, falling back to local engine:', err);
+    }
+
+    // Fallback to client-side parser if backend is unreachable
     const parsed = parseRfpPrompt(promptText);
 
     // Intent 1: View Documents

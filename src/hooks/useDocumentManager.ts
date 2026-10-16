@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { DocumentItem } from '../types';
-import { fetchDocuments, uploadDocumentFile, deleteDocumentById } from '../api/client';
+import {
+  fetchDocuments,
+  uploadDocumentFile,
+  archiveDocumentById,
+  restoreDocumentById,
+  permanentlyDeleteDocumentById
+} from '../api/client';
 
 export function useDocumentManager() {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
@@ -51,13 +57,40 @@ export function useDocumentManager() {
     }
   }, [loadDocuments]);
 
-  const deleteDocument = useCallback(async (id: string, filename: string) => {
+  // Soft Delete (Archive)
+  const archiveDocument = useCallback(async (id: string, filename: string) => {
     try {
-      await deleteDocumentById(id);
-      setDocuments((prev) => prev.filter((d) => d.id !== id));
-      setStatusMessage({ text: `Deleted "${filename}" successfully.` });
+      await archiveDocumentById(id);
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === id ? { ...d, is_archived: true, archived_at: new Date().toISOString() } : d))
+      );
+      setStatusMessage({ text: `"${filename}" archived (soft-deleted). Excluded from RAG vector search.` });
     } catch (err: any) {
-      setStatusMessage({ text: `Failed to delete "${filename}": ${err.message}`, isError: true });
+      setStatusMessage({ text: `Failed to archive "${filename}": ${err.message}`, isError: true });
+    }
+  }, []);
+
+  // Restore Soft-Deleted Document
+  const restoreDocument = useCallback(async (id: string, filename: string) => {
+    try {
+      await restoreDocumentById(id);
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === id ? { ...d, is_archived: false, archived_at: null } : d))
+      );
+      setStatusMessage({ text: `"${filename}" restored to active repository & vector search.` });
+    } catch (err: any) {
+      setStatusMessage({ text: `Failed to restore "${filename}": ${err.message}`, isError: true });
+    }
+  }, []);
+
+  // Permanent Hard Delete (Erase chunks & vector embeddings)
+  const hardDeleteDocument = useCallback(async (id: string, filename: string) => {
+    try {
+      await permanentlyDeleteDocumentById(id);
+      setDocuments((prev) => prev.filter((d) => d.id !== id));
+      setStatusMessage({ text: `"${filename}" permanently deleted along with all vector embeddings.` });
+    } catch (err: any) {
+      setStatusMessage({ text: `Failed to permanently delete "${filename}": ${err.message}`, isError: true });
     }
   }, []);
 
@@ -71,7 +104,10 @@ export function useDocumentManager() {
     totalChunks,
     loadDocuments,
     uploadFile,
-    deleteDocument,
+    archiveDocument,
+    restoreDocument,
+    hardDeleteDocument,
+    deleteDocument: archiveDocument,
     clearStatus: () => setStatusMessage(null)
   };
 }

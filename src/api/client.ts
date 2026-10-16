@@ -12,7 +12,27 @@ import type {
   PromptHistoryItem
 } from '../types';
 
-export const API_BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://127.0.0.1:8000';
+function resolveApiBaseUrl(): string {
+  const envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+
+  // Dynamic host detection: If deployed on Azure or any non-localhost domain, route to Azure Backend
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+
+    if (!isLocal) {
+      if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+        return envUrl;
+      }
+      return 'https://infosys-social-value.azurewebsites.net';
+    }
+  }
+
+  return envUrl || 'http://127.0.0.1:8000';
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
+
 
 const TOKEN_KEY = 'social_value_jwt_token';
 
