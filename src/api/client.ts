@@ -7,7 +7,9 @@ import type {
   PackageCalculation,
   UserProfile,
   AuthTokenResponse,
-  AuthStatusResponse
+  AuthStatusResponse,
+  PromptSubmissionResponse,
+  PromptHistoryItem
 } from '../types';
 
 export const API_BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://127.0.0.1:8000';
@@ -202,9 +204,42 @@ export async function uploadDocumentFile(file: File): Promise<{ success: boolean
   }
 }
 
-export async function deleteDocumentById(id: string): Promise<boolean> {
+// ==========================================
+// Natural Language Prompt API (Backend Driven)
+// ==========================================
+export async function submitPromptToBackend(prompt: string): Promise<PromptSubmissionResponse> {
+  const res = await fetch(`${API_BASE_URL}/responses/prompt`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ prompt })
+  });
+
+  if (!res.ok) {
+    throw new Error(`Server returned error ${res.status}: ${await res.text()}`);
+  }
+
+  return await res.json();
+}
+
+export async function fetchPromptHistory(limit = 25): Promise<PromptHistoryItem[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/documents/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/responses/history?limit=${limit}`, {
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+// ==========================================
+// Document Lifecycle Management (Soft / Hard Delete)
+// ==========================================
+
+export async function archiveDocumentById(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/documents/${id}?permanent=false`, {
       method: 'DELETE',
       headers: getAuthHeaders()
     });
@@ -213,6 +248,35 @@ export async function deleteDocumentById(id: string): Promise<boolean> {
     return true;
   }
 }
+
+export async function restoreDocumentById(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/documents/${id}/restore`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    return res.ok;
+  } catch {
+    return true;
+  }
+}
+
+export async function permanentlyDeleteDocumentById(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/documents/${id}?permanent=true`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    return res.ok;
+  } catch {
+    return true;
+  }
+}
+
+export async function deleteDocumentById(id: string): Promise<boolean> {
+  return archiveDocumentById(id);
+}
+
 
 export async function fetchTomsMetrics(): Promise<TOMsMetric[]> {
   try {

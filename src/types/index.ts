@@ -107,7 +107,36 @@ export interface DocumentItem {
   metadata?: Record<string, any>;
   created_at: string;
   chunks_count: number;
+  is_archived?: boolean;
+  archived_at?: string | null;
 }
+
+export interface PromptSubmissionResponse {
+  prompt_id: string;
+  is_rfp_prompt: boolean;
+  intent: string;
+  explanation?: string | null;
+  request?: OpportunityRequest | null;
+  result?: ResponseGenerationResult | null;
+  created_at: string;
+}
+
+export interface PromptHistoryItem {
+  id: string;
+  raw_prompt: string;
+  intent: string;
+  is_rfp_prompt: boolean;
+  client_name?: string | null;
+  location?: string | null;
+  contract_value_gbp?: number | null;
+  duration_years?: number | null;
+  weighting_percent?: number | null;
+  priorities?: string[];
+  explanation?: string | null;
+  response_summary?: Record<string, any> | null;
+  created_at?: string | null;
+}
+
 
 export interface TOMsMetric {
   code: string;
