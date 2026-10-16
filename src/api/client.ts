@@ -14,24 +14,15 @@ import type {
 
 function resolveApiBaseUrl(): string {
   let envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
-  if (envUrl && !envUrl.startsWith('http://') && !envUrl.startsWith('https://')) {
-    envUrl = `https://${envUrl}`;
-  }
-
-  // Dynamic host detection: If deployed on Azure or any non-localhost domain, route to Azure Backend
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
-
-    if (!isLocal) {
-      if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
-        return envUrl;
-      }
-      return 'https://infosys-social-value-gmc2fxd8epfsgrh7.southindia-01.azurewebsites.net';
+  if (envUrl) {
+    if (!envUrl.startsWith('http://') && !envUrl.startsWith('https://')) {
+      envUrl = `https://${envUrl}`;
     }
+    return envUrl;
   }
 
-  return envUrl || 'http://127.0.0.1:8000';
+  // Local development fallback
+  return 'http://127.0.0.1:8000';
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();
