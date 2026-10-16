@@ -221,14 +221,14 @@ export function parseRfpPrompt(prompt: string): ParsedPromptResult {
   if (!extracted.value) defaultedFields.push('Contract Value (defaulted to £10,000,000)');
   if (!extracted.weighting) defaultedFields.push('Weighting (defaulted to 10%)');
   if (!extracted.client && !extracted.location) {
-    defaultedFields.push('Client & Location (defaulted to Birmingham City Council)');
+    defaultedFields.push('Client & Location (defaulted to Public Sector Authority)');
   }
   if (!extracted.priorities || extracted.priorities.length === 0) {
-    defaultedFields.push('Priorities (defaulted to Digital Inclusion & Youth Employment)');
+    defaultedFields.push('Priorities (defaulted to standard Social Value pillars)');
   }
 
-  const effectiveClient = extracted.client || (extracted.location ? `${extracted.location} City Council` : 'Birmingham City Council');
-  const effectiveLocation = extracted.location || (extracted.client ? extracted.client.split(' ')[0] : 'Birmingham');
+  const effectiveClient = extracted.client || (extracted.location ? `${extracted.location} City Council` : 'UK Public Sector Authority');
+  const effectiveLocation = extracted.location || (extracted.client ? extracted.client.split(' ')[0] : 'UK Regional');
 
   const request: OpportunityRequest = {
     contract_duration_years: extracted.duration || 3,
@@ -238,7 +238,7 @@ export function parseRfpPrompt(prompt: string): ParsedPromptResult {
     location: effectiveLocation,
     priorities: extracted.priorities && extracted.priorities.length > 0
       ? extracted.priorities
-      : ['Digital Inclusion', 'Youth Employment', 'Local Supply Chain'],
+      : ['Local Skills & Employment', 'Local Economic Growth', 'Community Wellbeing'],
     top_k: 5,
     raw_prompt: cleanPrompt
   };
