@@ -21,6 +21,11 @@ export interface InitiativeItem {
   partner?: string | null;
   evidence_source: string;
   is_from_knowledge_base: boolean;
+  sessions_per_year?: number | null;
+  hours_per_session?: number | null;
+  participants_per_session?: number | null;
+  indicative_cost_gbp?: number | null;
+  commercial_viability?: string | null;
 }
 
 export interface InitiativeCalculation {
@@ -48,6 +53,13 @@ export interface PackageCalculation {
   audit_trail: string[];
 }
 
+export interface GovernanceCadence {
+  social_value_lead: string;
+  kickoff_cadence: string;
+  reporting_frequency: string;
+  annual_review: string;
+}
+
 export interface SocialValuePackage {
   name: string;
   initiatives: InitiativeItem[];
@@ -55,6 +67,16 @@ export interface SocialValuePackage {
   expected_impact: string[];
   dependencies: string[];
   financial_calculation?: PackageCalculation;
+  indicative_delivery_cost_gbp?: number;
+  commercial_viability_summary?: string;
+  governance?: GovernanceCadence;
+}
+
+export interface AIReasoningStep {
+  step_number: number;
+  title: string;
+  detail: string;
+  status?: string;
 }
 
 export interface ResponseGenerationResult {
@@ -74,6 +96,7 @@ export interface ResponseGenerationResult {
   validation_required: string[];
   retrieved_evidence_chunks: number;
   grounding_summary: Record<string, any>;
+  ai_reasoning_chain?: AIReasoningStep[];
   is_mock?: boolean;
 }
 
