@@ -32,7 +32,7 @@ jobs:
       - name: Build Application
         run: npm run build
         env:
-          VITE_API_URL: "https://infosys-social-value.azurewebsites.net"
+          VITE_API_URL: "https://infosys-social-value-gmc2fxd8epfsgrh7.southindia-01.azurewebsites.net"
 
       - name: Deploy to Azure Static Web Apps
         id: builddeploy
