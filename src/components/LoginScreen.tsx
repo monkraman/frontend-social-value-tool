@@ -82,6 +82,44 @@ export const LoginScreen: React.FC = () => {
           </div>
         )}
 
+        {/* Demo / Superadmin Credentials Helper */}
+        <div
+          style={{
+            padding: '0.65rem 0.85rem',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: '0.75rem',
+            color: 'var(--text-secondary)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}
+        >
+          <div>
+            <div><strong>Default Superadmin:</strong></div>
+            <div style={{ color: 'var(--text-muted)', fontFamily: 'monospace' }}>admin@infosys.com / admin123</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEmail('admin@infosys.com');
+              setPassword('admin123');
+            }}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--border-medium)',
+              borderRadius: '4px',
+              padding: '0.25rem 0.5rem',
+              color: 'var(--color-primary, #3b82f6)',
+              cursor: 'pointer',
+              fontSize: '0.75rem'
+            }}
+          >
+            Auto-fill
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
             <label
