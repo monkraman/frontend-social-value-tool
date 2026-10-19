@@ -38,6 +38,9 @@ export interface PromptStudioProps {
   result: ResponseGenerationResult | null;
   targetAmount: number;
   promptFeedback?: PromptFeedback | null;
+  error?: string | null;
+  onClearError?: () => void;
+  onRetry?: () => void;
   onNavigateTab?: (tab: 'prompt' | 'tuner' | 'documents' | 'search') => void;
   onClearFeedback?: () => void;
   onExportJson?: () => void;
@@ -60,6 +63,9 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
   result,
   targetAmount,
   promptFeedback,
+  error = null,
+  onClearError,
+  onRetry,
   onNavigateTab,
   onClearFeedback,
   onExportJson,
@@ -248,8 +254,84 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
         </div>
       )}
 
+      {/* Error State: Transparent, clean AI/Backend error alert */}
+      {error && !isLoading && (
+        <div
+          style={{
+            padding: '1.25rem 1.5rem',
+            backgroundColor: 'rgba(239, 68, 68, 0.06)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            borderRadius: 'var(--radius-md)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
+            marginTop: '0.5rem'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', fontWeight: 600, fontSize: '0.9rem' }}>
+              <AlertCircle size={18} />
+              <span>AI Pipeline Notice & Error</span>
+            </div>
+            <span
+              style={{
+                fontSize: '0.7rem',
+                backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                color: '#ef4444',
+                padding: '0.2rem 0.55rem',
+                borderRadius: 'var(--radius-sm)',
+                fontWeight: 600,
+                letterSpacing: '0.02em'
+              }}
+            >
+              Anti-Hallucination Safe Mode
+            </span>
+          </div>
+
+          <div
+            style={{
+              fontSize: '0.875rem',
+              color: 'var(--text-primary)',
+              lineHeight: 1.5,
+              padding: '0.6rem 0.85rem',
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-sm)',
+              wordBreak: 'break-word'
+            }}
+          >
+            {error}
+          </div>
+
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+            To protect your tender integrity, the system halted generation instead of fabricating unverified initiatives or hallucinated costs.
+          </p>
+
+          <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="btn-primary"
+                style={{ fontSize: '0.75rem', padding: '0.4rem 0.85rem', gap: '0.35rem' }}
+              >
+                <RefreshCw size={13} /> Retry Generation
+              </button>
+            )}
+            {onClearError && (
+              <button
+                onClick={onClearError}
+                className="btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '0.4rem 0.85rem' }}
+              >
+                Dismiss
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Empty State */}
-      {!result && !isLoading && !promptFeedback && (
+      {!result && !isLoading && !promptFeedback && !error && (
         <div style={{ textAlign: 'center', padding: '3.5rem 1rem 1.5rem 1rem' }}>
           <div style={{ display: 'inline-flex', padding: '0.6rem', borderRadius: '50%', backgroundColor: 'var(--bg-muted)', marginBottom: '1rem', color: 'var(--text-primary)' }}>
             <Brain size={28} />

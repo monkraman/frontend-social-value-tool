@@ -140,23 +140,25 @@ export async function checkBackendHealth(): Promise<{ online: boolean; message: 
 }
 
 export async function generateRfpResponse(request: OpportunityRequest): Promise<ResponseGenerationResult> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/responses/generate`, {
-      method: 'POST',
-      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify(request)
-    });
+  const res = await fetch(`${API_BASE_URL}/responses/generate`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(request)
+  });
 
-    if (!res.ok) {
-      throw new Error(`Server returned error ${res.status}: ${await res.text()}`);
+  if (!res.ok) {
+    let detail = `Server returned error (${res.status})`;
+    try {
+      const errJson = await res.json();
+      detail = errJson.detail || detail;
+    } catch {
+      detail = await res.text();
     }
-
-    const data: ResponseGenerationResult = await res.json();
-    return { ...data, is_mock: false };
-  } catch (err: any) {
-    console.warn('Backend unavailable, using realistic grounded fallback model:', err);
-    return getRealisticFallbackResponse(request);
+    throw new Error(detail);
   }
+
+  const data: ResponseGenerationResult = await res.json();
+  return { ...data, is_mock: false };
 }
 
 export async function fetchDocuments(): Promise<DocumentItem[]> {
@@ -229,7 +231,14 @@ export async function submitPromptToBackend(prompt: string): Promise<PromptSubmi
   });
 
   if (!res.ok) {
-    throw new Error(`Server returned error ${res.status}: ${await res.text()}`);
+    let detail = `Server error (${res.status})`;
+    try {
+      const errJson = await res.json();
+      detail = errJson.detail || detail;
+    } catch {
+      detail = await res.text();
+    }
+    throw new Error(detail);
   }
 
   return await res.json();
@@ -283,7 +292,14 @@ export async function refineRfpResponse(
   });
 
   if (!res.ok) {
-    throw new Error(`Refinement error ${res.status}: ${await res.text()}`);
+    let detail = `Refinement error (${res.status})`;
+    try {
+      const errJson = await res.json();
+      detail = errJson.detail || detail;
+    } catch {
+      detail = await res.text();
+    }
+    throw new Error(detail);
   }
 
   return await res.json();
@@ -468,7 +484,7 @@ export async function searchVectorKnowledge(query: string, top_k = 4): Promise<S
 }
 
 // Fallback high-fidelity sample result matching exact backend schema
-function getRealisticFallbackResponse(request: OpportunityRequest): ResponseGenerationResult {
+export function getRealisticFallbackResponse(request: OpportunityRequest): ResponseGenerationResult {
   const years = request.contract_duration_years || 3;
   const value = request.contract_value_gbp || 10000000;
   const weighting = request.social_value_weighting_percent || 10;

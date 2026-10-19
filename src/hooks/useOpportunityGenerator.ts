@@ -32,10 +32,14 @@ export function useOpportunityGenerator() {
       const data = await submitPromptToBackend(promptText);
       if (data.is_rfp_prompt && data.result) {
         setResult(data.result);
+        setError(null);
       }
       return data;
     } catch (err: any) {
-      console.warn('Backend prompt submission failed:', err);
+      const errMsg = err?.message || 'AI prompt processing failed.';
+      console.error('Backend prompt submission failed:', err);
+      setError(errMsg);
+      setResult(null);
       return null;
     } finally {
       setIsLoading(false);
@@ -53,9 +57,12 @@ export function useOpportunityGenerator() {
     ? (result.opportunity.contract_value_gbp * (result.opportunity.social_value_weighting_percent || 10)) / 100
     : 0;
 
+  const clearError = useCallback(() => setError(null), []);
+
   return {
     isLoading,
     error,
+    clearError,
     result,
     targetAmount,
     generate,

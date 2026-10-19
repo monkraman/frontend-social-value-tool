@@ -10,7 +10,6 @@ import { useBackendHealth } from './hooks/useBackendHealth';
 import { useOpportunityGenerator } from './hooks/useOpportunityGenerator';
 import { useTheme } from './hooks/useTheme';
 import { useChatHistory } from './hooks/useChatHistory';
-import { parseRfpPrompt } from './utils/promptParser';
 import type { PromptHistoryItem, ResponseGenerationResult } from './types';
 
 const DEFAULT_INITIAL_PROMPT =
@@ -32,9 +31,10 @@ const AppContent: React.FC = () => {
   const { online: backendOnline } = useBackendHealth();
   const {
     isLoading,
+    error,
+    clearError,
     result,
     targetAmount,
-    generate,
     submitPrompt,
     exportResponse,
     setResult
@@ -88,63 +88,43 @@ const AppContent: React.FC = () => {
   const handleSendPrompt = async (promptText: string) => {
     setCurrentPrompt(promptText);
     setRefinementNote(null);
+    clearError();
     resetSession(); // clears the conversation thread
 
-    // Try backend first
-    try {
-      const data = await submitPrompt(promptText);
-      if (data) {
-        if (data.intent === 'navigation_documents') {
-          setPromptFeedback(null);
-          setActiveTab('documents');
-          return;
-        }
-        if (data.intent === 'navigation_search') {
-          setPromptFeedback(null);
-          setActiveTab('search');
-          return;
-        }
-        if (!data.is_rfp_prompt || !data.result) {
-          setPromptFeedback({
-            type: 'non_rfp',
-            message: data.explanation || 'No tender specifications detected in this prompt.',
-            prompt: promptText
-          });
-          setResult(null);
-          setActiveTab('prompt');
-          return;
-        }
-
-        // ── SUCCESS: seed the conversation thread with turn 1 ──
-        initThread(promptText, data.result, data.prompt_id);
-        syncThreadLength();
-
-        setPromptFeedback(null);
-        setActiveTab('prompt');
-        await loadHistory(10);
-        return;
-      }
-    } catch (err) {
-      console.warn('Backend prompt processing failed, falling back to local engine:', err);
+    // Submit directly to backend AI pipeline
+    const data = await submitPrompt(promptText);
+    if (!data) {
+      // Backend AI returned error, which is now captured in `error` state.
+      // STOP HERE: do NOT hallucinate or synthesize unverified packages!
+      return;
     }
 
-    // Fallback: client-side parser
-    const parsed = parseRfpPrompt(promptText);
-    if (parsed.intent === 'navigation_documents') { setPromptFeedback(null); setActiveTab('documents'); return; }
-    if (parsed.intent === 'navigation_search')    { setPromptFeedback(null); setActiveTab('search');    return; }
-    if (!parsed.isRfpPrompt || !parsed.request) {
-      setPromptFeedback({ type: 'non_rfp', message: parsed.explanation || 'No tender specifications detected.', prompt: promptText });
+    if (data.intent === 'navigation_documents') {
+      setPromptFeedback(null);
+      setActiveTab('documents');
+      return;
+    }
+    if (data.intent === 'navigation_search') {
+      setPromptFeedback(null);
+      setActiveTab('search');
+      return;
+    }
+    if (!data.is_rfp_prompt || !data.result) {
+      setPromptFeedback({
+        type: 'non_rfp',
+        message: data.explanation || 'No tender specifications detected in this prompt.',
+        prompt: promptText
+      });
       setResult(null);
       setActiveTab('prompt');
       return;
     }
 
+    // ── SUCCESS: seed the conversation thread with turn 1 ──
+    initThread(promptText, data.result, data.prompt_id);
+    syncThreadLength();
+
     setPromptFeedback(null);
-    const fallbackResult = await generate(parsed.request);
-    if (fallbackResult) {
-      initThread(promptText, fallbackResult);
-      syncThreadLength();
-    }
     setActiveTab('prompt');
     await loadHistory(10);
   };
@@ -225,6 +205,9 @@ const AppContent: React.FC = () => {
             isLoading={isLoading}
             result={result}
             targetAmount={targetAmount}
+            error={error}
+            onClearError={clearError}
+            onRetry={() => handleSendPrompt(currentPrompt || DEFAULT_INITIAL_PROMPT)}
             promptFeedback={promptFeedback}
             onNavigateTab={setActiveTab}
             onClearFeedback={() => setPromptFeedback(null)}
