@@ -1,6 +1,7 @@
 import React from 'react';
-import { Plus, MessageSquare, Sliders, Database, Search, Sun, Moon, LogIn, LogOut } from 'lucide-react';
+import { Plus, MessageSquare, Sliders, Database, Search, Sun, Moon, LogIn, LogOut, Clock, Sparkles, ChevronRight } from 'lucide-react';
 import type { ThemeMode } from '../constants/theme';
+import type { PromptHistoryItem } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 export type ActiveTab = 'prompt' | 'tuner' | 'documents' | 'search';
@@ -12,6 +13,28 @@ export interface SidebarProps {
   backendOnline: boolean;
   theme: ThemeMode;
   onToggleTheme: () => void;
+  chatHistory?: PromptHistoryItem[];
+  isLoadingHistory?: boolean;
+  onRestoreChat?: (item: PromptHistoryItem) => void;
+}
+
+function formatRelativeTime(isoStr?: string | null): string {
+  if (!isoStr) return '';
+  const now = Date.now();
+  const then = new Date(isoStr).getTime();
+  const diffMs = now - then;
+  const mins = Math.floor(diffMs / 60000);
+  const hours = Math.floor(diffMs / 3600000);
+  const days = Math.floor(diffMs / 86400000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  return `${days}d ago`;
+}
+
+function truncatePrompt(text: string, max = 42): string {
+  if (text.length <= max) return text;
+  return text.slice(0, max).trimEnd() + '…';
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -20,7 +43,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNewPrompt,
   backendOnline,
   theme,
-  onToggleTheme
+  onToggleTheme,
+  chatHistory = [],
+  isLoadingHistory = false,
+  onRestoreChat
 }) => {
   const { user, isAuthenticated, logout, openAuthModal } = useAuth();
 
@@ -41,6 +67,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       .toUpperCase();
   };
 
+  // Only show rfp prompts in history
+  const rfpHistory = chatHistory.filter((h) => h.is_rfp_prompt).slice(0, 10);
+
   return (
     <aside
       style={{
@@ -52,11 +81,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         flexDirection: 'column',
         position: 'sticky',
         top: 0,
-        flexShrink: 0
+        flexShrink: 0,
+        overflowY: 'auto'
       }}
     >
       {/* Brand Header */}
-      <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-subtle)' }}>
+      <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -83,7 +113,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* New Prompt Button */}
-      <div style={{ padding: '1rem 1.25rem 0.5rem 1.25rem' }}>
+      <div style={{ padding: '1rem 1.25rem 0.5rem 1.25rem', flexShrink: 0 }}>
         <button
           onClick={onNewPrompt}
           className="btn-secondary"
@@ -95,7 +125,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Navigation List */}
-      <nav style={{ padding: '0.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: 1 }}>
+      <nav style={{ padding: '0.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.2rem', flexShrink: 0 }}>
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
           return (
@@ -125,8 +155,108 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
+      {/* Recent Chats History Section */}
+      <div
+        style={{
+          padding: '0 0.75rem',
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.75rem 0.25rem 0.4rem 0.25rem',
+            borderTop: '1px solid var(--border-subtle)',
+            marginTop: '0.25rem'
+          }}
+        >
+          <Clock size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+          <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            Recent Chats
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+          {isLoadingHistory && (
+            <div style={{ padding: '0.5rem 0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+              Loading history…
+            </div>
+          )}
+
+          {!isLoadingHistory && rfpHistory.length === 0 && (
+            <div style={{ padding: '0.5rem 0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+              No recent chats yet
+            </div>
+          )}
+
+          {rfpHistory.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                onRestoreChat?.(item);
+                onTabChange('prompt');
+              }}
+              title={item.raw_prompt}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.5rem',
+                padding: '0.5rem 0.6rem',
+                borderRadius: 'var(--radius-md)',
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                fontSize: '0.78rem',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'background 0.13s ease',
+                width: '100%'
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'var(--bg-muted)';
+                (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'transparent';
+                (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
+              }}
+            >
+              <Sparkles size={11} style={{ flexShrink: 0, marginTop: '2px', opacity: 0.6 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: '0.78rem',
+                    lineHeight: 1.35,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    fontWeight: 500
+                  }}
+                >
+                  {item.client_name
+                    ? `${item.client_name}${item.location ? ` · ${item.location}` : ''}`
+                    : truncatePrompt(item.raw_prompt)}
+                </div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '1px' }}>
+                  {item.contract_value_gbp
+                    ? `£${(item.contract_value_gbp / 1000000).toFixed(1)}M · ${item.weighting_percent ?? 10}% SV · `
+                    : ''}
+                  {formatRelativeTime(item.created_at)}
+                </div>
+              </div>
+              <ChevronRight size={10} style={{ flexShrink: 0, marginTop: '3px', opacity: 0.4 }} />
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* User Authentication Card */}
-      <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid var(--border-subtle)' }}>
+      <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid var(--border-subtle)', flexShrink: 0 }}>
         {isAuthenticated && user ? (
           <div
             style={{
@@ -230,7 +360,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           borderTop: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          flexShrink: 0
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
@@ -248,7 +379,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Bottom Status */}
-      <div style={{ padding: '0.75rem 1.25rem 1rem 1.25rem', borderTop: '1px solid var(--border-subtle)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+      <div style={{ padding: '0.75rem 1.25rem 1rem 1.25rem', borderTop: '1px solid var(--border-subtle)', fontSize: '0.75rem', color: 'var(--text-muted)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span
             style={{

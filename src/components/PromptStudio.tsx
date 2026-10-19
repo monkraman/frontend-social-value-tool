@@ -18,7 +18,10 @@ import {
   PoundSterling,
   Sparkles,
   TrendingUp,
-  ShieldCheck
+  ShieldCheck,
+  MessageSquarePlus,
+  RefreshCw,
+  Loader
 } from 'lucide-react';
 import { formatGbp, formatPercent } from '../utils/formatters';
 
@@ -39,6 +42,12 @@ export interface PromptStudioProps {
   onClearFeedback?: () => void;
   onExportJson?: () => void;
   onReset: () => void;
+  // Refinement props
+  onRefineResult?: (feedback: string) => void;
+  isRefining?: boolean;
+  refineError?: string | null;
+  refinementNote?: string | null;
+  conversationTurnCount?: number;
 }
 
 const DEFAULT_SAMPLE_PROMPT =
@@ -54,7 +63,12 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
   onNavigateTab,
   onClearFeedback,
   onExportJson,
-  onReset
+  onReset,
+  onRefineResult,
+  isRefining = false,
+  refineError = null,
+  refinementNote = null,
+  conversationTurnCount = 0
 }) => {
   const [inputText, setInputText] = useState(currentPrompt);
   const [prevPrompt, setPrevPrompt] = useState(currentPrompt);
@@ -62,6 +76,8 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
   const [activePackage, setActivePackage] = useState<'core' | 'enhanced' | 'localised'>('localised');
   const [showAiReasoning, setShowAiReasoning] = useState<boolean>(true);
   const [copiedTender, setCopiedTender] = useState<boolean>(false);
+  const [refineText, setRefineText] = useState<string>('');
+  const [showRefinePanel, setShowRefinePanel] = useState<boolean>(false);
 
   if (currentPrompt !== prevPrompt) {
     setPrevPrompt(currentPrompt);
@@ -77,7 +93,22 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
 
   const handleSubmit = () => {
     if (!inputText.trim() || isLoading) return;
+    setShowRefinePanel(false);
+    setRefineText('');
     onSendPrompt(inputText.trim());
+  };
+
+  const handleRefineSubmit = () => {
+    if (!refineText.trim() || isRefining) return;
+    onRefineResult?.(refineText.trim());
+    setRefineText('');
+  };
+
+  const handleRefineKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleRefineSubmit();
+    }
   };
 
   const currentPkg = result
@@ -763,8 +794,162 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
         </div>
       )}
 
+      {/* Refinement Note Banner — shown after a successful AI refinement */}
+      {refinementNote && (
+        <div
+          style={{
+            padding: '0.6rem 1rem',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-md)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.8rem',
+            color: 'var(--text-secondary)',
+            marginBottom: '0.25rem'
+          }}
+        >
+          <RefreshCw size={13} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
+          <span>{refinementNote}</span>
+        </div>
+      )}
+
+      {/* Refine Result Panel — shown when there is a current result */}
+      {result && onRefineResult && (
+        <div
+          style={{
+            backgroundColor: 'var(--bg-surface)',
+            border: showRefinePanel ? '1px solid var(--text-primary)' : '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            overflow: 'hidden',
+            transition: 'border-color 0.2s ease'
+          }}
+        >
+          {/* Refine Toggle Header */}
+          <button
+            onClick={() => setShowRefinePanel((p) => !p)}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0.65rem 1rem',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
+              fontSize: '0.8125rem',
+              fontWeight: 500
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <MessageSquarePlus size={14} />
+              <span>Not satisfied? Refine &amp; improve this result</span>
+              {/* Live memory badge */}
+              {conversationTurnCount > 0 && (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.2rem',
+                    fontSize: '0.68rem',
+                    fontWeight: 600,
+                    padding: '0.1rem 0.45rem',
+                    borderRadius: '999px',
+                    backgroundColor: 'rgba(34,197,94,0.12)',
+                    color: '#22c55e',
+                    border: '1px solid rgba(34,197,94,0.25)'
+                  }}
+                >
+                  <RefreshCw size={9} />
+                  {conversationTurnCount} turn{conversationTurnCount !== 1 ? 's' : ''} in memory
+                </span>
+              )}
+            </div>
+            {showRefinePanel ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+
+          {/* Collapsible Refine Input */}
+          {showRefinePanel && (
+            <div
+              style={{
+                borderTop: '1px solid var(--border-subtle)',
+                padding: '0.75rem 1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem'
+              }}
+            >
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                🧠 <strong style={{ color: 'var(--text-secondary)' }}>AI has full session memory.</strong>{' '}
+                {conversationTurnCount > 0
+                  ? `It remembers all ${conversationTurnCount} turns of this conversation — every previous instruction is still active.`
+                  : 'Tell the AI what to change and it will use the full context of this result.'}
+                {' '}For example: <em>"Add more Net Zero focus"</em>, <em>"Increase Digital Inclusion to 12%"</em>,
+                or <em>"Make the Enhanced Package stronger on Supply Chain"</em>.
+              </div>
+
+              <textarea
+                value={refineText}
+                onChange={(e) => setRefineText(e.target.value)}
+                onKeyDown={handleRefineKeyDown}
+                placeholder="Describe what to improve, change, or focus on more…"
+                rows={2}
+                disabled={isRefining}
+                style={{
+                  width: '100%',
+                  backgroundColor: 'var(--bg-muted)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '0.5rem 0.75rem',
+                  fontSize: '0.875rem',
+                  color: 'var(--text-primary)',
+                  resize: 'vertical',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                  opacity: isRefining ? 0.6 : 1
+                }}
+              />
+
+              {refineError && (
+                <div style={{ fontSize: '0.78rem', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <AlertCircle size={12} />
+                  {refineError}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                  Press <CornerDownLeft size={11} /> to refine
+                </span>
+                <button
+                  onClick={handleRefineSubmit}
+                  disabled={!refineText.trim() || isRefining}
+                  className="btn-primary"
+                  style={{ padding: '0.4rem 0.85rem', fontSize: '0.75rem' }}
+                >
+                  {isRefining ? (
+                    <>
+                      <Loader size={12} className="spin-icon" />
+                      Refining…
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw size={12} />
+                      Refine with AI
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Sticky Bottom Prompt Box */}
       <div style={{ position: 'sticky', bottom: '1.5rem', marginTop: 'auto', paddingTop: '1rem' }}>
+
         <div
           style={{
             backgroundColor: 'var(--bg-surface)',

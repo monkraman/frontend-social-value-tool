@@ -113,9 +113,12 @@ export interface DocumentItem {
 
 export interface PromptSubmissionResponse {
   prompt_id: string;
+  session_id?: string | null;
+  turn_index?: number;
   is_rfp_prompt: boolean;
   intent: string;
   explanation?: string | null;
+  refinement_note?: string | null;
   request?: OpportunityRequest | null;
   result?: ResponseGenerationResult | null;
   created_at: string;
@@ -123,6 +126,8 @@ export interface PromptSubmissionResponse {
 
 export interface PromptHistoryItem {
   id: string;
+  session_id?: string | null;
+  turn_index?: number;
   raw_prompt: string;
   intent: string;
   is_rfp_prompt: boolean;
@@ -134,6 +139,7 @@ export interface PromptHistoryItem {
   priorities?: string[];
   explanation?: string | null;
   response_summary?: Record<string, any> | null;
+  full_result?: Record<string, any> | null;
   created_at?: string | null;
 }
 

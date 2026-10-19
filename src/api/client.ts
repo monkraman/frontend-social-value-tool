@@ -247,6 +247,48 @@ export async function fetchPromptHistory(limit = 25): Promise<PromptHistoryItem[
   }
 }
 
+export async function fetchPromptHistoryById(promptId: string): Promise<PromptHistoryItem | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/responses/history/${promptId}`, {
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function refineRfpResponse(
+  feedback: string,
+  previousResult: any,
+  previousPrompt: string,
+  sessionId?: string,
+  parentPromptId?: string,
+  turnIndex = 2,
+  conversationTurns?: Array<{ role: string; content: string }>
+): Promise<PromptSubmissionResponse> {
+  const res = await fetch(`${API_BASE_URL}/responses/refine`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({
+      feedback,
+      previous_result: previousResult,
+      previous_prompt: previousPrompt,
+      session_id: sessionId,
+      parent_prompt_id: parentPromptId,
+      turn_index: turnIndex,
+      conversation_turns: conversationTurns ?? null
+    })
+  });
+
+  if (!res.ok) {
+    throw new Error(`Refinement error ${res.status}: ${await res.text()}`);
+  }
+
+  return await res.json();
+}
+
 // ==========================================
 // Document Lifecycle Management (Soft / Hard Delete)
 // ==========================================
