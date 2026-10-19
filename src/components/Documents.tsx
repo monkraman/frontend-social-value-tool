@@ -34,6 +34,7 @@ export const Documents: React.FC = () => {
 
   const [activeFilter, setActiveFilter] = useState<'active' | 'archived'>('active');
   const [isDragging, setIsDragging] = useState(false);
+  const [batchStatus, setBatchStatus] = useState<{ current: number; total: number; filename: string } | null>(null);
 
   // Chunk inspection state
   const [inspectingDoc, setInspectingDoc] = useState<DocumentItem | null>(null);
@@ -46,16 +47,21 @@ export const Documents: React.FC = () => {
   const archivedDocs = documents.filter((d) => d.is_archived);
   const displayedDocs = activeFilter === 'active' ? activeDocs : archivedDocs;
 
-  // Handle files
+  // Handle batch & single files
   const processFiles = async (files: FileList | File[]) => {
-    for (let i = 0; i < files.length; i++) {
+    const total = files.length;
+    for (let i = 0; i < total; i++) {
       const file = files[i];
+      if (total > 1) {
+        setBatchStatus({ current: i + 1, total, filename: file.name });
+      }
       try {
         await uploadFile(file);
       } catch (err: any) {
-        console.error('File upload failed:', err);
+        console.error(`File upload failed for ${file.name}:`, err);
       }
     }
+    setBatchStatus(null);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
