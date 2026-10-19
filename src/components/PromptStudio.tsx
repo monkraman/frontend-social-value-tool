@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { ResponseGenerationResult } from '../types';
+import { useToast } from '../context/ToastContext';
 import {
   Send,
   CornerDownLeft,
@@ -84,6 +85,7 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
   const [copiedTender, setCopiedTender] = useState<boolean>(false);
   const [refineText, setRefineText] = useState<string>('');
   const [showRefinePanel, setShowRefinePanel] = useState<boolean>(false);
+  const toast = useToast();
 
   if (currentPrompt !== prevPrompt) {
     setPrevPrompt(currentPrompt);
@@ -192,6 +194,7 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
 
     navigator.clipboard.writeText(tenderText);
     setCopiedTender(true);
+    toast.success('Full tender response copied to clipboard!');
     setTimeout(() => setCopiedTender(false), 2500);
   };
 
@@ -628,7 +631,14 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
               </button>
 
               {onExportJson && (
-                <button onClick={onExportJson} className="btn-secondary" style={{ padding: '0.45rem 0.75rem', fontSize: '0.75rem' }}>
+                <button
+                  onClick={() => {
+                    onExportJson();
+                    toast.info('Tender response JSON downloaded.');
+                  }}
+                  className="btn-secondary"
+                  style={{ padding: '0.45rem 0.75rem', fontSize: '0.75rem' }}
+                >
                   <Download size={13} /> JSON
                 </button>
               )}

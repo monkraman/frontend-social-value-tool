@@ -6,6 +6,7 @@ import { Documents } from './components/Documents';
 import { Search } from './components/Search';
 import { LoginScreen } from './components/LoginScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import { useBackendHealth } from './hooks/useBackendHealth';
 import { useOpportunityGenerator } from './hooks/useOpportunityGenerator';
 import { useTheme } from './hooks/useTheme';
@@ -230,9 +231,11 @@ const AppContent: React.FC = () => {
 };
 
 export const App: React.FC = () => (
-  <AuthProvider>
-    <AppContent />
-  </AuthProvider>
+  <ToastProvider>
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  </ToastProvider>
 );
 
 export default App;

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useDocumentManager } from '../hooks/useDocumentManager';
 import { formatDate } from '../utils/formatters';
 import type { DocumentItem, DocumentChunkItem } from '../types';
+import { ConfirmationModal } from './ConfirmationModal';
 import {
   UploadCloud,
   Trash2,
@@ -42,6 +43,25 @@ export const Documents: React.FC = () => {
   const [isLoadingChunks, setIsLoadingChunks] = useState(false);
   const [chunkFilterQuery, setChunkFilterQuery] = useState('');
   const [copiedChunkId, setCopiedChunkId] = useState<string | null>(null);
+
+  // Custom Confirmation Modal State (replaces window.confirm)
+  const [confirmModalState, setConfirmModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: React.ReactNode;
+    confirmText: string;
+    variant: 'danger' | 'warning' | 'info';
+    badge?: string;
+    isLoading?: boolean;
+    onConfirm: () => Promise<void>;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Confirm',
+    variant: 'warning',
+    onConfirm: async () => {}
+  });
 
   const activeDocs = documents.filter((d) => !d.is_archived);
   const archivedDocs = documents.filter((d) => d.is_archived);
@@ -92,24 +112,74 @@ export const Documents: React.FC = () => {
     await processFiles(files);
   };
 
-  const handleArchive = async (id: string, filename: string) => {
-    if (!window.confirm(`Archive "${filename}"? It will be excluded from RAG vector searches, but audit records remain.`)) return;
-    await archiveDocument(id, filename);
+  const handleArchive = (id: string, filename: string) => {
+    setConfirmModalState({
+      isOpen: true,
+      title: 'Archive Document',
+      badge: 'Soft Delete (Audit Preserved)',
+      variant: 'warning',
+      confirmText: 'Archive Document',
+      message: (
+        <div>
+          <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-primary)' }}>
+            Are you sure you want to archive <strong>"{filename}"</strong>?
+          </p>
+          <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            This document will be immediately excluded from all RAG vector similarity searches, but its metadata and audit history will remain preserved in accordance with statutory compliance.
+          </p>
+        </div>
+      ),
+      onConfirm: async () => {
+        setConfirmModalState((prev) => ({ ...prev, isLoading: true }));
+        try {
+          await archiveDocument(id, filename);
+        } finally {
+          setConfirmModalState((prev) => ({ ...prev, isOpen: false, isLoading: false }));
+        }
+      }
+    });
   };
 
   const handleRestore = async (id: string, filename: string) => {
     await restoreDocument(id, filename);
   };
 
-  const handleHardDelete = async (id: string, filename: string) => {
-    if (
-      !window.confirm(
-        `PERMANENT DELETION WARNING: Are you sure you want to permanently delete "${filename}"? All chunks and vector embeddings will be completely erased from PostgreSQL.`
-      )
-    ) {
-      return;
-    }
-    await hardDeleteDocument(id, filename);
+  const handleHardDelete = (id: string, filename: string) => {
+    setConfirmModalState({
+      isOpen: true,
+      title: 'Permanently Delete Document',
+      badge: 'Irreversible Action',
+      variant: 'danger',
+      confirmText: 'Permanently Erase',
+      message: (
+        <div>
+          <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-primary)' }}>
+            Are you sure you want to permanently delete <strong>"{filename}"</strong>?
+          </p>
+          <div
+            style={{
+              padding: '0.65rem 0.85rem',
+              backgroundColor: 'rgba(239, 68, 68, 0.08)',
+              borderRadius: '6px',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              fontSize: '0.78rem',
+              color: '#ef4444',
+              lineHeight: 1.45
+            }}
+          >
+            <strong>PERMANENT DELETION WARNING:</strong> All text chunks and 768-dimensional vector embeddings for this document will be completely erased from PostgreSQL. This action cannot be undone.
+          </div>
+        </div>
+      ),
+      onConfirm: async () => {
+        setConfirmModalState((prev) => ({ ...prev, isLoading: true }));
+        try {
+          await hardDeleteDocument(id, filename);
+        } finally {
+          setConfirmModalState((prev) => ({ ...prev, isOpen: false, isLoading: false }));
+        }
+      }
+    });
   };
 
   // Inspect chunks handler
@@ -640,6 +710,18 @@ export const Documents: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Custom Reusable Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmModalState.isOpen}
+        title={confirmModalState.title}
+        message={confirmModalState.message}
+        confirmText={confirmModalState.confirmText}
+        variant={confirmModalState.variant}
+        badge={confirmModalState.badge}
+        isLoading={confirmModalState.isLoading}
+        onConfirm={confirmModalState.onConfirm}
+        onCancel={() => setConfirmModalState((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };

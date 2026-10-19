@@ -319,43 +319,73 @@ export async function refineRfpResponse(
 // Document Lifecycle Management (Soft / Hard Delete)
 // ==========================================
 
-export async function archiveDocumentById(id: string): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/documents/${id}?permanent=false`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    return res.ok;
-  } catch {
-    return true;
+export async function archiveDocumentById(id: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/documents/${id}?permanent=false`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  if (!res.ok) {
+    let detail = `Failed to archive document (${res.status})`;
+    try {
+      const err = await res.json();
+      detail = err.detail || detail;
+    } catch {
+      detail = await res.text();
+    }
+    throw new Error(detail);
   }
+  const data = await res.json().catch(() => ({}));
+  return {
+    success: true,
+    message: data.message || 'Document archived successfully.'
+  };
 }
 
-export async function restoreDocumentById(id: string): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/documents/${id}/restore`, {
-      method: 'POST',
-      headers: getAuthHeaders()
-    });
-    return res.ok;
-  } catch {
-    return true;
+export async function restoreDocumentById(id: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/documents/${id}/restore`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  });
+  if (!res.ok) {
+    let detail = `Failed to restore document (${res.status})`;
+    try {
+      const err = await res.json();
+      detail = err.detail || detail;
+    } catch {
+      detail = await res.text();
+    }
+    throw new Error(detail);
   }
+  const data = await res.json().catch(() => ({}));
+  return {
+    success: true,
+    message: data.message || 'Document restored successfully.'
+  };
 }
 
-export async function permanentlyDeleteDocumentById(id: string): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/documents/${id}?permanent=true`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    return res.ok;
-  } catch {
-    return true;
+export async function permanentlyDeleteDocumentById(id: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/documents/${id}?permanent=true`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  if (!res.ok) {
+    let detail = `Failed to delete document (${res.status})`;
+    try {
+      const err = await res.json();
+      detail = err.detail || detail;
+    } catch {
+      detail = await res.text();
+    }
+    throw new Error(detail);
   }
+  const data = await res.json().catch(() => ({}));
+  return {
+    success: true,
+    message: data.message || 'Document permanently deleted.'
+  };
 }
 
-export async function deleteDocumentById(id: string): Promise<boolean> {
+export async function deleteDocumentById(id: string): Promise<{ success: boolean; message: string }> {
   return archiveDocumentById(id);
 }
 
