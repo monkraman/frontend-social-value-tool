@@ -551,7 +551,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {backendOnline && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', paddingLeft: '0.9rem', fontSize: '0.68rem' }}>
                 <div style={{ color: 'var(--text-secondary)' }}>
-                  DB: {healthData?.database?.engine === 'postgresql' ? 'PostgreSQL (pgvector)' : 'SQLite Fallback'}
+                  DB: {healthData?.database?.engine === 'postgresql' ? 'PostgreSQL (pgvector)' : 'PostgreSQL unavailable'}
                 </div>
                 <div style={{ color: 'var(--text-muted)' }}>
                   AI: {healthData?.active_provider === 'gemini' ? (healthData?.providers?.gemini?.model || 'Gemini 3.8 Flash') : 'OpenAI'}
@@ -890,7 +890,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.35rem', color: 'var(--text-secondary)' }}>
                     <span>Engine:</span>
                     <strong style={{ color: healthData?.database?.engine === 'postgresql' ? '#16a34a' : 'var(--text-primary)' }}>
-                      {healthData?.database?.engine === 'postgresql' ? 'PostgreSQL (Neon Cloud)' : 'SQLite 3 (Portable / Embedded)'}
+                      {healthData?.database?.engine === 'postgresql' ? 'PostgreSQL (pgvector)' : 'PostgreSQL unavailable'}
                     </strong>
                     <span>pgvector:</span>
                     <span>{healthData?.database?.pgvector_installed ? `Installed (v${healthData?.database?.pgvector_version || '0.8.0'})` : 'Not Detected'}</span>
@@ -981,10 +981,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <ShieldCheck size={18} style={{ color: '#16a34a', flexShrink: 0, marginTop: '2px' }} />
                   <div>
                     <strong style={{ color: '#16a34a', display: 'block', marginBottom: '0.2rem' }}>
-                      Anti-Hallucination Integrity Active
+                      Prototype calculation safeguards
                     </strong>
                     <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', lineHeight: 1.45 }}>
-                      Real errors are surfaced honestly. All proxy values and calculations are strictly deterministic and traceable to National TOMs rate schedules.
+                      Calculations are repeatable using the current POC catalog. Confirm the catalog rates, source evidence and delivery assumptions before using bid figures.
                     </span>
                   </div>
                 </div>

@@ -86,6 +86,7 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
   const [copiedTender, setCopiedTender] = useState<boolean>(false);
   const [refineText, setRefineText] = useState<string>('');
   const [showRefinePanel, setShowRefinePanel] = useState<boolean>(false);
+  const [showPackageComparison, setShowPackageComparison] = useState<boolean>(false);
   const toast = useToast();
 
   if (currentPrompt !== prevPrompt) {
@@ -137,8 +138,8 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
     : 0;
 
   const deliveryCost = currentPkg?.indicative_delivery_cost_gbp || 0;
-  const svroiMultiplier = deliveryCost > 0 ? (currentTotal / deliveryCost).toFixed(1) : '24.0';
-  const isTargetAchieved = currentTotal >= (targetAmount * 0.98); // Allow small rounding margin
+  const svroiMultiplier = deliveryCost > 0 ? (currentTotal / deliveryCost).toFixed(1) : null;
+  const isTargetAchieved = currentCalc?.target_met ?? false;
 
   // Copy Tender-Ready Text to Clipboard
   const handleCopyTenderText = () => {
@@ -148,20 +149,20 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
     const governance = currentPkg.governance;
 
     const tenderText = `
-INFOSYS SOCIAL VALUE TENDER RESPONSE SPECIFICATION
+SOCIAL VALUE BID RESPONSE WORKING DRAFT — REVIEW BEFORE USE
 =====================================================
 Client: ${opp.client} (${opp.location})
 Contract Value: ${formatGbp(opp.contract_value_gbp)}
 Contract Term: ${opp.duration_years} Years
 Mandated Target Weighting: ${opp.social_value_weighting_percent}% (${formatGbp(targetAmount)})
 Package Option: ${currentPkg.name}
-Total Social Value Committed: ${formatGbp(currentTotal)} (${formatPercent(currentPercent)} of contract value)
-Commercial Status: ${isTargetAchieved ? 'TARGET ACHIEVED / EXCEEDED' : 'RESERVATION'}
+Indicative Social Value Estimate: ${formatGbp(currentTotal)} (${formatPercent(currentPercent)} of contract value)
+Proxy Calculation Status: ${isTargetAchieved ? 'MEETS SYNTHETIC POC TARGET' : 'BELOW SYNTHETIC POC TARGET'}
 
 1. EXECUTIVE SUMMARY & COMMITMENT
 -----------------------------------------------------
 ${currentPkg.rationale}
-This package delivers a defensible total of ${formatGbp(currentTotal)} in auditable Social Value, mapped directly to National TOMs (Themes, Outcomes and Measures).
+This draft estimates ${formatGbp(currentTotal)} using the current POC metric catalog. Confirm measure definitions, rates and delivery evidence before treating this as a bid commitment.
 
 2. PROPOSED INITIATIVES & OPERATIONAL METRICS
 -----------------------------------------------------
@@ -171,9 +172,10 @@ ${currentPkg.initiatives
 Theme: ${init.theme} | Location: ${init.location}
 Delivery: ${init.delivery_mechanism}
 Target Group: ${init.target_beneficiaries}
-Annual Volume: ${init.annual_volume} units/yr
-Commercial Viability: ${init.commercial_viability || 'Internal Delivery'}
-Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audited'}
+Annual TOMs Volume: ${init.annual_volume} ${currentCalc?.initiatives[i]?.unit || 'units'}/yr
+Delivery detail: ${init.sessions_per_year ?? 'TBC'} sessions/yr × ${init.hours_per_session ?? 'TBC'} hours/session × ${init.participants_per_session ?? 'TBC'} participants/session
+Evidence status: ${init.is_from_knowledge_base ? 'Retrieved; approval and fit require review' : 'Model suggestion; validate against approved offer'}
+Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
 `
   )
   .join('\n')}
@@ -188,9 +190,9 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
 4. COMMERCIAL FEASIBILITY & SOCIAL RETURN (SVROI)
 -----------------------------------------------------
 - Total Quantifiable Social Value Created: ${formatGbp(currentTotal)}
-- Estimated Delivery Investment to Infosys: ${formatGbp(deliveryCost)}
-- Social Return on Investment (SVROI): ${svroiMultiplier}x
-- Summary: ${currentPkg.commercial_viability_summary || 'Highly viable commercial delivery model'}
+- Indicative Delivery Investment to Infosys: ${deliveryCost > 0 ? formatGbp(deliveryCost) : 'Not provided'}
+- Social Return on Investment (SVROI): ${svroiMultiplier ? `${svroiMultiplier}x (indicative)` : 'Not calculated (delivery cost not provided)'}
+- Summary: ${currentPkg.commercial_viability_summary || 'Not assessed; approved delivery cost inputs are required.'}
     `.trim();
 
     navigator.clipboard.writeText(tenderText);
@@ -344,7 +346,7 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
             Social Value RFP Response Builder
           </h1>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', maxWidth: '580px', margin: '0 auto 1.5rem auto', lineHeight: 1.6 }}>
-            Synthesizes grounded public sector tender proposals aligned with Cabinet Office PPN 06/20, National TOMs proxies, and deterministic financial calculations.
+            Drafts initiative options against your stated priorities, shows POC proxy calculations, and highlights the evidence and delivery checks needed before a bid commitment.
           </p>
           <button
             onClick={() => setInputText(DEFAULT_SAMPLE_PROMPT)}
@@ -363,7 +365,7 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
             <Brain size={18} className="spin-icon" /> Synthesizing Social Value Response Packages...
           </div>
           <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-            Retrieving grounded case studies, allocating National TOMs codes, and executing deterministic math engine.
+            Retrieving available documents, mapping candidate measures, and calculating illustrative POC values.
           </div>
         </div>
       )}
@@ -371,6 +373,10 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
       {/* Render Response Result */}
       {result && !isLoading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(217, 119, 6, 0.45)', background: 'rgba(217, 119, 6, 0.08)', color: 'var(--text-primary)', fontSize: '0.8125rem', lineHeight: 1.5 }}>
+            <strong>{result.is_mock ? 'Demo generation' : 'Prototype estimate'}:</strong>{' '}
+            TOMs proxy rates and sample knowledge may be synthetic. Treat initiative volumes, partner suitability and delivery costs as draft assumptions until checked against approved Infosys evidence and the current TOMs source.
+          </div>
           {/* User Prompt Message with Dynamic Badges */}
           <div
             style={{
@@ -402,7 +408,7 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                   <span>AI Audit & Grounding Trail</span>
                 </button>
                 <span className="tag-mono" style={{ fontSize: '0.7rem', color: 'var(--text-primary)' }}>
-                  ✓ Grounded in RFP Intent
+                  RFP requirements captured
                 </span>
               </div>
             </div>
@@ -465,13 +471,13 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                     border: '1px solid var(--border-subtle)'
                   }}
                 >
-                  {isTargetAchieved ? '🎯 Target Achieved' : 'Below Target'} ({formatPercent(currentPercent)})
+                  {isTargetAchieved ? 'Meets proxy target' : 'Below proxy target'} ({formatPercent(currentPercent)})
                 </span>
               </div>
             </div>
           </div>
 
-          {/* TEMPLATES & QUICK ACTIONS: Prioritized directly here */}
+          {/* Package options and quick actions */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.65rem' }}>
             <div style={{ display: 'flex', gap: '0.35rem', backgroundColor: 'var(--bg-surface)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
               <button
@@ -504,7 +510,7 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                   transition: 'all 0.15s ease'
                 }}
               >
-                Template 2: Enhanced (Competitive Win)
+                Template 2: Expanded option
               </button>
               <button
                 onClick={() => setActivePackage('localised')}
@@ -520,9 +526,13 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                   transition: 'all 0.15s ease'
                 }}
               >
-                Template 3: Localised (10% Target Match)
+                Template 3: Localised (Place Based)
               </button>
             </div>
+
+            <button className="btn-secondary" onClick={() => setShowPackageComparison((shown) => !shown)} style={{ fontSize: '0.75rem' }}>
+              {showPackageComparison ? 'Hide package comparison' : 'Compare all options'}
+            </button>
 
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button
@@ -562,6 +572,27 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
             </div>
           </div>
 
+          {showPackageComparison && (
+            <div style={{ overflowX: 'auto', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', color: 'var(--text-primary)' }}>
+                <thead><tr>{['Option', 'Social value', 'Target', 'Initiatives', 'Indicative delivery cost'].map((label) => <th key={label} style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid var(--border-subtle)' }}>{label}</th>)}</tr></thead>
+                <tbody>{[
+                  ['Core', result.core_package], ['Enhanced', result.enhanced_package], ['Localised', result.localised_package]
+                ].map(([label, pkg]) => {
+                  const option = pkg as typeof result.core_package;
+                  const calc = option.financial_calculation;
+                  return <tr key={label as string}>
+                    <td style={{ padding: '0.75rem' }}>{label}</td>
+                    <td style={{ padding: '0.75rem' }}>{formatGbp(calc?.total_social_value_gbp || 0)} ({formatPercent(calc?.social_value_percentage || 0)})</td>
+                    <td style={{ padding: '0.75rem' }}>{calc?.target_met ? 'Meets (proxy)' : 'Below (proxy)'} {formatGbp(calc?.target_social_value_gbp || targetAmount)}</td>
+                    <td style={{ padding: '0.75rem' }}>{option.initiatives.length}</td>
+                    <td style={{ padding: '0.75rem' }}>{(option.indicative_delivery_cost_gbp || 0) > 0 ? formatGbp(option.indicative_delivery_cost_gbp || 0) : 'Not provided'}</td>
+                  </tr>;
+                })}</tbody>
+              </table>
+            </div>
+          )}
+
           {/* Active Package Detailed Card */}
           {currentPkg && (
             <div
@@ -592,7 +623,7 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                         color: 'var(--text-secondary)'
                       }}
                     >
-                      {activePackage === 'core' ? 'Compliance Baseline' : activePackage === 'enhanced' ? 'Winning Advantage' : 'Place-Based Match'}
+                      {activePackage === 'core' ? 'Core option' : activePackage === 'enhanced' ? 'Expanded option' : 'Place-focused option'}
                     </span>
                   </div>
                   <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.35rem', lineHeight: 1.5, margin: '0.35rem 0 0 0' }}>
@@ -615,10 +646,10 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                     {formatGbp(currentTotal)}
                   </div>
                   <div style={{ fontSize: '0.775rem', fontWeight: 600, color: isTargetAchieved ? '#16a34a' : 'var(--text-muted)' }}>
-                    {formatPercent(currentPercent)} Social Value Commitment
+                    {formatPercent(currentPercent)} estimated Social Value (POC rates)
                   </div>
                   <div style={{ fontSize: '0.725rem', color: 'var(--text-secondary)', marginTop: '0.25rem', paddingTop: '0.25rem', borderTop: '1px solid var(--border-subtle)' }}>
-                    Est. Delivery Cost: {formatGbp(deliveryCost)} • <strong>{svroiMultiplier}x SVROI</strong>
+                    Est. Delivery Cost: {deliveryCost > 0 ? formatGbp(deliveryCost) : 'Not provided'} • <strong>{svroiMultiplier ? `${svroiMultiplier}x indicative SVROI` : 'SVROI unavailable'}</strong>
                   </div>
                 </div>
               </div>
@@ -638,15 +669,15 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
               >
                 <TrendingUp size={16} style={{ color: 'var(--text-primary)', flexShrink: 0 }} />
                 <div style={{ color: 'var(--text-secondary)' }}>
-                  <strong style={{ color: 'var(--text-primary)' }}>Commercial Viability:</strong>{' '}
-                  {currentPkg.commercial_viability_summary || 'Highly viable model leveraging core operational delivery and supply chain partnerships.'}
+                  <strong style={{ color: 'var(--text-primary)' }}>Commercial assessment:</strong>{' '}
+                  {currentPkg.commercial_viability_summary || 'Not assessed; approved delivery cost inputs are required.'}
                 </div>
               </div>
 
               {/* Initiatives List with Granular Operational Metrics */}
               <div>
                 <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
-                  Committed Initiatives ({currentPkg.initiatives.length} Measures)
+                  Proposed Initiatives ({currentPkg.initiatives.length})
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
@@ -687,10 +718,10 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                                 color: init.is_from_knowledge_base ? '#16a34a' : 'var(--text-secondary)'
                               }}
                             >
-                              {init.is_from_knowledge_base ? '✓ Case Study Grounded' : 'Model Recommended'}
+                              {init.is_from_knowledge_base ? 'Retrieved evidence (review)' : 'Model suggested (validate)'}
                             </span>
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                              {init.partner ? `Partner: ${init.partner}` : 'Self-Delivered / Open Hub'}
+                              {init.partner ? `Proposed partner: ${init.partner} (approval to confirm)` : 'Partner not specified'}
                             </span>
                           </div>
                         </div>
@@ -718,6 +749,11 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                             <Calendar size={12} />
                             <span>Delivery: {init.delivery_mechanism}</span>
                           </div>
+                          <span>•</span>
+                          <span>Volume: {init.annual_volume} TOMs units/year</span>
+                          {init.sessions_per_year != null && <span>• {init.sessions_per_year} sessions/year</span>}
+                          {init.hours_per_session != null && <span>• {init.hours_per_session} hours/session</span>}
+                          {init.participants_per_session != null && <span>• {init.participants_per_session} participants/session</span>}
                           <span>•</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                             <Users size={12} />
@@ -763,7 +799,7 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                               Formula: {calc.calculation_formula}
                             </span>
                             <strong style={{ fontSize: '0.825rem', color: 'var(--text-primary)' }}>
-                              Total SV: {formatGbp(calc.total_social_value_gbp)}
+                              POC value: {formatGbp(calc.total_social_value_gbp)}
                             </strong>
                           </div>
                         )}
@@ -783,7 +819,7 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.65rem' }}>
                   <ShieldCheck size={16} style={{ color: 'var(--text-primary)' }} />
                   <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    Standardised Governance & Reporting Cadence (Contractual Commitment)
+                    Proposed Governance & Reporting Cadence
                   </span>
                 </div>
 
@@ -814,7 +850,7 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
 
                   <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
-                      📊 Quarterly Auditing
+                      📊 Quarterly Reporting
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                       {currentPkg.governance?.reporting_frequency || 'Quarterly Social Value Progress & National TOMs Performance Reporting'}
@@ -1197,14 +1233,14 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                     <FileText size={15} />
-                    <span>PostgreSQL RAG Grounding Evidence</span>
+                    <span>Retrieved Knowledge Documents</span>
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                    Retrieved <strong>{result.retrieved_evidence_chunks}</strong> semantic vector chunks from pgvector database.
+                    Retrieved <strong>{result.retrieved_evidence_chunks}</strong> relevant text chunks. Retrieval does not confirm source approval, accuracy or current partner status.
                   </div>
                   {Array.isArray(result.grounding_summary?.sources_used) && result.grounding_summary.sources_used.length > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.2rem' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Verified Sources:</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Retrieved documents (review):</span>
                       {result.grounding_summary.sources_used.map((src: string, idx: number) => (
                         <span key={idx} className="tag-mono" style={{ fontSize: '0.72rem' }}>
                           {src}
