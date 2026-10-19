@@ -193,3 +193,36 @@ export interface AuthStatusResponse {
   default_superadmin_email: string;
   active_roles: string[];
 }
+
+export interface DocumentChunkItem {
+  id: string;
+  document_id: string;
+  chunk_index: number;
+  content: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+}
+
+export interface BackendHealthData {
+  status: string;
+  app_name: string;
+  database: {
+    connected: boolean;
+    engine?: string;
+    postgres_version?: string;
+    pgvector_installed?: boolean;
+    pgvector_version?: string;
+  };
+  active_provider: string;
+  providers: {
+    gemini?: {
+      configured: boolean;
+      model: string;
+    };
+    openai?: {
+      configured: boolean;
+      model: string;
+    };
+  };
+  embedding_dimension: number;
+}

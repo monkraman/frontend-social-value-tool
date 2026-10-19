@@ -5,8 +5,10 @@ import {
   uploadDocumentFile,
   archiveDocumentById,
   restoreDocumentById,
-  permanentlyDeleteDocumentById
+  permanentlyDeleteDocumentById,
+  fetchDocumentChunks
 } from '../api/client';
+import type { DocumentChunkItem } from '../types';
 
 export function useDocumentManager() {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
@@ -94,6 +96,10 @@ export function useDocumentManager() {
     }
   }, []);
 
+  const getChunksForDocument = useCallback(async (id: string): Promise<DocumentChunkItem[]> => {
+    return await fetchDocumentChunks(id);
+  }, []);
+
   const totalChunks = documents.reduce((sum, d) => sum + (d.chunks_count || 0), 0);
 
   return {
@@ -104,6 +110,7 @@ export function useDocumentManager() {
     totalChunks,
     loadDocuments,
     uploadFile,
+    getChunksForDocument,
     archiveDocument,
     restoreDocument,
     hardDeleteDocument,

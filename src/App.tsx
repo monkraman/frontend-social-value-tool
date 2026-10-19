@@ -28,7 +28,7 @@ const AppContent: React.FC = () => {
   const [refinementNote, setRefinementNote] = useState<string | null>(null);
 
   const { theme, toggleTheme } = useTheme();
-  const { online: backendOnline } = useBackendHealth();
+  const { online: backendOnline, data: healthData } = useBackendHealth();
   const {
     isLoading,
     error,
@@ -190,6 +190,7 @@ const AppContent: React.FC = () => {
         onTabChange={setActiveTab}
         onNewPrompt={handleReset}
         backendOnline={backendOnline}
+        healthData={healthData}
         theme={theme}
         onToggleTheme={toggleTheme}
         chatHistory={history}

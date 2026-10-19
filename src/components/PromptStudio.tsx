@@ -528,6 +528,45 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
             </div>
           </div>
 
+          {/* RAG Knowledge Grounding Audit Strip */}
+          {result.retrieved_evidence_chunks != null && result.retrieved_evidence_chunks > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.65rem',
+                padding: '0.6rem 0.85rem',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.75rem',
+                color: 'var(--text-secondary)'
+              }}
+            >
+              <FileText size={14} style={{ color: 'var(--color-primary, #3b82f6)', flexShrink: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                <strong style={{ color: 'var(--text-primary)' }}>RAG Grounding:</strong>
+                <span>
+                  {result.retrieved_evidence_chunks} vector chunks retrieved from PostgreSQL
+                </span>
+                {Array.isArray(result.grounding_summary?.sources_used) && result.grounding_summary.sources_used.length > 0 && (
+                  <>
+                    <span>• Verified Sources:</span>
+                    {result.grounding_summary.sources_used.map((src: string, idx: number) => (
+                      <span
+                        key={idx}
+                        className="tag-mono"
+                        style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem' }}
+                      >
+                        {src}
+                      </span>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Package Switcher Tabs & Quick Actions */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.65rem' }}>
             <div style={{ display: 'flex', gap: '0.35rem', backgroundColor: 'var(--bg-surface)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
@@ -771,6 +810,28 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                             </>
                           )}
                         </div>
+
+                        {/* RAG Evidence Grounding Source */}
+                        {init.evidence_source && (
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.4rem',
+                              fontSize: '0.725rem',
+                              color: 'var(--text-secondary)',
+                              backgroundColor: 'var(--bg-surface)',
+                              padding: '0.3rem 0.55rem',
+                              borderRadius: '4px',
+                              border: '1px solid var(--border-subtle)'
+                            }}
+                          >
+                            <FileText size={12} style={{ color: 'var(--color-primary, #3b82f6)', flexShrink: 0 }} />
+                            <span>
+                              <strong style={{ color: 'var(--text-primary)' }}>Evidence:</strong> {init.evidence_source}
+                            </span>
+                          </div>
+                        )}
 
                         {/* Deterministic Formula Trail */}
                         {calc && (

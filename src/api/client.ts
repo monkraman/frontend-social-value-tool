@@ -9,7 +9,9 @@ import type {
   AuthTokenResponse,
   AuthStatusResponse,
   PromptSubmissionResponse,
-  PromptHistoryItem
+  PromptHistoryItem,
+  DocumentChunkItem,
+  BackendHealthData
 } from '../types';
 
 function resolveApiBaseUrl(): string {
@@ -128,14 +130,14 @@ export async function checkAuthStatus(): Promise<AuthStatusResponse | null> {
   }
 }
 
-export async function checkBackendHealth(): Promise<{ online: boolean; message: string; data?: any }> {
+export async function checkBackendHealth(): Promise<{ online: boolean; message: string; data?: BackendHealthData }> {
   try {
     const res = await fetch(`${API_BASE_URL}/health`, { method: 'GET' });
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: BackendHealthData = await res.json();
     return { online: true, message: 'Backend connected (FastAPI)', data };
-  } catch {
-    return { online: false, message: 'Backend offline (using intelligent local fallback)' };
+  } catch (err: any) {
+    return { online: false, message: `Backend offline: ${err.message || 'Cannot reach server'}` };
   }
 }
 
@@ -162,62 +164,68 @@ export async function generateRfpResponse(request: OpportunityRequest): Promise<
 }
 
 export async function fetchDocuments(): Promise<DocumentItem[]> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/documents`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } catch {
-    return [
-      {
-        id: 'birm-doc-01',
-        filename: 'Infosys_Birmingham_Digital_Inclusion.docx',
-        document_type: 'docx',
-        chunks_count: 8,
-        created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-        metadata: { client: 'Birmingham City Council', theme: 'Digital Inclusion' }
-      },
-      {
-        id: 'birm-doc-02',
-        filename: 'National_TOMs_Rate_Card_v2024.xlsx',
-        document_type: 'xlsx',
-        chunks_count: 24,
-        created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
-        metadata: { source: 'Social Value Portal', version: '2024' }
-      },
-      {
-        id: 'birm-doc-03',
-        filename: 'Infosys_West_Midlands_CSR_Impact_Report.pdf',
-        document_type: 'pdf',
-        chunks_count: 15,
-        created_at: new Date(Date.now() - 86400000 * 8).toISOString(),
-        metadata: { author: 'Infosys CSR Lead UK' }
-      }
-    ];
+  const res = await fetch(`${API_BASE_URL}/documents`, {
+    headers: getAuthHeaders()
+  });
+  if (!res.ok) {
+    let detail = `Failed to load documents (${res.status})`;
+    try {
+      const err = await res.json();
+      detail = err.detail || detail;
+    } catch {
+      // ignore
+    }
+    throw new Error(detail);
   }
+  return await res.json();
 }
 
 export async function uploadDocumentFile(file: File): Promise<{ success: boolean; message: string; data?: any }> {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
+  const formData = new FormData();
+  formData.append('file', file);
 
-    const res = await fetch(`${API_BASE_URL}/documents/ingest`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: formData
-    });
+  const res = await fetch(`${API_BASE_URL}/documents/ingest`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: formData
+  });
 
-    if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
-    return { success: true, message: data.message || 'File ingested successfully!', data };
-  } catch {
-    return {
-      success: true,
-      message: `[Simulated] "${file.name}" processed & indexed (Connect FastAPI backend for permanent DB storage)`
-    };
+  if (!res.ok) {
+    let detail = `Upload failed (${res.status})`;
+    try {
+      const err = await res.json();
+      detail = err.detail || detail;
+    } catch {
+      detail = await res.text();
+    }
+    throw new Error(detail);
   }
+
+  const data = await res.json();
+  return {
+    success: true,
+    message: data.message || `"${file.name}" successfully indexed into pgvector!`,
+    data
+  };
+}
+
+export async function fetchDocumentChunks(documentId: string): Promise<DocumentChunkItem[]> {
+  const res = await fetch(`${API_BASE_URL}/documents/${documentId}/chunks`, {
+    headers: getAuthHeaders()
+  });
+
+  if (!res.ok) {
+    let detail = `Failed to retrieve chunks (${res.status})`;
+    try {
+      const err = await res.json();
+      detail = err.detail || detail;
+    } catch {
+      detail = await res.text();
+    }
+    throw new Error(detail);
+  }
+
+  return await res.json();
 }
 
 // ==========================================
@@ -443,44 +451,34 @@ export async function calculatePackageSimulation(
   }
 }
 
-export async function searchVectorKnowledge(query: string, top_k = 4): Promise<SearchResponse> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/search`, {
-      method: 'POST',
-      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ query, top_k })
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return await res.json();
-  } catch {
-    return {
-      query,
-      total_results: 3,
-      results: [
-        {
-          chunk_id: 'chk-birm-89',
-          similarity: 0.942,
-          content: 'Infosys Birmingham Innovation Center delivered 16 Digital Literacy Clinics in partnership with East Birmingham College, training over 240 local jobseekers in foundational cloud and office software skills.',
-          filename: 'Infosys_Birmingham_Digital_Inclusion.docx',
-          document_id: 'doc-01'
-        },
-        {
-          chunk_id: 'chk-birm-92',
-          similarity: 0.887,
-          content: 'National TOMs proxy metric NT8 dictates £1,250.00 proxy social value per accredited digital inclusion workshop session delivered to local communities.',
-          filename: 'National_TOMs_Rate_Card_v2024.xlsx',
-          document_id: 'doc-02'
-        },
-        {
-          chunk_id: 'chk-birm-44',
-          similarity: 0.815,
-          content: 'Local VCSE partner engagement: St Basils youth charity in Digbeth collaborated on tech apprenticeship pathway, placing 6 disadvantaged youths in full-time IT apprentice programs.',
-          filename: 'Infosys_West_Midlands_CSR_Impact_Report.pdf',
-          document_id: 'doc-03'
-        }
-      ]
-    };
+export async function searchVectorKnowledge(
+  query: string,
+  top_k = 4,
+  document_id?: string | null
+): Promise<SearchResponse> {
+  const payload: Record<string, any> = { query, top_k };
+  if (document_id) {
+    payload.document_id = document_id;
   }
+
+  const res = await fetch(`${API_BASE_URL}/search`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    let detail = `Semantic search failed (${res.status})`;
+    try {
+      const err = await res.json();
+      detail = err.detail || detail;
+    } catch {
+      detail = await res.text();
+    }
+    throw new Error(detail);
+  }
+
+  return await res.json();
 }
 
 // Fallback high-fidelity sample result matching exact backend schema
