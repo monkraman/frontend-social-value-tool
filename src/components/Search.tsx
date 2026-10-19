@@ -52,7 +52,7 @@ export const Search: React.FC = () => {
   ];
 
   return (
-    <div style={{ maxWidth: '960px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ width: '100%', maxWidth: '1440px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Semantic Vector Search</h2>
         <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>

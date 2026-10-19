@@ -67,35 +67,16 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const isError = toast.type === 'error';
           const isWarning = toast.type === 'warning';
 
-          const bg = isSuccess
-            ? 'var(--bg-surface, #ffffff)'
-            : isError
-            ? 'var(--bg-surface, #ffffff)'
-            : isWarning
-            ? 'var(--bg-surface, #ffffff)'
-            : 'var(--bg-surface, #ffffff)';
-
-          const borderColor = isSuccess
-            ? '#22c55e'
-            : isError
-            ? '#ef4444'
-            : isWarning
-            ? '#f59e0b'
-            : '#3b82f6';
-
-          const iconColor = borderColor;
-
           return (
             <div
               key={toast.id}
               style={{
                 pointerEvents: 'auto',
-                backgroundColor: bg,
-                border: `1px solid ${borderColor}`,
-                borderLeft: `4px solid ${borderColor}`,
+                backgroundColor: 'var(--bg-surface, #ffffff)',
+                border: '1px solid var(--border-medium)',
                 borderRadius: 'var(--radius-md, 8px)',
-                padding: '0.75rem 0.9rem',
-                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                padding: '0.75rem 0.95rem',
+                boxShadow: '0 12px 32px -4px rgba(0, 0, 0, 0.28)',
                 display: 'flex',
                 alignItems: 'flex-start',
                 justifyContent: 'space-between',
@@ -103,12 +84,12 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 animation: 'slideInRight 0.22s ease-out'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', flex: 1, minWidth: 0 }}>
-                <div style={{ flexShrink: 0, marginTop: '2px' }}>
-                  {isSuccess && <CheckCircle2 size={17} style={{ color: iconColor }} />}
-                  {isError && <AlertTriangle size={17} style={{ color: iconColor }} />}
-                  {isWarning && <AlertCircle size={17} style={{ color: iconColor }} />}
-                  {!isSuccess && !isError && !isWarning && <Info size={17} style={{ color: iconColor }} />}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', flex: 1, minWidth: 0 }}>
+                <div style={{ flexShrink: 0, marginTop: '2px', color: 'var(--text-primary)' }}>
+                  {isSuccess && <CheckCircle2 size={16} />}
+                  {isError && <AlertTriangle size={16} />}
+                  {isWarning && <AlertCircle size={16} />}
+                  {!isSuccess && !isError && !isWarning && <Info size={16} />}
                 </div>
                 <div style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', lineHeight: 1.45, wordBreak: 'break-word', fontWeight: 500 }}>
                   {toast.message}

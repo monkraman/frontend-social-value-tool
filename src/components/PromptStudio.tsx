@@ -22,7 +22,8 @@ import {
   ShieldCheck,
   MessageSquarePlus,
   RefreshCw,
-  Loader
+  Loader,
+  X
 } from 'lucide-react';
 import { formatGbp, formatPercent } from '../utils/formatters';
 
@@ -81,7 +82,7 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
   const [prevPrompt, setPrevPrompt] = useState(currentPrompt);
   // Default to localised package as it matches the exact 10% place-based target
   const [activePackage, setActivePackage] = useState<'core' | 'enhanced' | 'localised'>('localised');
-  const [showAiReasoning, setShowAiReasoning] = useState<boolean>(true);
+  const [showAuditModal, setShowAuditModal] = useState<boolean>(false);
   const [copiedTender, setCopiedTender] = useState<boolean>(false);
   const [refineText, setRefineText] = useState<string>('');
   const [showRefinePanel, setShowRefinePanel] = useState<boolean>(false);
@@ -199,7 +200,7 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
   };
 
   return (
-    <div style={{ maxWidth: '980px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
+    <div style={{ width: '100%', maxWidth: '1440px', display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1 }}>
       {/* Feedback State: Non-RFP Prompt */}
       {promptFeedback && !result && !isLoading && (
         <div
@@ -379,13 +380,31 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
               borderRadius: 'var(--radius-md)'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                 Active Tender Specification
               </span>
-              <span className="tag-mono" style={{ fontSize: '0.7rem', color: 'var(--text-primary)' }}>
-                ✓ Grounded in RFP Intent
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button
+                  onClick={() => setShowAuditModal(true)}
+                  className="btn-secondary"
+                  style={{
+                    padding: '0.2rem 0.55rem',
+                    fontSize: '0.725rem',
+                    borderRadius: 'var(--radius-sm, 4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem'
+                  }}
+                  title="Inspect AI Reasoning Chain & PostgreSQL Vector Evidence"
+                >
+                  <Brain size={13} />
+                  <span>AI Audit & Grounding Trail</span>
+                </button>
+                <span className="tag-mono" style={{ fontSize: '0.7rem', color: 'var(--text-primary)' }}>
+                  ✓ Grounded in RFP Intent
+                </span>
+              </div>
             </div>
             <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: '0.6rem' }}>
               "{currentPrompt}"
@@ -400,85 +419,6 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                 <span className="tag-mono">Priorities: {result.opportunity.priorities.join(', ')}</span>
               )}
             </div>
-          </div>
-
-          {/* AI Reasoning & Grounding Audit (Transparent Thinking Chain) */}
-          <div
-            style={{
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              overflow: 'hidden'
-            }}
-          >
-            <div
-              onClick={() => setShowAiReasoning(!showAiReasoning)}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '0.85rem 1.25rem',
-                cursor: 'pointer',
-                backgroundColor: 'var(--bg-card)'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <Brain size={16} style={{ color: 'var(--text-primary)' }} />
-                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  AI Reasoning & Evidence Grounding Chain
-                </span>
-                <span style={{ fontSize: '0.75rem', padding: '0.15rem 0.5rem', borderRadius: '12px', backgroundColor: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                  5 Verified Steps • Zero Hallucination Arithmetic
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  {showAiReasoning ? 'Hide Audit Trail' : 'Inspect Reasoning'}
-                </span>
-                {showAiReasoning ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </div>
-            </div>
-
-            {showAiReasoning && (
-              <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                {result.ai_reasoning_chain && result.ai_reasoning_chain.length > 0 ? (
-                  result.ai_reasoning_chain.map((step) => (
-                    <div key={step.step_number} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                      <div
-                        style={{
-                          width: '22px',
-                          height: '22px',
-                          borderRadius: '50%',
-                          backgroundColor: 'var(--bg-muted)',
-                          color: 'var(--text-primary)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '0.7rem',
-                          fontWeight: 700,
-                          flexShrink: 0,
-                          marginTop: '0.1rem'
-                        }}
-                      >
-                        {step.step_number}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.15rem' }}>
-                          {step.title}
-                        </div>
-                        <div style={{ fontSize: '0.775rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-                          {step.detail}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                    Deterministic reasoning pipeline verified. All proxy values derived from repository knowledge chunks.
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Tender Financial & Commercial Summary Bar */}
@@ -516,13 +456,13 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.1rem' }}>
                 <span
                   style={{
-                    fontSize: '0.775rem',
+                    fontSize: '0.75rem',
                     fontWeight: 600,
                     padding: '0.2rem 0.55rem',
                     borderRadius: 'var(--radius-sm)',
-                    backgroundColor: isTargetAchieved ? 'rgba(34, 197, 94, 0.15)' : 'rgba(234, 179, 8, 0.15)',
-                    color: isTargetAchieved ? '#16a34a' : '#ca8a04',
-                    border: isTargetAchieved ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(234, 179, 8, 0.3)'
+                    backgroundColor: 'var(--bg-muted)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-subtle)'
                   }}
                 >
                   {isTargetAchieved ? '🎯 Target Achieved' : 'Below Target'} ({formatPercent(currentPercent)})
@@ -531,46 +471,7 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
             </div>
           </div>
 
-          {/* RAG Knowledge Grounding Audit Strip */}
-          {result.retrieved_evidence_chunks != null && result.retrieved_evidence_chunks > 0 && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.65rem',
-                padding: '0.6rem 0.85rem',
-                backgroundColor: 'var(--bg-surface)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.75rem',
-                color: 'var(--text-secondary)'
-              }}
-            >
-              <FileText size={14} style={{ color: 'var(--color-primary, #3b82f6)', flexShrink: 0 }} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                <strong style={{ color: 'var(--text-primary)' }}>RAG Grounding:</strong>
-                <span>
-                  {result.retrieved_evidence_chunks} vector chunks retrieved from PostgreSQL
-                </span>
-                {Array.isArray(result.grounding_summary?.sources_used) && result.grounding_summary.sources_used.length > 0 && (
-                  <>
-                    <span>• Verified Sources:</span>
-                    {result.grounding_summary.sources_used.map((src: string, idx: number) => (
-                      <span
-                        key={idx}
-                        className="tag-mono"
-                        style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem' }}
-                      >
-                        {src}
-                      </span>
-                    ))}
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Package Switcher Tabs & Quick Actions */}
+          {/* TEMPLATES & QUICK ACTIONS: Prioritized directly here */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.65rem' }}>
             <div style={{ display: 'flex', gap: '0.35rem', backgroundColor: 'var(--bg-surface)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
               <button
@@ -579,11 +480,12 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                   padding: '0.45rem 0.85rem',
                   borderRadius: 'var(--radius-sm)',
                   border: 'none',
-                  background: activePackage === 'core' ? 'var(--bg-muted)' : 'transparent',
-                  color: activePackage === 'core' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  background: activePackage === 'core' ? 'var(--btn-primary-bg)' : 'transparent',
+                  color: activePackage === 'core' ? 'var(--btn-primary-text)' : 'var(--text-secondary)',
                   fontSize: '0.8125rem',
                   fontWeight: activePackage === 'core' ? 600 : 400,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
                 }}
               >
                 Template 1: Core (Baseline)
@@ -594,11 +496,12 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                   padding: '0.45rem 0.85rem',
                   borderRadius: 'var(--radius-sm)',
                   border: 'none',
-                  background: activePackage === 'enhanced' ? 'var(--bg-muted)' : 'transparent',
-                  color: activePackage === 'enhanced' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  background: activePackage === 'enhanced' ? 'var(--btn-primary-bg)' : 'transparent',
+                  color: activePackage === 'enhanced' ? 'var(--btn-primary-text)' : 'var(--text-secondary)',
                   fontSize: '0.8125rem',
                   fontWeight: activePackage === 'enhanced' ? 600 : 400,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
                 }}
               >
                 Template 2: Enhanced (Competitive Win)
@@ -609,11 +512,12 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                   padding: '0.45rem 0.85rem',
                   borderRadius: 'var(--radius-sm)',
                   border: 'none',
-                  background: activePackage === 'localised' ? 'var(--bg-muted)' : 'transparent',
-                  color: activePackage === 'localised' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  background: activePackage === 'localised' ? 'var(--btn-primary-bg)' : 'transparent',
+                  color: activePackage === 'localised' ? 'var(--btn-primary-text)' : 'var(--text-secondary)',
                   fontSize: '0.8125rem',
                   fontWeight: activePackage === 'localised' ? 600 : 400,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
                 }}
               >
                 Template 3: Localised (10% Target Match)
@@ -642,6 +546,15 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
                   <Download size={13} /> JSON
                 </button>
               )}
+
+              <button
+                onClick={() => setShowAuditModal(true)}
+                className="btn-secondary"
+                style={{ padding: '0.45rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                title="View AI Reasoning Chain & PostgreSQL Vector Evidence"
+              >
+                <Brain size={13} /> Audit Trail
+              </button>
 
               <button onClick={onReset} className="btn-secondary" style={{ padding: '0.45rem 0.75rem', fontSize: '0.75rem' }}>
                 <RotateCcw size={13} /> Clear
@@ -1172,6 +1085,212 @@ Calculation Trail: ${currentCalc?.initiatives[i]?.calculation_formula || 'Audite
           </div>
         </div>
       </div>
+
+      {/* AI Reasoning & Evidence Grounding Modal */}
+      {showAuditModal && result && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(3px)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.25rem',
+            animation: 'fadeIn 0.15s ease-out'
+          }}
+          onClick={() => setShowAuditModal(false)}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '680px',
+              maxHeight: '85vh',
+              backgroundColor: 'var(--bg-surface, #ffffff)',
+              borderRadius: 'var(--radius-lg, 10px)',
+              border: '1px solid var(--border-medium)',
+              boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.35)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '1.15rem 1.4rem',
+                borderBottom: '1px solid var(--border-subtle)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.75rem'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div
+                  style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: 'var(--radius-sm, 6px)',
+                    backgroundColor: 'var(--bg-muted)',
+                    border: '1px solid var(--border-subtle)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    color: 'var(--text-primary)'
+                  }}
+                >
+                  <Brain size={18} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    AI Reasoning & Evidence Grounding Audit
+                  </h3>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                    5 Verified Steps • Zero Hallucination Arithmetic • PostgreSQL pgvector
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowAuditModal(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '0.25rem',
+                  borderRadius: 'var(--radius-sm)'
+                }}
+                title="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div
+              style={{
+                padding: '1.25rem 1.4rem',
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1.25rem'
+              }}
+            >
+              {/* RAG Evidence Summary */}
+              {result.retrieved_evidence_chunks != null && result.retrieved_evidence_chunks > 0 && (
+                <div
+                  style={{
+                    padding: '0.85rem 1rem',
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-sm, 6px)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    <FileText size={15} />
+                    <span>PostgreSQL RAG Grounding Evidence</span>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                    Retrieved <strong>{result.retrieved_evidence_chunks}</strong> semantic vector chunks from pgvector database.
+                  </div>
+                  {Array.isArray(result.grounding_summary?.sources_used) && result.grounding_summary.sources_used.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.2rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Verified Sources:</span>
+                      {result.grounding_summary.sources_used.map((src: string, idx: number) => (
+                        <span key={idx} className="tag-mono" style={{ fontSize: '0.72rem' }}>
+                          {src}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 5-Step AI Reasoning Steps */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Transparent AI Reasoning Trail
+                </div>
+                {result.ai_reasoning_chain && result.ai_reasoning_chain.length > 0 ? (
+                  result.ai_reasoning_chain.map((step) => (
+                    <div
+                      key={step.step_number}
+                      style={{
+                        display: 'flex',
+                        gap: '0.75rem',
+                        alignItems: 'flex-start',
+                        padding: '0.75rem 0.9rem',
+                        backgroundColor: 'var(--bg-card)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-sm, 6px)'
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '22px',
+                          height: '22px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--bg-muted)',
+                          color: 'var(--text-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          flexShrink: 0,
+                          marginTop: '0.1rem'
+                        }}
+                      >
+                        {step.step_number}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
+                          {step.title}
+                        </div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                          {step.detail}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                    Deterministic reasoning pipeline verified. All proxy values derived from repository knowledge chunks.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div
+              style={{
+                padding: '0.75rem 1.4rem',
+                borderTop: '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--bg-card)',
+                display: 'flex',
+                justifyContent: 'flex-end'
+              }}
+            >
+              <button
+                onClick={() => setShowAuditModal(false)}
+                className="btn-secondary"
+                style={{ padding: '0.45rem 1rem', fontSize: '0.8125rem' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

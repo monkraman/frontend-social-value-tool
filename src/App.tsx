@@ -199,7 +199,7 @@ const AppContent: React.FC = () => {
         onRestoreChat={handleRestoreChat}
       />
 
-      <main style={{ flex: 1, minWidth: 0, padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      <main style={{ flex: 1, minWidth: 0, padding: '1.5rem 2rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         {activeTab === 'prompt' && (
           <PromptStudio
             currentPrompt={currentPrompt}

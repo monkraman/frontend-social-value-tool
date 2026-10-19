@@ -41,15 +41,13 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   if (!isOpen) return null;
 
   const isDanger = variant === 'danger';
-  const isWarning = variant === 'warning';
 
-  const accentColor = isDanger ? '#ef4444' : isWarning ? '#f59e0b' : 'var(--color-primary, #3b82f6)';
   const icon = isDanger ? (
-    <Trash2 size={20} style={{ color: '#ef4444' }} />
-  ) : isWarning ? (
-    <Archive size={20} style={{ color: '#f59e0b' }} />
+    <Trash2 size={18} style={{ color: 'var(--text-primary)' }} />
+  ) : variant === 'warning' ? (
+    <Archive size={18} style={{ color: 'var(--text-primary)' }} />
   ) : (
-    <HelpCircle size={20} style={{ color: 'var(--color-primary, #3b82f6)' }} />
+    <HelpCircle size={18} style={{ color: 'var(--text-primary)' }} />
   );
 
   return (
@@ -57,7 +55,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backgroundColor: 'rgba(0, 0, 0, 0.65)',
         backdropFilter: 'blur(3px)',
         zIndex: 1000,
         display: 'flex',
@@ -75,9 +73,9 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           width: '100%',
           maxWidth: '460px',
           backgroundColor: 'var(--bg-surface, #ffffff)',
-          borderRadius: 'var(--radius-lg, 12px)',
+          borderRadius: 'var(--radius-lg, 10px)',
           border: '1px solid var(--border-medium)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+          boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.35)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column'
@@ -87,7 +85,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         {/* Modal Header */}
         <div
           style={{
-            padding: '1.25rem 1.5rem',
+            padding: '1.15rem 1.4rem',
             borderBottom: '1px solid var(--border-subtle)',
             display: 'flex',
             alignItems: 'center',
@@ -95,40 +93,41 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             gap: '0.75rem'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div
               style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '8px',
-                backgroundColor: isDanger
-                  ? 'rgba(239, 68, 68, 0.12)'
-                  : isWarning
-                  ? 'rgba(245, 158, 11, 0.12)'
-                  : 'rgba(59, 130, 246, 0.12)',
+                width: '34px',
+                height: '34px',
+                borderRadius: 'var(--radius-sm, 6px)',
+                backgroundColor: 'var(--bg-muted)',
+                border: '1px solid var(--border-subtle)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                flexShrink: 0
+                flexShrink: 0,
+                color: 'var(--text-primary)'
               }}
             >
               {icon}
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              <h3 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                 {title}
               </h3>
               {badge && (
                 <span
                   style={{
-                    fontSize: '0.65rem',
-                    fontWeight: 700,
+                    display: 'inline-block',
+                    marginTop: '0.15rem',
+                    fontSize: '0.625rem',
+                    fontWeight: 600,
                     textTransform: 'uppercase',
                     letterSpacing: '0.04em',
-                    padding: '0.1rem 0.35rem',
+                    padding: '0.1rem 0.4rem',
                     borderRadius: '4px',
-                    backgroundColor: isDanger ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-muted)',
-                    color: isDanger ? '#ef4444' : 'var(--text-muted)'
+                    backgroundColor: 'var(--bg-muted)',
+                    border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-muted)'
                   }}
                 >
                   {badge}
@@ -154,16 +153,16 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         </div>
 
         {/* Modal Content */}
-        <div style={{ padding: '1.25rem 1.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+        <div style={{ padding: '1.25rem 1.4rem', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
           {typeof message === 'string' ? <p style={{ margin: 0 }}>{message}</p> : message}
         </div>
 
         {/* Modal Footer / Actions */}
         <div
           style={{
-            padding: '1rem 1.5rem',
+            padding: '0.85rem 1.4rem',
             borderTop: '1px solid var(--border-subtle)',
-            backgroundColor: 'var(--bg-card, #f9fafb)',
+            backgroundColor: 'var(--bg-card)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
@@ -191,15 +190,14 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               padding: '0.5rem 1.15rem',
               fontSize: '0.8125rem',
               fontWeight: 600,
-              borderRadius: 'var(--radius-md, 6px)',
-              border: 'none',
-              backgroundColor: accentColor,
-              color: '#ffffff',
+              borderRadius: 'var(--radius-md, 8px)',
+              border: '1px solid var(--btn-primary-bg)',
+              backgroundColor: 'var(--btn-primary-bg)',
+              color: 'var(--btn-primary-text)',
               cursor: isLoading ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '0.45rem',
-              boxShadow: isDanger ? '0 2px 8px rgba(239, 68, 68, 0.35)' : 'none',
               transition: 'opacity 0.15s ease'
             }}
           >

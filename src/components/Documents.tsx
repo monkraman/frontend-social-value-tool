@@ -16,7 +16,9 @@ import {
   Copy,
   Check,
   CheckCircle2,
-  Layers
+  Layers,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 export const Documents: React.FC = () => {
@@ -63,9 +65,49 @@ export const Documents: React.FC = () => {
     onConfirm: async () => {}
   });
 
+  const [docSearchQuery, setDocSearchQuery] = useState('');
+  const [docTypeFilter, setDocTypeFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
+
   const activeDocs = documents.filter((d) => !d.is_archived);
   const archivedDocs = documents.filter((d) => d.is_archived);
-  const displayedDocs = activeFilter === 'active' ? activeDocs : archivedDocs;
+  const baseDocs = activeFilter === 'active' ? activeDocs : archivedDocs;
+
+  const filteredDocs = baseDocs.filter((doc) => {
+    if (docTypeFilter !== 'all' && doc.document_type.toLowerCase() !== docTypeFilter.toLowerCase()) {
+      return false;
+    }
+    if (docSearchQuery.trim()) {
+      const q = docSearchQuery.toLowerCase();
+      return doc.filename.toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredDocs.length / pageSize));
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedDocs = filteredDocs.slice(startIndex, startIndex + pageSize);
+
+  const handleTabChange = (tab: 'active' | 'archived') => {
+    setActiveFilter(tab);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setDocSearchQuery(query);
+    setCurrentPage(1);
+  };
+
+  const handleTypeFilterChange = (type: string) => {
+    setDocTypeFilter(type);
+    setCurrentPage(1);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
 
   // Handle batch & single files
   const processFiles = async (files: FileList | File[]) => {
@@ -159,15 +201,15 @@ export const Documents: React.FC = () => {
           <div
             style={{
               padding: '0.65rem 0.85rem',
-              backgroundColor: 'rgba(239, 68, 68, 0.08)',
-              borderRadius: '6px',
-              border: '1px solid rgba(239, 68, 68, 0.25)',
+              backgroundColor: 'var(--bg-muted)',
+              borderRadius: 'var(--radius-sm, 6px)',
+              border: '1px solid var(--border-medium)',
               fontSize: '0.78rem',
-              color: '#ef4444',
+              color: 'var(--text-secondary)',
               lineHeight: 1.45
             }}
           >
-            <strong>PERMANENT DELETION WARNING:</strong> All text chunks and 768-dimensional vector embeddings for this document will be completely erased from PostgreSQL. This action cannot be undone.
+            <strong style={{ color: 'var(--text-primary)' }}>PERMANENT DELETION WARNING:</strong> All text chunks and 768-dimensional vector embeddings for this document will be completely erased from PostgreSQL. This action cannot be undone.
           </div>
         </div>
       ),
@@ -211,7 +253,7 @@ export const Documents: React.FC = () => {
   });
 
   return (
-    <div style={{ maxWidth: '960px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ width: '100%', maxWidth: '1440px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Header */}
       <div>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Knowledge Documents</h2>
@@ -231,9 +273,9 @@ export const Documents: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'center',
           padding: '2.25rem 1.5rem',
-          border: isDragging ? '2px dashed var(--color-primary, #3b82f6)' : '1px dashed var(--border-medium)',
+          border: isDragging ? '2px dashed var(--border-focus)' : '1px dashed var(--border-medium)',
           borderRadius: 'var(--radius-md)',
-          backgroundColor: isDragging ? 'rgba(59, 130, 246, 0.05)' : 'var(--bg-surface)',
+          backgroundColor: isDragging ? 'var(--bg-muted)' : 'var(--bg-surface)',
           cursor: isUploading ? 'not-allowed' : 'pointer',
           transition: 'all 0.2s ease',
           position: 'relative'
@@ -248,10 +290,10 @@ export const Documents: React.FC = () => {
           onChange={handleFileUpload}
           disabled={isUploading}
         />
-        <UploadCloud size={30} style={{ color: isDragging ? 'var(--color-primary, #3b82f6)' : 'var(--text-secondary)', marginBottom: '0.6rem' }} />
+        <UploadCloud size={30} style={{ color: isDragging ? 'var(--text-primary)' : 'var(--text-secondary)', marginBottom: '0.6rem' }} />
         <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'center' }}>
           {batchStatus ? (
-            <span style={{ color: 'var(--color-primary, #3b82f6)' }}>
+            <span style={{ color: 'var(--text-primary)' }}>
               Uploading batch item {batchStatus.current} of {batchStatus.total}: {batchStatus.filename}...
             </span>
           ) : isUploading ? (
@@ -271,11 +313,11 @@ export const Documents: React.FC = () => {
         <div
           style={{
             padding: '0.65rem 0.85rem',
-            backgroundColor: statusMessage.isError ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
-            border: `1px solid ${statusMessage.isError ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'}`,
-            borderRadius: 'var(--radius-sm)',
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-medium)',
+            borderRadius: 'var(--radius-sm, 6px)',
             fontSize: '0.8125rem',
-            color: statusMessage.isError ? '#ef4444' : '#16a34a',
+            color: 'var(--text-primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -283,12 +325,12 @@ export const Documents: React.FC = () => {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {statusMessage.isError ? <AlertTriangle size={15} /> : <CheckCircle2 size={15} />}
+            {statusMessage.isError ? <AlertTriangle size={15} style={{ color: 'var(--text-primary)' }} /> : <CheckCircle2 size={15} style={{ color: 'var(--text-primary)' }} />}
             <span>{statusMessage.text}</span>
           </div>
           <button
             onClick={clearStatus}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0 }}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}
           >
             <X size={14} />
           </button>
@@ -316,33 +358,35 @@ export const Documents: React.FC = () => {
           <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
             Indexed Document Repository
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.35rem', backgroundColor: 'var(--bg-muted)', padding: '0.2rem', borderRadius: 'var(--radius-sm, 6px)' }}>
             <button
-              onClick={() => setActiveFilter('active')}
+              onClick={() => handleTabChange('active')}
               style={{
-                background: activeFilter === 'active' ? 'var(--bg-active, rgba(59, 130, 246, 0.15))' : 'transparent',
-                color: activeFilter === 'active' ? 'var(--color-primary, #3b82f6)' : 'var(--text-secondary)',
+                background: activeFilter === 'active' ? 'var(--btn-primary-bg)' : 'transparent',
+                color: activeFilter === 'active' ? 'var(--btn-primary-text)' : 'var(--text-secondary)',
                 border: 'none',
                 borderRadius: 'var(--radius-sm, 4px)',
                 padding: '0.25rem 0.65rem',
                 fontSize: '0.75rem',
                 cursor: 'pointer',
-                fontWeight: activeFilter === 'active' ? 600 : 400
+                fontWeight: activeFilter === 'active' ? 600 : 500,
+                transition: 'all 0.15s ease'
               }}
             >
               Active ({activeDocs.length})
             </button>
             <button
-              onClick={() => setActiveFilter('archived')}
+              onClick={() => handleTabChange('archived')}
               style={{
-                background: activeFilter === 'archived' ? 'var(--bg-active, rgba(239, 68, 68, 0.15))' : 'transparent',
-                color: activeFilter === 'archived' ? '#ef4444' : 'var(--text-secondary)',
+                background: activeFilter === 'archived' ? 'var(--btn-primary-bg)' : 'transparent',
+                color: activeFilter === 'archived' ? 'var(--btn-primary-text)' : 'var(--text-secondary)',
                 border: 'none',
                 borderRadius: 'var(--radius-sm, 4px)',
                 padding: '0.25rem 0.65rem',
                 fontSize: '0.75rem',
                 cursor: 'pointer',
-                fontWeight: activeFilter === 'archived' ? 600 : 400
+                fontWeight: activeFilter === 'archived' ? 600 : 500,
+                transition: 'all 0.15s ease'
               }}
             >
               Archived ({archivedDocs.length})
@@ -350,13 +394,115 @@ export const Documents: React.FC = () => {
           </div>
         </div>
 
+        {/* Search & Filter Toolbar */}
+        <div
+          style={{
+            padding: '0.65rem 1.25rem',
+            borderBottom: '1px solid var(--border-subtle)',
+            backgroundColor: 'var(--bg-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem',
+            flexWrap: 'wrap'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '220px' }}>
+            <div style={{ position: 'relative', width: '100%', maxWidth: '320px' }}>
+              <Search size={14} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input
+                type="text"
+                placeholder="Search documents by filename..."
+                value={docSearchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.4rem 0.65rem 0.4rem 1.9rem',
+                  fontSize: '0.78rem',
+                  borderRadius: 'var(--radius-sm, 4px)',
+                  backgroundColor: 'var(--bg-surface)',
+                  border: '1px solid var(--border-subtle)',
+                  color: 'var(--text-primary)',
+                  outline: 'none'
+                }}
+              />
+              {docSearchQuery && (
+                <button
+                  onClick={() => handleSearchChange('')}
+                  style={{
+                    position: 'absolute',
+                    right: '0.5rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
+                  title="Clear search"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            {/* Document format dropdown */}
+            <select
+              value={docTypeFilter}
+              onChange={(e) => handleTypeFilterChange(e.target.value)}
+              style={{
+                padding: '0.4rem 0.65rem',
+                fontSize: '0.78rem',
+                borderRadius: 'var(--radius-sm, 4px)',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="all">All Formats</option>
+              <option value="pdf">PDF only</option>
+              <option value="docx">Word (DOCX)</option>
+              <option value="xlsx">Excel (XLSX)</option>
+              <option value="txt">Text & Markdown</option>
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            <span>Per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              style={{
+                padding: '0.25rem 0.45rem',
+                fontSize: '0.75rem',
+                borderRadius: 'var(--radius-sm, 4px)',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer'
+              }}
+            >
+              <option value={5}>5</option>
+              <option value={8}>8</option>
+              <option value={15}>15</option>
+              <option value={30}>30</option>
+            </select>
+          </div>
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {displayedDocs.length === 0 ? (
-            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
-              {activeFilter === 'active' ? 'No active documents in repository.' : 'No archived documents.'}
+          {filteredDocs.length === 0 ? (
+            <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+              {docSearchQuery || docTypeFilter !== 'all'
+                ? `No documents matching "${docSearchQuery || docTypeFilter}".`
+                : activeFilter === 'active'
+                ? 'No active documents in repository.'
+                : 'No archived documents.'}
             </div>
           ) : (
-            displayedDocs.map((doc, idx) => (
+            paginatedDocs.map((doc, idx) => (
               <div
                 key={doc.id}
                 style={{
@@ -364,7 +510,7 @@ export const Documents: React.FC = () => {
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '0.75rem 1.25rem',
-                  borderBottom: idx !== displayedDocs.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                  borderBottom: idx !== paginatedDocs.length - 1 ? '1px solid var(--border-subtle)' : 'none',
                   fontSize: '0.8125rem',
                   opacity: doc.is_archived ? 0.75 : 1
                 }}
@@ -377,14 +523,17 @@ export const Documents: React.FC = () => {
                       {doc.is_archived && (
                         <span
                           style={{
-                            fontSize: '0.65rem',
-                            backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                            color: '#ef4444',
+                            fontSize: '0.625rem',
+                            fontWeight: 600,
+                            letterSpacing: '0.04em',
+                            backgroundColor: 'var(--bg-muted)',
+                            border: '1px solid var(--border-subtle)',
+                            color: 'var(--text-muted)',
                             padding: '0.1rem 0.4rem',
-                            borderRadius: '3px'
+                            borderRadius: '4px'
                           }}
                         >
-                          ARCHIVED (Excluded from RAG)
+                          ARCHIVED (EXCLUDED FROM RAG)
                         </span>
                       )}
                     </div>
@@ -444,7 +593,7 @@ export const Documents: React.FC = () => {
                           background: 'transparent',
                           border: '1px solid var(--border-subtle)',
                           borderRadius: 'var(--radius-sm, 4px)',
-                          color: 'var(--color-primary, #3b82f6)',
+                          color: 'var(--text-primary)',
                           cursor: 'pointer',
                           padding: '0.25rem 0.5rem',
                           display: 'flex',
@@ -460,10 +609,10 @@ export const Documents: React.FC = () => {
                       <button
                         onClick={() => handleHardDelete(doc.id, doc.filename)}
                         style={{
-                          background: 'rgba(239, 68, 68, 0.1)',
-                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          background: 'transparent',
+                          border: '1px solid var(--border-subtle)',
                           borderRadius: 'var(--radius-sm, 4px)',
-                          color: '#ef4444',
+                          color: 'var(--text-secondary)',
                           cursor: 'pointer',
                           padding: '0.25rem 0.5rem',
                           display: 'flex',
@@ -483,6 +632,101 @@ export const Documents: React.FC = () => {
             ))
           )}
         </div>
+
+        {/* Pagination Navigation Footer */}
+        {filteredDocs.length > 0 && (
+          <div
+            style={{
+              padding: '0.75rem 1.25rem',
+              borderTop: '1px solid var(--border-subtle)',
+              backgroundColor: 'var(--bg-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              fontSize: '0.78rem'
+            }}
+          >
+            <div style={{ color: 'var(--text-secondary)' }}>
+              Showing{' '}
+              <strong style={{ color: 'var(--text-primary)' }}>
+                {filteredDocs.length === 0 ? 0 : startIndex + 1}–{Math.min(startIndex + pageSize, filteredDocs.length)}
+              </strong>{' '}
+              of <strong style={{ color: 'var(--text-primary)' }}>{filteredDocs.length}</strong>{' '}
+              {activeFilter === 'active' ? 'active' : 'archived'} documents
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="btn-secondary"
+                style={{
+                  padding: '0.3rem 0.55rem',
+                  fontSize: '0.75rem',
+                  opacity: currentPage === 1 ? 0.4 : 1,
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <ChevronLeft size={13} />
+                <span>Prev</span>
+              </button>
+
+              {/* Page numbers */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => {
+                if (
+                  totalPages <= 6 ||
+                  pg === 1 ||
+                  pg === totalPages ||
+                  Math.abs(pg - currentPage) <= 1
+                ) {
+                  const isActive = pg === currentPage;
+                  return (
+                    <button
+                      key={pg}
+                      onClick={() => setCurrentPage(pg)}
+                      style={{
+                        padding: '0.25rem 0.55rem',
+                        fontSize: '0.75rem',
+                        fontWeight: isActive ? 700 : 500,
+                        borderRadius: 'var(--radius-sm, 4px)',
+                        border: 'none',
+                        backgroundColor: isActive ? 'var(--btn-primary-bg)' : 'transparent',
+                        color: isActive ? 'var(--btn-primary-text)' : 'var(--text-secondary)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {pg}
+                    </button>
+                  );
+                } else if (pg === currentPage - 2 || pg === currentPage + 2) {
+                  return (
+                    <span key={pg} style={{ color: 'var(--text-muted)', padding: '0 0.15rem' }}>
+                      …
+                    </span>
+                  );
+                }
+                return null;
+              })}
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="btn-secondary"
+                style={{
+                  padding: '0.3rem 0.55rem',
+                  fontSize: '0.75rem',
+                  opacity: currentPage === totalPages ? 0.4 : 1,
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <span>Next</span>
+                <ChevronRight size={13} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Chunk Inspector Modal */}
@@ -531,8 +775,9 @@ export const Documents: React.FC = () => {
                   style={{
                     padding: '0.5rem',
                     borderRadius: 'var(--radius-sm, 6px)',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    color: 'var(--color-primary, #3b82f6)'
+                    backgroundColor: 'var(--bg-muted)',
+                    border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-primary)'
                   }}
                 >
                   <Layers size={20} />
@@ -631,9 +876,10 @@ export const Documents: React.FC = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <span
                             style={{
-                              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                              color: 'var(--color-primary, #3b82f6)',
-                              fontWeight: 700,
+                              backgroundColor: 'var(--bg-muted)',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'var(--text-primary)',
+                              fontWeight: 600,
                               padding: '0.15rem 0.45rem',
                               borderRadius: '4px',
                               fontSize: '0.7rem'
@@ -653,7 +899,7 @@ export const Documents: React.FC = () => {
                             background: 'transparent',
                             border: '1px solid var(--border-subtle)',
                             borderRadius: '4px',
-                            color: isCopied ? '#16a34a' : 'var(--text-secondary)',
+                            color: isCopied ? 'var(--text-primary)' : 'var(--text-secondary)',
                             padding: '0.2rem 0.45rem',
                             cursor: 'pointer',
                             display: 'flex',
