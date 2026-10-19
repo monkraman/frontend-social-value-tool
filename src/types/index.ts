@@ -226,3 +226,29 @@ export interface BackendHealthData {
   };
   embedding_dimension: number;
 }
+
+export interface AuditLogItem {
+  id: string;
+  request_id: string;
+  timestamp: string;
+  event_type: string;
+  severity: string;
+  endpoint?: string | null;
+  method?: string | null;
+  status_code?: number | null;
+  duration_ms?: number | null;
+  message: string;
+  error_detail?: string | null;
+  client_ip?: string | null;
+}
+
+export interface AuditSummary {
+  total_logs: number;
+  total_errors: number;
+  errors_last_24h: number;
+  total_warnings: number;
+  retention_policy: string;
+  retention_days: number;
+  oldest_record_timestamp?: string | null;
+  system_health: string;
+}

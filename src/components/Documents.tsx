@@ -179,11 +179,21 @@ export const Documents: React.FC = () => {
           disabled={isUploading}
         />
         <UploadCloud size={30} style={{ color: isDragging ? 'var(--color-primary, #3b82f6)' : 'var(--text-secondary)', marginBottom: '0.6rem' }} />
-        <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-          {isUploading ? 'Ingesting, chunking & vectorizing file...' : isDragging ? 'Drop tender documents here' : 'Click or Drag & Drop tender documents here'}
+        <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'center' }}>
+          {batchStatus ? (
+            <span style={{ color: 'var(--color-primary, #3b82f6)' }}>
+              Uploading batch item {batchStatus.current} of {batchStatus.total}: {batchStatus.filename}...
+            </span>
+          ) : isUploading ? (
+            'Ingesting, chunking & vectorizing file...'
+          ) : isDragging ? (
+            'Drop tender documents here'
+          ) : (
+            'Click or Drag & Drop tender documents here (Single or Multiple)'
+          )}
         </div>
         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
-          Supports PDF, Word (DOCX), Excel (XLSX), Markdown & Text files • Auto-indexed into PostgreSQL pgvector
+          Supports batch upload of PDF, Word (DOCX), Excel (XLSX), Markdown & Text files • Auto-indexed into PostgreSQL pgvector
         </div>
       </div>
 

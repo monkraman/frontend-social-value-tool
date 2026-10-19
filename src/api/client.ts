@@ -11,7 +11,9 @@ import type {
   PromptSubmissionResponse,
   PromptHistoryItem,
   DocumentChunkItem,
-  BackendHealthData
+  BackendHealthData,
+  AuditLogItem,
+  AuditSummary
 } from '../types';
 
 function resolveApiBaseUrl(): string {
@@ -355,6 +357,34 @@ export async function permanentlyDeleteDocumentById(id: string): Promise<boolean
 
 export async function deleteDocumentById(id: string): Promise<boolean> {
   return archiveDocumentById(id);
+}
+
+// ==========================================
+// Enterprise System Audit & Error Logs
+// ==========================================
+
+export async function fetchAuditLogs(severity?: string, limit = 50): Promise<AuditLogItem[]> {
+  try {
+    let url = `${API_BASE_URL}/audit/logs?limit=${limit}`;
+    if (severity) {
+      url += `&severity=${encodeURIComponent(severity)}`;
+    }
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchAuditSummary(): Promise<AuditSummary | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/audit/summary`, { headers: getAuthHeaders() });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 
