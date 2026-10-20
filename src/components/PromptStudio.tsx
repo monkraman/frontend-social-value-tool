@@ -10,8 +10,6 @@ import {
   FileText,
   Search,
   Brain,
-  ChevronDown,
-  ChevronUp,
   Copy,
   Check,
   Calendar,
@@ -85,7 +83,6 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
   const [showAuditModal, setShowAuditModal] = useState<boolean>(false);
   const [copiedTender, setCopiedTender] = useState<boolean>(false);
   const [refineText, setRefineText] = useState<string>('');
-  const [showRefinePanel, setShowRefinePanel] = useState<boolean>(false);
   const [showPackageComparison, setShowPackageComparison] = useState<boolean>(false);
   const toast = useToast();
 
@@ -103,7 +100,6 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
 
   const handleSubmit = () => {
     if (!inputText.trim() || isLoading) return;
-    setShowRefinePanel(false);
     setRefineText('');
     onSendPrompt(inputText.trim());
   };
@@ -373,6 +369,61 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
       {/* Render Response Result */}
       {result && !isLoading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* Prominent Refinement Delta / What-Changed Banner */}
+          {refinementNote && (
+            <div
+              style={{
+                padding: '0.9rem 1.25rem',
+                backgroundColor: 'rgba(34, 197, 94, 0.08)',
+                border: '1px solid rgba(34, 197, 94, 0.35)',
+                borderRadius: 'var(--radius-md)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.85rem',
+                animation: 'fadeIn 0.2s ease-in-out'
+              }}
+            >
+              <div
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  backgroundColor: '#22c55e',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginTop: '0.1rem'
+                }}
+              >
+                <Sparkles size={15} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem', flexWrap: 'wrap' }}>
+                  <strong style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                    {conversationTurnCount > 1 ? `⚡ Refined in Turn ${conversationTurnCount}` : '⚡ Proposal Updated with Feedback'}
+                  </strong>
+                  <span
+                    style={{
+                      fontSize: '0.68rem',
+                      padding: '0.12rem 0.5rem',
+                      borderRadius: '999px',
+                      backgroundColor: 'rgba(34, 197, 94, 0.18)',
+                      color: '#15803d',
+                      fontWeight: 600
+                    }}
+                  >
+                    AI Context Retained
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  {refinementNote}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(217, 119, 6, 0.45)', background: 'rgba(217, 119, 6, 0.08)', color: 'var(--text-primary)', fontSize: '0.8125rem', lineHeight: 1.5 }}>
             <strong>{result.is_mock ? 'Demo generation' : 'Prototype estimate'}:</strong>{' '}
             TOMs proxy rates and sample knowledge may be synthetic. Treat initiative volumes, partner suitability and delivery costs as draft assumptions until checked against approved Infosys evidence and the current TOMs source.
@@ -577,16 +628,17 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', color: 'var(--text-primary)' }}>
                 <thead><tr>{['Option', 'Social value', 'Target', 'Initiatives', 'Indicative delivery cost'].map((label) => <th key={label} style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid var(--border-subtle)' }}>{label}</th>)}</tr></thead>
                 <tbody>{[
-                  ['Core', result.core_package], ['Enhanced', result.enhanced_package], ['Localised', result.localised_package]
-                ].map(([label, pkg]) => {
-                  const option = pkg as typeof result.core_package;
-                  const calc = option.financial_calculation;
-                  return <tr key={label as string}>
-                    <td style={{ padding: '0.75rem' }}>{label}</td>
+                  { name: 'Core', pkg: result.core_package },
+                  { name: 'Enhanced', pkg: result.enhanced_package },
+                  { name: 'Localised', pkg: result.localised_package }
+                ].map(({ name, pkg }) => {
+                  const calc = pkg.financial_calculation;
+                  return <tr key={name}>
+                    <td style={{ padding: '0.75rem' }}>{name}</td>
                     <td style={{ padding: '0.75rem' }}>{formatGbp(calc?.total_social_value_gbp || 0)} ({formatPercent(calc?.social_value_percentage || 0)})</td>
                     <td style={{ padding: '0.75rem' }}>{calc?.target_met ? 'Meets (proxy)' : 'Below (proxy)'} {formatGbp(calc?.target_social_value_gbp || targetAmount)}</td>
-                    <td style={{ padding: '0.75rem' }}>{option.initiatives.length}</td>
-                    <td style={{ padding: '0.75rem' }}>{(option.indicative_delivery_cost_gbp || 0) > 0 ? formatGbp(option.indicative_delivery_cost_gbp || 0) : 'Not provided'}</td>
+                    <td style={{ padding: '0.75rem' }}>{pkg.initiatives.length}</td>
+                    <td style={{ padding: '0.75rem' }}>{(pkg.indicative_delivery_cost_gbp || 0) > 0 ? formatGbp(pkg.indicative_delivery_cost_gbp || 0) : 'Not provided'}</td>
                   </tr>;
                 })}</tbody>
               </table>
@@ -896,228 +948,190 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
         </div>
       )}
 
-      {/* Refinement Note Banner — shown after a successful AI refinement */}
-      {refinementNote && (
+      {/* Single Intelligent Sticky Bottom Input (Zero Duplicate Box Confusion) */}
+      <div style={{ position: 'sticky', bottom: '1.5rem', marginTop: 'auto', paddingTop: '1rem' }}>
         <div
           style={{
-            padding: '0.6rem 1rem',
             backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-md)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.8rem',
-            color: 'var(--text-secondary)',
-            marginBottom: '0.25rem'
-          }}
-        >
-          <RefreshCw size={13} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
-          <span>{refinementNote}</span>
-        </div>
-      )}
-
-      {/* Refine Result Panel — shown when there is a current result */}
-      {result && onRefineResult && (
-        <div
-          style={{
-            backgroundColor: 'var(--bg-surface)',
-            border: showRefinePanel ? '1px solid var(--text-primary)' : '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            transition: 'border-color 0.2s ease'
+            padding: '0.85rem 1.15rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.6rem',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.07)'
           }}
         >
-          {/* Refine Toggle Header */}
-          <button
-            onClick={() => setShowRefinePanel((p) => !p)}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0.65rem 1rem',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--text-secondary)',
-              fontSize: '0.8125rem',
-              fontWeight: 500
-            }}
-          >
+          {/* Top Header inside Input Box */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {result ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <MessageSquarePlus size={14} style={{ color: 'var(--primary, #0ea5e9)' }} />
+                  Request changes to this proposal
+                </span>
+                {conversationTurnCount > 0 && (
+                  <span
+                    style={{
+                      fontSize: '0.68rem',
+                      padding: '0.1rem 0.45rem',
+                      borderRadius: '999px',
+                      backgroundColor: 'rgba(34,197,94,0.12)',
+                      color: '#22c55e',
+                      border: '1px solid rgba(34,197,94,0.25)',
+                      fontWeight: 600
+                    }}
+                  >
+                    Turn {conversationTurnCount} active
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                Enter RFP Tender Specification to generate bid
+              </span>
+            )}
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <MessageSquarePlus size={14} />
-              <span>Not satisfied? Refine &amp; improve this result</span>
-              {/* Live memory badge */}
-              {conversationTurnCount > 0 && (
-                <span
+              {result ? (
+                <button
+                  onClick={onReset}
+                  className="btn-secondary"
                   style={{
-                    display: 'inline-flex',
+                    padding: '0.25rem 0.65rem',
+                    fontSize: '0.725rem',
+                    display: 'flex',
                     alignItems: 'center',
-                    gap: '0.2rem',
-                    fontSize: '0.68rem',
-                    fontWeight: 600,
-                    padding: '0.1rem 0.45rem',
-                    borderRadius: '999px',
-                    backgroundColor: 'rgba(34,197,94,0.12)',
-                    color: '#22c55e',
-                    border: '1px solid rgba(34,197,94,0.25)'
+                    gap: '0.3rem',
+                    borderRadius: 'var(--radius-sm)'
+                  }}
+                  title="Clear current proposal and start a new tender"
+                >
+                  <RotateCcw size={11} /> Start New RFP
+                </button>
+              ) : (
+                <button
+                  onClick={() => setInputText(DEFAULT_SAMPLE_PROMPT)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    padding: '0.15rem 0.35rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.3rem'
                   }}
                 >
-                  <RefreshCw size={9} />
-                  {conversationTurnCount} turn{conversationTurnCount !== 1 ? 's' : ''} in memory
-                </span>
+                  <Sparkles size={12} /> Insert Sample Prompt
+                </button>
               )}
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                Press <CornerDownLeft size={11} />
+              </span>
             </div>
-            {showRefinePanel ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
+          </div>
 
-          {/* Collapsible Refine Input */}
-          {showRefinePanel && (
-            <div
+          {/* Dynamic Single Textarea */}
+          {result ? (
+            <textarea
+              value={refineText}
+              onChange={(e) => setRefineText(e.target.value)}
+              onKeyDown={handleRefineKeyDown}
+              placeholder="Describe what to improve or change (e.g. 'Increase youth training by 20%', 'Shift focus to Net Zero & digital skills', 'Add local VCSE partner')..."
+              rows={2}
+              disabled={isRefining}
               style={{
-                borderTop: '1px solid var(--border-subtle)',
-                padding: '0.75rem 1rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem'
+                width: '100%',
+                backgroundColor: 'transparent',
+                border: 'none',
+                padding: 0,
+                fontSize: '0.875rem',
+                outline: 'none',
+                resize: 'none',
+                color: 'var(--text-primary)',
+                fontFamily: 'inherit'
               }}
-            >
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                🧠 <strong style={{ color: 'var(--text-secondary)' }}>AI has full session memory.</strong>{' '}
-                {conversationTurnCount > 0
-                  ? `It remembers all ${conversationTurnCount} turns of this conversation — every previous instruction is still active.`
-                  : 'Tell the AI what to change and it will use the full context of this result.'}
-                {' '}For example: <em>"Add more Net Zero focus"</em>, <em>"Increase Digital Inclusion to 12%"</em>,
-                or <em>"Make the Enhanced Package stronger on Supply Chain"</em>.
+            />
+          ) : (
+            <textarea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your Social Value RFP tender prompt here (e.g. 3-year £10M contract for Birmingham City Council with 10% Social Value weighting)..."
+              rows={2}
+              disabled={isLoading}
+              style={{
+                width: '100%',
+                backgroundColor: 'transparent',
+                border: 'none',
+                padding: 0,
+                fontSize: '0.875rem',
+                outline: 'none',
+                resize: 'none',
+                color: 'var(--text-primary)',
+                fontFamily: 'inherit'
+              }}
+            />
+          )}
+
+          {/* Bottom Action Row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {refineError && result ? (
+              <div style={{ fontSize: '0.75rem', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <AlertCircle size={12} />
+                {refineError}
               </div>
+            ) : (
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                {result
+                  ? '🧠 AI uses full conversation memory to refine this proposal'
+                  : 'Grounded in National TOMs & repository knowledge'}
+              </span>
+            )}
 
-              <textarea
-                value={refineText}
-                onChange={(e) => setRefineText(e.target.value)}
-                onKeyDown={handleRefineKeyDown}
-                placeholder="Describe what to improve, change, or focus on more…"
-                rows={2}
-                disabled={isRefining}
-                style={{
-                  width: '100%',
-                  backgroundColor: 'var(--bg-muted)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '0.5rem 0.75rem',
-                  fontSize: '0.875rem',
-                  color: 'var(--text-primary)',
-                  resize: 'vertical',
-                  fontFamily: 'inherit',
-                  outline: 'none',
-                  opacity: isRefining ? 0.6 : 1
-                }}
-              />
-
-              {refineError && (
-                <div style={{ fontSize: '0.78rem', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <AlertCircle size={12} />
-                  {refineError}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                  Press <CornerDownLeft size={11} /> to refine
-                </span>
+            <div>
+              {result ? (
                 <button
                   onClick={handleRefineSubmit}
                   disabled={!refineText.trim() || isRefining}
                   className="btn-primary"
-                  style={{ padding: '0.4rem 0.85rem', fontSize: '0.75rem' }}
+                  style={{ padding: '0.45rem 1rem', fontSize: '0.75rem', gap: '0.35rem' }}
                 >
                   {isRefining ? (
                     <>
-                      <Loader size={12} className="spin-icon" />
-                      Refining…
+                      <Loader size={13} className="spin-icon" />
+                      Refining Proposal...
                     </>
                   ) : (
                     <>
-                      <RefreshCw size={12} />
-                      Refine with AI
+                      <span>Refine Proposal</span>
+                      <RefreshCw size={13} />
                     </>
                   )}
                 </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Sticky Bottom Prompt Box */}
-      <div style={{ position: 'sticky', bottom: '1.5rem', marginTop: 'auto', paddingTop: '1rem' }}>
-
-        <div
-          style={{
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '0.75rem 1rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <button
-              onClick={() => setInputText(DEFAULT_SAMPLE_PROMPT)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-secondary)',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                padding: '0.15rem 0.35rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.3rem'
-              }}
-            >
-              <Sparkles size={12} /> Insert Client Prompt Template
-            </button>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              Press <CornerDownLeft size={11} /> to send
-            </span>
-          </div>
-
-          <textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type your Social Value RFP tender prompt here..."
-            rows={2}
-            style={{
-              width: '100%',
-              backgroundColor: 'transparent',
-              border: 'none',
-              padding: 0,
-              fontSize: '0.875rem'
-            }}
-          />
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '0.25rem' }}>
-            <button
-              onClick={handleSubmit}
-              disabled={!inputText.trim() || isLoading}
-              className="btn-primary"
-              style={{ padding: '0.45rem 0.95rem', fontSize: '0.75rem' }}
-            >
-              {isLoading ? (
-                <>
-                  <span className="spin-icon">⚙</span> Running...
-                </>
               ) : (
-                <>
-                  <span>Generate Tender Response</span>
-                  <Send size={13} />
-                </>
+                <button
+                  onClick={handleSubmit}
+                  disabled={!inputText.trim() || isLoading}
+                  className="btn-primary"
+                  style={{ padding: '0.45rem 1rem', fontSize: '0.75rem', gap: '0.35rem' }}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader size={13} className="spin-icon" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <span>Generate Tender Response</span>
+                      <Send size={13} />
+                    </>
+                  )}
+                </button>
               )}
-            </button>
+            </div>
           </div>
         </div>
       </div>
