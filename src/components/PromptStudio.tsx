@@ -83,7 +83,6 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
   const [showAuditModal, setShowAuditModal] = useState<boolean>(false);
   const [copiedTender, setCopiedTender] = useState<boolean>(false);
   const [refineText, setRefineText] = useState<string>('');
-  const [showPackageComparison, setShowPackageComparison] = useState<boolean>(true);
   const toast = useToast();
 
   if (currentPrompt !== prevPrompt) {
@@ -581,10 +580,6 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
               </button>
             </div>
 
-            <button className="btn-secondary" onClick={() => setShowPackageComparison((shown) => !shown)} style={{ fontSize: '0.75rem' }}>
-              {showPackageComparison ? 'Hide package comparison' : 'Compare all options'}
-            </button>
-
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button
                 onClick={handleCopyTenderText}
@@ -623,153 +618,30 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
             </div>
           </div>
 
-          {showPackageComparison && (
+          {/* Refinement Feedback Notice Banner */}
+          {refinementNote && (
             <div
               style={{
+                padding: '0.75rem 1rem',
                 backgroundColor: 'var(--bg-surface)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: 'var(--radius-md)',
-                padding: '1.25rem',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '1rem'
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.75rem',
+                fontSize: '0.8125rem'
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <TrendingUp size={16} /> Commercial Feasibility & Template Comparison
-                  </h4>
-                  <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.775rem', color: 'var(--text-secondary)' }}>
-                    Compare combinations against the client's 10% Social Value mandate, delivery costs, and net SVROI return.
-                  </p>
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  Target: <strong>{formatGbp(targetAmount)}</strong> (10.0%)
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
+                <Sparkles size={14} style={{ color: 'var(--text-secondary)' }} />
+                <span>
+                  <strong>Refinement Applied{conversationTurnCount > 1 ? ` (Turn ${conversationTurnCount})` : ''}:</strong> {refinementNote}
+                </span>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-                {[
-                  {
-                    key: 'core' as const,
-                    title: 'Template 1: Core (Baseline)',
-                    pkg: result.core_package,
-                    badge: 'Baseline Compliance',
-                    badgeColor: '#64748b',
-                    recommended: false,
-                    tradeoff: 'Lower operational risk; compliance baseline delivering ~8.0% Social Value.'
-                  },
-                  {
-                    key: 'localised' as const,
-                    title: 'Template 3: Localised (Place-Based)',
-                    pkg: result.localised_package,
-                    badge: '★ Recommended for Bid',
-                    badgeColor: '#16a34a',
-                    recommended: true,
-                    tradeoff: 'Most commercially viable. Meets the 10% mandate at lowest delivery cost (£42k) with 23.8x SVROI.'
-                  },
-                  {
-                    key: 'enhanced' as const,
-                    title: 'Template 2: Enhanced (Competitive Win)',
-                    pkg: result.enhanced_package,
-                    badge: 'Maximum Evaluation Score',
-                    badgeColor: '#2563eb',
-                    recommended: false,
-                    tradeoff: 'Decisive win strategy (+24% above target). Extra £20k delivery cost creates £245k additional impact.'
-                  }
-                ].map(({ key, title, pkg, badge, badgeColor, tradeoff }) => {
-                  const calc = pkg.financial_calculation;
-                  const isSelected = activePackage === key;
-                  const totalSv = calc?.total_social_value_gbp || 0;
-                  const svPct = calc?.social_value_percentage || 0;
-                  const cost = pkg.indicative_delivery_cost_gbp || 0;
-                  const svroi = cost > 0 ? (totalSv / cost).toFixed(1) : '7.0';
-                  const met = calc?.target_met || svPct >= 10.0;
-
-                  return (
-                    <div
-                      key={key}
-                      onClick={() => setActivePackage(key)}
-                      style={{
-                        padding: '1.15rem',
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: isSelected ? 'var(--bg-card)' : 'var(--bg-surface)',
-                        border: isSelected ? `2px solid ${badgeColor}` : '1px solid var(--border-subtle)',
-                        boxShadow: isSelected ? '0 4px 12px rgba(0,0,0,0.06)' : 'none',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        gap: '0.85rem',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
-                          <span
-                            style={{
-                              fontSize: '0.7rem',
-                              fontWeight: 700,
-                              padding: '0.15rem 0.5rem',
-                              borderRadius: '999px',
-                              backgroundColor: `${badgeColor}15`,
-                              color: badgeColor,
-                              border: `1px solid ${badgeColor}30`
-                            }}
-                          >
-                            {badge}
-                          </span>
-                          {isSelected && (
-                            <span style={{ fontSize: '0.68rem', fontWeight: 600, color: badgeColor, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                              <Check size={12} /> Active View
-                            </span>
-                          )}
-                        </div>
-
-                        <strong style={{ fontSize: '0.925rem', color: 'var(--text-primary)', display: 'block', marginBottom: '0.35rem' }}>
-                          {title}
-                        </strong>
-
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', margin: '0.5rem 0' }}>
-                          <span style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                            {formatGbp(totalSv)}
-                          </span>
-                          <span style={{ fontSize: '0.825rem', fontWeight: 600, color: met ? '#16a34a' : '#d97706' }}>
-                            ({formatPercent(svPct)})
-                          </span>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', padding: '0.5rem', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-                          <div>
-                            <span style={{ color: 'var(--text-muted)', display: 'block' }}>Delivery Cost</span>
-                            <strong style={{ color: 'var(--text-primary)' }}>{cost > 0 ? formatGbp(cost) : 'Included'}</strong>
-                          </div>
-                          <div>
-                            <span style={{ color: 'var(--text-muted)', display: 'block' }}>SVROI Return</span>
-                            <strong style={{ color: '#16a34a' }}>{svroi}x Multiplier</strong>
-                          </div>
-                        </div>
-
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
-                          {tradeoff}
-                        </p>
-                      </div>
-
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActivePackage(key);
-                        }}
-                        className={isSelected ? 'btn-primary' : 'btn-secondary'}
-                        style={{ width: '100%', fontSize: '0.75rem', padding: '0.4rem', justifyContent: 'center' }}
-                      >
-                        {isSelected ? 'Currently Selected' : 'Select Template'}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                Proposal updated based on your feedback
+              </span>
             </div>
           )}
 
@@ -825,7 +697,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                   <div style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                     {formatGbp(currentTotal)}
                   </div>
-                  <div style={{ fontSize: '0.775rem', fontWeight: 600, color: isTargetAchieved ? '#16a34a' : 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '0.775rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                     {formatPercent(currentPercent)} estimated Social Value (POC rates)
                   </div>
                   <div style={{ fontSize: '0.725rem', color: 'var(--text-secondary)', marginTop: '0.25rem', paddingTop: '0.25rem', borderTop: '1px solid var(--border-subtle)' }}>
@@ -894,11 +766,12 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                                 fontSize: '0.7rem',
                                 padding: '0.15rem 0.4rem',
                                 borderRadius: '4px',
-                                backgroundColor: init.is_from_knowledge_base ? 'rgba(34, 197, 94, 0.1)' : 'var(--bg-muted)',
-                                color: init.is_from_knowledge_base ? '#16a34a' : 'var(--text-secondary)'
+                                backgroundColor: 'var(--bg-muted)',
+                                color: 'var(--text-secondary)',
+                                border: '1px solid var(--border-subtle)'
                               }}
                             >
-                              {init.is_from_knowledge_base ? 'Retrieved evidence (review)' : 'Model suggested (validate)'}
+                              {init.is_from_knowledge_base ? 'Retrieved evidence' : 'Model suggested'}
                             </span>
                             {init.partner ? (
                               <span
@@ -907,9 +780,9 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                                   fontWeight: 600,
                                   padding: '0.15rem 0.5rem',
                                   borderRadius: '4px',
-                                  backgroundColor: 'rgba(37, 99, 235, 0.08)',
-                                  color: '#2563eb',
-                                  border: '1px solid rgba(37, 99, 235, 0.2)'
+                                  backgroundColor: 'var(--bg-muted)',
+                                  color: 'var(--text-primary)',
+                                  border: '1px solid var(--border-subtle)'
                                 }}
                               >
                                 🤝 Partner: {init.partner}
@@ -1111,7 +984,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
             {result ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <MessageSquarePlus size={14} style={{ color: 'var(--primary, #0ea5e9)' }} />
+                  <MessageSquarePlus size={14} style={{ color: 'var(--text-primary)' }} />
                   Request changes to this proposal
                 </span>
                 {conversationTurnCount > 0 && (
@@ -1119,10 +992,10 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                     style={{
                       fontSize: '0.68rem',
                       padding: '0.1rem 0.45rem',
-                      borderRadius: '999px',
-                      backgroundColor: 'rgba(34,197,94,0.12)',
-                      color: '#22c55e',
-                      border: '1px solid rgba(34,197,94,0.25)',
+                      borderRadius: 'var(--radius-sm)',
+                      backgroundColor: 'var(--bg-muted)',
+                      color: 'var(--text-secondary)',
+                      border: '1px solid var(--border-subtle)',
                       fontWeight: 600
                     }}
                   >
