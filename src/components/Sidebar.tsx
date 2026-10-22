@@ -263,11 +263,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 alignItems: 'center',
                 gap: '0.25rem',
                 fontSize: '0.68rem',
-                fontWeight: 600
+                fontWeight: 500
               }}
-              title="Open full searches side panel"
+              title="View all search history"
             >
-              <span>Side Panel</span>
+              <span>View all</span>
               <PanelLeftOpen size={11} />
             </button>
           )}
@@ -541,23 +541,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     boxShadow: backendOnline ? '0 0 6px rgba(34, 197, 94, 0.4)' : 'none'
                   }}
                 />
-                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                  {backendOnline ? 'FastAPI Connected' : 'Backend Offline'}
+                <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+                  {backendOnline ? 'System Operational' : 'Service Offline'}
                 </span>
               </div>
-              <Activity size={11} style={{ color: 'var(--text-muted)' }} />
+              <Activity size={12} style={{ color: 'var(--text-muted)' }} />
             </div>
-
-            {backendOnline && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', paddingLeft: '0.9rem', fontSize: '0.68rem' }}>
-                <div style={{ color: 'var(--text-secondary)' }}>
-                  DB: {healthData?.database?.engine === 'postgresql' ? 'PostgreSQL (pgvector)' : 'PostgreSQL unavailable'}
-                </div>
-                <div style={{ color: 'var(--text-muted)' }}>
-                  AI: {healthData?.active_provider === 'gemini' ? (healthData?.providers?.gemini?.model || 'Gemini 3.8 Flash') : 'OpenAI'}
-                </div>
-              </div>
-            )}
           </button>
         </div>
       </div>

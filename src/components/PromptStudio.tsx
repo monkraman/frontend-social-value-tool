@@ -16,7 +16,6 @@ import {
   Users,
   PoundSterling,
   Sparkles,
-  TrendingUp,
   ShieldCheck,
   MessageSquarePlus,
   RefreshCw,
@@ -423,107 +422,71 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
             </div>
           )}
 
-          <div style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(217, 119, 6, 0.45)', background: 'rgba(217, 119, 6, 0.08)', color: 'var(--text-primary)', fontSize: '0.8125rem', lineHeight: 1.5 }}>
-            <strong>{result.is_mock ? 'Demo generation' : 'Prototype estimate'}:</strong>{' '}
-            TOMs proxy rates and sample knowledge may be synthetic. Treat initiative volumes, partner suitability and delivery costs as draft assumptions until checked against approved Infosys evidence and the current TOMs source.
-          </div>
-          {/* User Prompt Message with Dynamic Badges */}
+          {/* Unified Clean Tender Overview Card */}
           <div
             style={{
               padding: '1rem 1.25rem',
               backgroundColor: 'var(--bg-surface)',
               border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)'
+              borderRadius: 'var(--radius-md)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.85rem'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                Active Tender Specification
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                <strong style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>
+                  {result.opportunity.client}
+                </strong>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  • {result.opportunity.location}
+                </span>
+              </div>
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  padding: '0.2rem 0.55rem',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'var(--bg-muted)',
+                  color: isTargetAchieved ? 'var(--status-online, #22c55e)' : 'var(--text-primary)',
+                  border: '1px solid var(--border-subtle)'
+                }}
+              >
+                {isTargetAchieved ? 'Meets Target' : 'Below Target'} ({formatPercent(currentPercent)})
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <button
-                  onClick={() => setShowAuditModal(true)}
-                  className="btn-secondary"
-                  style={{
-                    padding: '0.2rem 0.55rem',
-                    fontSize: '0.725rem',
-                    borderRadius: 'var(--radius-sm, 4px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.35rem'
-                  }}
-                  title="Inspect AI Reasoning Chain & PostgreSQL Vector Evidence"
-                >
-                  <Brain size={13} />
-                  <span>AI Audit & Grounding Trail</span>
-                </button>
-                <span className="tag-mono" style={{ fontSize: '0.7rem', color: 'var(--text-primary)' }}>
-                  RFP requirements captured
-                </span>
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '0.85rem',
+                paddingTop: '0.65rem',
+                borderTop: '1px solid var(--border-subtle)'
+              }}
+            >
+              <div>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.15rem' }}>Contract Value</span>
+                <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{formatGbp(result.opportunity.contract_value_gbp)}</strong>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginLeft: '0.35rem' }}>({result.opportunity.duration_years} Years)</span>
               </div>
-            </div>
-            <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: '0.6rem' }}>
-              "{currentPrompt}"
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', fontSize: '0.75rem' }}>
-              <span className="tag-mono">Client: {result.opportunity.client}</span>
-              <span className="tag-mono">Location: {result.opportunity.location}</span>
-              <span className="tag-mono">Value: {formatGbp(result.opportunity.contract_value_gbp)}</span>
-              <span className="tag-mono">Duration: {result.opportunity.duration_years} Yrs</span>
-              <span className="tag-mono">Target Weighting: {result.opportunity.social_value_weighting_percent}%</span>
+
+              <div>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.15rem' }}>Social Value Target</span>
+                <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{formatGbp(targetAmount)}</strong>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginLeft: '0.35rem' }}>({result.opportunity.social_value_weighting_percent}% Weighting)</span>
+              </div>
+
               {result.opportunity.priorities && result.opportunity.priorities.length > 0 && (
-                <span className="tag-mono">Priorities: {result.opportunity.priorities.join(', ')}</span>
+                <div>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.15rem' }}>Key Priorities</span>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                    {result.opportunity.priorities.join(', ')}
+                  </div>
+                </div>
               )}
-            </div>
-          </div>
-
-          {/* Tender Financial & Commercial Summary Bar */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '0.85rem',
-              padding: '1.15rem 1.25rem',
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)'
-            }}
-          >
-            <div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.15rem' }}>Client Authority</span>
-              <strong style={{ fontSize: '0.925rem', color: 'var(--text-primary)' }}>{result.opportunity.client}</strong>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Region: {result.opportunity.location}</div>
-            </div>
-
-            <div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.15rem' }}>Contract Scale</span>
-              <strong style={{ fontSize: '0.925rem', color: 'var(--text-primary)' }}>{formatGbp(result.opportunity.contract_value_gbp)}</strong>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Term: {result.opportunity.duration_years} Years</div>
-            </div>
-
-            <div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.15rem' }}>Target Social Value</span>
-              <strong style={{ fontSize: '0.925rem', color: 'var(--text-primary)' }}>{formatGbp(targetAmount)}</strong>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Weighting: {result.opportunity.social_value_weighting_percent}%</div>
-            </div>
-
-            <div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.15rem' }}>Selected Package Status</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.1rem' }}>
-                <span
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    padding: '0.2rem 0.55rem',
-                    borderRadius: 'var(--radius-sm)',
-                    backgroundColor: 'var(--bg-muted)',
-                    color: 'var(--text-primary)',
-                    border: '1px solid var(--border-subtle)'
-                  }}
-                >
-                  {isTargetAchieved ? 'Meets proxy target' : 'Below proxy target'} ({formatPercent(currentPercent)})
-                </span>
-              </div>
             </div>
           </div>
 
@@ -698,35 +661,15 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                     {formatGbp(currentTotal)}
                   </div>
                   <div style={{ fontSize: '0.775rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    {formatPercent(currentPercent)} estimated Social Value (POC rates)
+                    {formatPercent(currentPercent)} Social Value Commitment
                   </div>
-                  <div style={{ fontSize: '0.725rem', color: 'var(--text-secondary)', marginTop: '0.25rem', paddingTop: '0.25rem', borderTop: '1px solid var(--border-subtle)' }}>
-                    Est. Delivery Cost: {deliveryCost > 0 ? formatGbp(deliveryCost) : 'Not provided'} • <strong>{svroiMultiplier ? `${svroiMultiplier}x indicative SVROI` : 'SVROI unavailable'}</strong>
+                  <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)', marginTop: '0.25rem', paddingTop: '0.25rem', borderTop: '1px solid var(--border-subtle)' }}>
+                    Est. Cost: {deliveryCost > 0 ? formatGbp(deliveryCost) : '£0'} {svroiMultiplier ? `• ${svroiMultiplier}x SVROI` : ''}
                   </div>
                 </div>
               </div>
 
-              {/* Commercial Viability Summary Notice */}
-              <div
-                style={{
-                  padding: '0.75rem 1rem',
-                  backgroundColor: 'var(--bg-card)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.8125rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.65rem'
-                }}
-              >
-                <TrendingUp size={16} style={{ color: 'var(--text-primary)', flexShrink: 0 }} />
-                <div style={{ color: 'var(--text-secondary)' }}>
-                  <strong style={{ color: 'var(--text-primary)' }}>Commercial assessment:</strong>{' '}
-                  {currentPkg.commercial_viability_summary || 'Not assessed; approved delivery cost inputs are required.'}
-                </div>
-              </div>
-
-              {/* Initiatives List with Granular Operational Metrics */}
+              {/* Initiatives List */}
               <div>
                 <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
                   Proposed Initiatives ({currentPkg.initiatives.length})
@@ -761,23 +704,11 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                           </div>
 
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <span
-                              style={{
-                                fontSize: '0.7rem',
-                                padding: '0.15rem 0.4rem',
-                                borderRadius: '4px',
-                                backgroundColor: 'var(--bg-muted)',
-                                color: 'var(--text-secondary)',
-                                border: '1px solid var(--border-subtle)'
-                              }}
-                            >
-                              {init.is_from_knowledge_base ? 'Retrieved evidence' : 'Model suggested'}
-                            </span>
                             {init.partner ? (
                               <span
                                 style={{
                                   fontSize: '0.72rem',
-                                  fontWeight: 600,
+                                  fontWeight: 500,
                                   padding: '0.15rem 0.5rem',
                                   borderRadius: '4px',
                                   backgroundColor: 'var(--bg-muted)',
@@ -785,13 +716,9 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                                   border: '1px solid var(--border-subtle)'
                                 }}
                               >
-                                🤝 Partner: {init.partner}
+                                Partner: {init.partner}
                               </span>
-                            ) : (
-                              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                                Partner not assigned
-                              </span>
-                            )}
+                            ) : null}
                           </div>
                         </div>
 
@@ -800,7 +727,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                           {init.description}
                         </p>
 
-                        {/* Operational Breakdown Bar */}
+                        {/* Clean Operational Breakdown Bar */}
                         <div
                           style={{
                             display: 'flex',
@@ -816,24 +743,19 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                             <Calendar size={12} />
-                            <span>Delivery: {init.delivery_mechanism}</span>
+                            <span>{init.delivery_mechanism}</span>
                           </div>
-                          <span>•</span>
-                          <span>Volume: {init.annual_volume} TOMs units/year</span>
-                          {init.sessions_per_year != null && <span>• {init.sessions_per_year} sessions/year</span>}
-                          {init.hours_per_session != null && <span>• {init.hours_per_session} hours/session</span>}
-                          {init.participants_per_session != null && <span>• {init.participants_per_session} participants/session</span>}
                           <span>•</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                             <Users size={12} />
-                            <span>Target Group: {init.target_beneficiaries}</span>
+                            <span>{init.target_beneficiaries}</span>
                           </div>
                           {init.indicative_cost_gbp != null && init.indicative_cost_gbp > 0 && (
                             <>
                               <span>•</span>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--text-primary)' }}>
                                 <PoundSterling size={12} />
-                                <span>Cost: {formatGbp(init.indicative_cost_gbp)} ({init.commercial_viability})</span>
+                                <span>Est. Cost: {formatGbp(init.indicative_cost_gbp)}</span>
                               </div>
                             </>
                           )}

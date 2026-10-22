@@ -26,7 +26,6 @@ export const Documents: React.FC = () => {
     documents,
     isUploading,
     statusMessage,
-    totalChunks,
     uploadFile,
     getChunksForDocument,
     archiveDocument,
@@ -256,28 +255,28 @@ export const Documents: React.FC = () => {
     <div style={{ width: '100%', maxWidth: '1440px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Header */}
       <div>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Knowledge Documents</h2>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Documents</h2>
         <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-          {activeDocs.length} active documents • {totalChunks} vector chunks stored in pgvector. Soft-deleted documents are strictly excluded from RAG vector search.
+          Manage your tender evidence, case studies, and reference materials ({activeDocs.length} files)
         </p>
       </div>
 
-      {/* Upload Drop Zone */}
+      {/* Upload Drop Zone - Compact & Clean */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         style={{
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '2.25rem 1.5rem',
+          gap: '0.85rem',
+          padding: '1.1rem 1.5rem',
           border: isDragging ? '2px dashed var(--border-focus)' : '1px dashed var(--border-medium)',
           borderRadius: 'var(--radius-md)',
           backgroundColor: isDragging ? 'var(--bg-muted)' : 'var(--bg-surface)',
           cursor: isUploading ? 'not-allowed' : 'pointer',
-          transition: 'all 0.2s ease',
+          transition: 'all 0.15s ease',
           position: 'relative'
         }}
       >
@@ -290,22 +289,22 @@ export const Documents: React.FC = () => {
           onChange={handleFileUpload}
           disabled={isUploading}
         />
-        <UploadCloud size={30} style={{ color: isDragging ? 'var(--text-primary)' : 'var(--text-secondary)', marginBottom: '0.6rem' }} />
-        <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'center' }}>
-          {batchStatus ? (
-            <span style={{ color: 'var(--text-primary)' }}>
-              Uploading batch item {batchStatus.current} of {batchStatus.total}: {batchStatus.filename}...
-            </span>
-          ) : isUploading ? (
-            'Ingesting, chunking & vectorizing file...'
-          ) : isDragging ? (
-            'Drop tender documents here'
-          ) : (
-            'Click or Drag & Drop tender documents here (Single or Multiple)'
-          )}
-        </div>
-        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
-          Supports batch upload of PDF, Word (DOCX), Excel (XLSX), Markdown & Text files • Auto-indexed into PostgreSQL pgvector
+        <UploadCloud size={24} style={{ color: isDragging ? 'var(--text-primary)' : 'var(--text-secondary)', flexShrink: 0 }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+          <div style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+            {batchStatus ? (
+              <span>Uploading {batchStatus.current} of {batchStatus.total}: {batchStatus.filename}...</span>
+            ) : isUploading ? (
+              'Processing document...'
+            ) : isDragging ? (
+              'Drop files here'
+            ) : (
+              'Upload reference documents'
+            )}
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            Drag and drop or click to browse (PDF, Word, Excel, Markdown)
+          </div>
         </div>
       </div>
 
@@ -533,18 +532,18 @@ export const Documents: React.FC = () => {
                             borderRadius: '4px'
                           }}
                         >
-                          ARCHIVED (EXCLUDED FROM RAG)
+                          Archived
                         </span>
                       )}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      {doc.document_type.toUpperCase()} • {doc.chunks_count} chunks • {formatDate(doc.created_at)}
+                      {doc.document_type.toUpperCase()} • {doc.chunks_count} sections • {formatDate(doc.created_at)}
                     </div>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  {/* View Chunks Button */}
+                  {/* Preview Button */}
                   <button
                     onClick={() => handleOpenChunkInspector(doc)}
                     style={{
@@ -559,10 +558,10 @@ export const Documents: React.FC = () => {
                       gap: '0.35rem',
                       fontSize: '0.75rem'
                     }}
-                    title="Audit and inspect parsed text chunks"
+                    title="Preview extracted content"
                   >
                     <Eye size={13} />
-                    <span>View Chunks</span>
+                    <span>Preview</span>
                   </button>
 
                   {!doc.is_archived ? (
