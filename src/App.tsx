@@ -68,13 +68,17 @@ const AppContent: React.FC = () => {
         style={{
           minHeight: '100vh',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
+          gap: '1.25rem',
           backgroundColor: 'var(--bg-app)',
           color: 'var(--text-secondary)'
         }}
       >
-        <div style={{ fontSize: '0.875rem' }}>Verifying Superadmin Session...</div>
+        <img src="/infosys-logo.png" alt="Infosys" className="brand-logo logo-on-light" style={{ height: '40px' }} />
+        <img src="/infosys-logo-dark.png" alt="Infosys" className="brand-logo logo-on-dark" style={{ height: '40px' }} />
+        <div style={{ fontSize: '0.9rem' }}>Signing you in…</div>
       </div>
     );
   }
@@ -199,7 +203,7 @@ const AppContent: React.FC = () => {
         onRestoreChat={handleRestoreChat}
       />
 
-      <main style={{ flex: 1, minWidth: 0, padding: '1.5rem 2rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      <main style={{ flex: 1, minWidth: 0, padding: '2rem 2.5rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         {activeTab === 'prompt' && (
           <PromptStudio
             currentPrompt={currentPrompt}

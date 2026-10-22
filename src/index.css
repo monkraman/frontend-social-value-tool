@@ -2,60 +2,66 @@
    Central Theme & Design System Stylesheet
    All colors and typography are driven by CSS custom properties.
    Master configuration is in: src/constants/theme.ts
+   Defaults below mirror the Light (Infosys) theme to avoid a flash on load.
    ========================================================================== */
 
 :root {
   /* Fonts */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-sans: 'Source Sans 3', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+  --font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-mono: 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Backgrounds */
-  --bg-app: #09090b;
-  --bg-sidebar: #09090b;
-  --bg-surface: #121215;
-  --bg-card: #18181b;
-  --bg-card-hover: #222226;
-  --bg-input: #18181b;
-  --bg-muted: #27272a;
+  --bg-app: #F4F6FA;
+  --bg-sidebar: #FFFFFF;
+  --bg-surface: #FFFFFF;
+  --bg-card: #F8FAFC;
+  --bg-card-hover: #EEF3F9;
+  --bg-input: #FFFFFF;
+  --bg-muted: #EEF2F7;
 
   /* Text & Content */
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
-  --text-inverse: #09090b;
+  --text-primary: #1B2533;
+  --text-secondary: #4A5668;
+  --text-muted: #7A8597;
+  --text-inverse: #FFFFFF;
 
   /* Borders & Dividers */
-  --border-subtle: #27272a;
-  --border-medium: #3f3f46;
-  --border-focus: #71717a;
+  --border-subtle: #E3E8EF;
+  --border-medium: #CDD5E0;
+  --border-focus: #3A7FBC;
 
   /* Buttons & Actions */
-  --btn-primary-bg: #fafafa;
-  --btn-primary-text: #09090b;
-  --btn-primary-hover: #e4e4e7;
-
-  /* Accent */
-  --accent: #2A9FE0;
+  --btn-primary-bg: #2B67A0;
+  --btn-primary-text: #FFFFFF;
+  --btn-primary-hover: #1F5487;
 
   /* Infosys Brand Accent System */
-  --color-primary: #2A9FE0;
-  --color-primary-hover: #4FB3E8;
-  --color-primary-subtle: rgba(42, 159, 224, 0.14);
-  --ring: rgba(42, 159, 224, 0.35);
+  --accent: #3A7FBC;
+  --color-primary: #3A7FBC;
+  --color-primary-hover: #2B67A0;
+  --color-primary-text: #2B67A0;
+  --color-primary-subtle: rgba(58, 127, 188, 0.10);
+  --color-primary-border: rgba(58, 127, 188, 0.32);
+  --ring: rgba(58, 127, 188, 0.28);
 
   /* Elevation */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
-  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.55);
+  --overlay: rgba(17, 27, 42, 0.42);
+  --shadow-sm: 0 1px 2px rgba(17, 27, 42, 0.06);
+  --shadow-md: 0 4px 16px rgba(17, 27, 42, 0.08);
+  --shadow-lg: 0 24px 48px -12px rgba(17, 27, 42, 0.22);
 
   /* Status Indicators */
-  --status-online: #22c55e;
-  --status-offline: #52525b;
+  --status-online: #1E9E5A;
+  --status-offline: #A1A9B5;
 
   /* Radii */
   --radius-sm: 6px;
   --radius-md: 8px;
-  --radius-lg: 10px;
+  --radius-lg: 12px;
   --radius-full: 9999px;
+
+  color-scheme: light;
 }
 
 * {
@@ -64,13 +70,25 @@
   padding: 0;
 }
 
+/* Source Sans runs slightly smaller than system UI fonts; nudge the base size up */
+html {
+  font-size: 103.125%;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-app);
   color: var(--text-primary);
   min-height: 100vh;
-  line-height: 1.5;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-primary-subtle);
+  color: var(--text-primary);
 }
 
 /* Headings & Text Semantics */
@@ -79,24 +97,48 @@ h1, h2, h3, h4, h5, h6, strong, b {
   font-weight: 600;
 }
 
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
 p, span, label {
   color: inherit;
 }
 
+/* Headline figures (money, percentages) set in the editorial serif */
+.display-num {
+  font-family: var(--font-display);
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Small uppercase section label */
+.eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary-text);
+}
+
 /* Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-app);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-subtle);
+  background: var(--border-medium);
   border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--border-medium);
+  background: var(--text-muted);
+  background-clip: padding-box;
 }
 
 /* Form Controls */
@@ -105,11 +147,15 @@ input, textarea, select {
   font-size: 0.875rem;
   color: var(--text-primary);
   background-color: var(--bg-input);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-medium);
   border-radius: var(--radius-md);
   padding: 0.6rem 0.85rem;
   outline: none;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
 }
 
 input:focus, textarea:focus, select:focus {
@@ -117,15 +163,26 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 0 3px var(--ring);
 }
 
+input[type='range'] {
+  accent-color: var(--color-primary);
+  padding: 0;
+  border: none;
+  box-shadow: none;
+}
+
 /* Accessible focus ring for interactive elements */
 button:focus-visible,
 a:focus-visible,
-[role="button"]:focus-visible {
+[role='button']:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
-/* Minimalist Action Buttons */
+button {
+  font-family: inherit;
+}
+
+/* Primary Action Button — Infosys blue */
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -141,11 +198,12 @@ a:focus-visible,
   letter-spacing: 0.01em;
   cursor: pointer;
   box-shadow: var(--shadow-sm);
-  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 }
 
 .btn-primary:hover {
   background-color: var(--btn-primary-hover);
+  border-color: var(--btn-primary-hover);
   box-shadow: var(--shadow-md);
 }
 
@@ -154,29 +212,32 @@ a:focus-visible,
 }
 
 .btn-primary:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
+/* Secondary Button — white with a blue hover */
 .btn-secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background-color: var(--bg-card);
+  background-color: var(--bg-surface);
   color: var(--text-primary);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-medium);
   border-radius: var(--radius-md);
   padding: 0.55rem 1rem;
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .btn-secondary:hover {
-  background-color: var(--bg-card-hover);
-  border-color: var(--border-medium);
+  background-color: var(--color-primary-subtle);
+  border-color: var(--color-primary-border);
+  color: var(--color-primary-text);
 }
 
 .btn-secondary:disabled {
@@ -184,53 +245,215 @@ a:focus-visible,
   cursor: not-allowed;
 }
 
-/* Monochromatic Badges */
+/* Quiet text-style button (links, small inline actions) */
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: transparent;
+  border: none;
+  padding: 0.15rem 0.35rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-primary-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-link:hover {
+  background-color: var(--color-primary-subtle);
+}
+
+/* Pill Badge */
 .badge-mono {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.2rem 0.5rem;
+  padding: 0.2rem 0.55rem;
   border-radius: var(--radius-full);
   font-size: 0.75rem;
-  font-weight: 500;
-  background-color: var(--bg-card);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-subtle);
+  font-weight: 600;
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary-text);
+  border: 1px solid var(--color-primary-border);
 }
 
-/* Code / TOMs Formula Tag */
+/* Reference tag (TOMs codes, formulas, IDs) — brand chip */
 .tag-mono {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 0.75rem;
-  background-color: var(--bg-surface);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary-text);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-primary-border);
+}
+
+/* Repeated content cards carry an Infosys-blue edge */
+.card-accent {
+  border-left: 3px solid var(--color-primary) !important;
+}
+
+/* Round tinted holder for section / step icons */
+.icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary-text);
+}
+
+/* Bulleted lists with Infosys-blue markers */
+.list-brand li {
+  padding-left: 0.2rem;
+  margin-bottom: 0.25rem;
+}
+.list-brand li::marker {
+  color: var(--color-primary);
+}
+
+/* Prompt composer: brand ring while typing */
+.composer {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.composer:focus-within {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px var(--ring), var(--shadow-md) !important;
+}
+.composer textarea:focus {
+  box-shadow: none;
+}
+
+/* Interactive list rows */
+.row-hover {
+  transition: background-color 0.13s ease;
+}
+.row-hover:hover {
+  background-color: var(--bg-card-hover);
+}
+
+/* Sidebar navigation */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
   color: var(--text-secondary);
-  padding: 0.2rem 0.45rem;
-  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.nav-item:hover {
+  background-color: var(--bg-muted);
+  color: var(--text-primary);
+}
+.nav-item.is-active {
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary-text);
+  font-weight: 600;
+}
+.nav-item.is-active::before {
+  content: '';
+  position: absolute;
+  left: -0.75rem;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background-color: var(--color-primary);
+}
+
+/* Segmented control (package / filter tabs) */
+.segmented {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background-color: var(--bg-muted);
   border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.segmented > button {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.segmented > button:hover {
+  color: var(--color-primary-text);
+}
+.segmented > button.is-active {
+  background-color: var(--bg-surface);
+  color: var(--color-primary-text);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm), inset 0 -2px 0 var(--color-primary);
+}
+
+/* Infosys Brand Logo — swaps tone with the theme */
+.brand-logo {
+  display: block;
+  height: auto;
+  width: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.logo-on-dark {
+  display: none;
+}
+[data-theme='dark'] .logo-on-light {
+  display: none;
+}
+[data-theme='dark'] .logo-on-dark {
+  display: block;
+}
+
+/* Elevated surface helper */
+.elevated {
+  box-shadow: var(--shadow-md);
 }
 
 /* Micro-animations */
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-.spin-icon {
+.spin-icon,
+.spin,
+.animate-spin {
   animation: spin 1s linear infinite;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateX(-6px); }
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-8px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
-/* Infosys Brand Logo */
-.brand-logo {
-  display: block;
-  height: auto;
-  user-select: none;
-  -webkit-user-drag: none;
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
-/* Elevated surface helper */
-.elevated {
-  box-shadow: var(--shadow-md);
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

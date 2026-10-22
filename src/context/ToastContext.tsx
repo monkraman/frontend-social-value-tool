@@ -66,17 +66,19 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const isSuccess = toast.type === 'success';
           const isError = toast.type === 'error';
           const isWarning = toast.type === 'warning';
+          const tone = isSuccess ? 'var(--status-online)' : isError ? '#C53B3B' : isWarning ? '#B7791F' : 'var(--color-primary)';
 
           return (
             <div
               key={toast.id}
               style={{
                 pointerEvents: 'auto',
-                backgroundColor: 'var(--bg-surface, #ffffff)',
-                border: '1px solid var(--border-medium)',
-                borderRadius: 'var(--radius-md, 8px)',
-                padding: '0.75rem 0.95rem',
-                boxShadow: '0 12px 32px -4px rgba(0, 0, 0, 0.28)',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                borderLeft: `4px solid ${tone}`,
+                borderRadius: 'var(--radius-md)',
+                padding: '0.8rem 0.95rem',
+                boxShadow: 'var(--shadow-lg)',
                 display: 'flex',
                 alignItems: 'flex-start',
                 justifyContent: 'space-between',
@@ -85,13 +87,13 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', flex: 1, minWidth: 0 }}>
-                <div style={{ flexShrink: 0, marginTop: '2px', color: 'var(--text-primary)' }}>
+                <div style={{ flexShrink: 0, marginTop: '2px', color: tone }}>
                   {isSuccess && <CheckCircle2 size={16} />}
                   {isError && <AlertTriangle size={16} />}
                   {isWarning && <AlertCircle size={16} />}
                   {!isSuccess && !isError && !isWarning && <Info size={16} />}
                 </div>
-                <div style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', lineHeight: 1.45, wordBreak: 'break-word', fontWeight: 500 }}>
+                <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.5, wordBreak: 'break-word', fontWeight: 500 }}>
                   {toast.message}
                 </div>
               </div>

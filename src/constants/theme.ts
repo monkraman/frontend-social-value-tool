@@ -4,7 +4,9 @@
  * ALL colors, typography, borders, and UI tokens for the ENTIRE application
  * are configured in this SINGLE file.
  *
- * Supports Dark Mode (Minimalist Zinc/Black) and Light Mode (Clean White/Black).
+ * Built around the Infosys corporate identity:
+ *  - Light Mode (default): calm cool-grey canvas, white surfaces, Infosys blue accents.
+ *  - Dark Mode: deep Infosys navy surfaces with brightened blue accents.
  * Any change made here updates the entire UI immediately via CSS custom properties.
  */
 
@@ -12,181 +14,204 @@ export type ThemeMode = 'dark' | 'light';
 
 /**
  * Infosys Brand Palette
- * Canonical corporate blue used for all accents, primary actions and focus states.
+ * `blue` is sampled directly from the Infosys wordmark so the logo and UI match exactly.
  */
 const BRAND = {
-  blue: '#007CC3',        // Canonical Infosys blue (wordmark)
-  blueDeep: '#005B91',    // Darker shade for light-mode button / hover
-  blueBright: '#2A9FE0',  // Brightened azure for legibility on near-black surfaces
-  blueBrightHi: '#4FB3E8' // Hover state on dark surfaces
+  blue: '#3A7FBC',      // Infosys wordmark blue
+  blueDeep: '#2B67A0',  // Buttons / brand text on light surfaces (WCAG AA with white)
+  blueDeeper: '#1F5487',// Hover / pressed on light surfaces
+  blueSoft: '#6EA6DB',  // Accent on navy surfaces
+  blueSofter: '#8FBCE6' // Hover / brand text on navy surfaces
 };
 
 // Shared Typography and Corner Radii
 const SHARED_TYPOGRAPHY = {
-  sans: "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif",
-  mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+  // Humanist sans for UI and reading text
+  sans: "'Source Sans 3', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif",
+  // Editorial serif for page titles, section headings and headline figures
+  display: "'Source Serif 4', Georgia, 'Times New Roman', serif",
+  mono: "'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
 };
 
 const SHARED_RADII = {
   sm: '6px',
   md: '8px',
-  lg: '10px',
+  lg: '12px',
   full: '9999px'
 };
 
-// 1. Dark Theme Palette (Monochrome Slate / Zinc)
-export const DARK_THEME = {
-  fonts: SHARED_TYPOGRAPHY,
-  radii: SHARED_RADII,
-  colors: {
-    bgApp: '#09090b',          // Main canvas background
-    bgSidebar: '#09090b',      // Sidebar panel background
-    bgSurface: '#121215',      // Card surfaces, containers, toolbars
-    bgCard: '#18181b',         // Inner cards, list items
-    bgCardHover: '#222226',    // Card hover state
-    bgInput: '#18181b',        // Text inputs, textareas, selects
-    bgMuted: '#27272a',        // Active nav tabs, subtle pills
-
-    textPrimary: '#fafafa',    // High-contrast primary text, headings
-    textSecondary: '#a1a1aa',  // Secondary labels, descriptions
-    textMuted: '#71717a',      // Footnotes, timestamps, hints
-    textInverse: '#09090b',    // Text on white accent buttons
-
-    borderSubtle: '#27272a',   // Standard structural borders
-    borderMedium: '#3f3f46',   // Input borders, upload zone dash
-    borderFocus: BRAND.blueBright, // Focused input outline (Infosys blue)
-
-    btnPrimaryBg: BRAND.blue,      // Infosys-blue primary CTA
-    btnPrimaryText: '#ffffff',
-    btnPrimaryHover: '#1E90D4',
-
-    accent: BRAND.blueBright,
-
-    // Brand accent system (consumed as --color-primary across components)
-    colorPrimary: BRAND.blueBright,
-    colorPrimaryHover: BRAND.blueBrightHi,
-    colorPrimarySubtle: 'rgba(42, 159, 224, 0.14)',
-    ring: 'rgba(42, 159, 224, 0.35)',
-
-    shadowSm: '0 1px 2px rgba(0, 0, 0, 0.45)',
-    shadowMd: '0 6px 20px rgba(0, 0, 0, 0.55)',
-
-    statusOnline: '#22c55e',
-    statusOffline: '#52525b'
-  }
-} as const;
-
-// 2. Light Theme Palette (Clean White / Dark Charcoal)
+// 1. Light Theme Palette (default) — Infosys white & blue
 export const LIGHT_THEME = {
   fonts: SHARED_TYPOGRAPHY,
   radii: SHARED_RADII,
   colors: {
-    bgApp: '#ffffff',          // Crisp white background
-    bgSidebar: '#f8fafc',      // Subtle off-white sidebar
-    bgSurface: '#ffffff',      // Pure white card surfaces
-    bgCard: '#f4f4f5',         // Soft zinc card backgrounds
-    bgCardHover: '#e4e4e7',    // Card hover state
-    bgInput: '#ffffff',        // White inputs
-    bgMuted: '#e4e4e7',        // Active nav tabs, subtle pills
+    bgApp: '#F4F6FA',          // Soft cool-grey canvas
+    bgSidebar: '#FFFFFF',      // White sidebar (logo sits on white)
+    bgSurface: '#FFFFFF',      // Cards, panels, toolbars
+    bgCard: '#F8FAFC',         // Inner cards, list items
+    bgCardHover: '#EEF3F9',    // Card hover state
+    bgInput: '#FFFFFF',        // Inputs, textareas, selects
+    bgMuted: '#EEF2F7',        // Subtle pills, toolbars, table headers
 
-    textPrimary: '#09090b',    // Deep high-contrast black
-    textSecondary: '#52525b',  // Readable dark charcoal
-    textMuted: '#71717a',      // Secondary helper text
-    textInverse: '#ffffff',    // Text on dark elements
+    textPrimary: '#1B2533',    // Deep navy-charcoal
+    textSecondary: '#4A5668',  // Body copy
+    textMuted: '#7A8597',      // Hints, timestamps
+    textInverse: '#FFFFFF',
 
-    borderSubtle: '#e4e4e7',   // Clean light divider
-    borderMedium: '#d4d4d8',   // Medium input borders
-    borderFocus: BRAND.blue,   // Infosys-blue focused input outline
+    borderSubtle: '#E3E8EF',
+    borderMedium: '#CDD5E0',
+    borderFocus: BRAND.blue,
 
-    btnPrimaryBg: BRAND.blueDeep,  // Deep Infosys blue (AA contrast with white)
-    btnPrimaryText: '#ffffff',     // White button text
-    btnPrimaryHover: BRAND.blue,
+    btnPrimaryBg: BRAND.blueDeep,
+    btnPrimaryText: '#FFFFFF',
+    btnPrimaryHover: BRAND.blueDeeper,
 
     accent: BRAND.blue,
 
-    // Brand accent system (consumed as --color-primary across components)
+    // Brand accent system (consumed as --color-primary-* across components)
     colorPrimary: BRAND.blue,
     colorPrimaryHover: BRAND.blueDeep,
-    colorPrimarySubtle: 'rgba(0, 124, 195, 0.08)',
-    ring: 'rgba(0, 124, 195, 0.30)',
+    colorPrimaryText: BRAND.blueDeep,              // Brand-coloured text that stays legible
+    colorPrimarySubtle: 'rgba(58, 127, 188, 0.10)',// Tinted backgrounds
+    colorPrimaryBorder: 'rgba(58, 127, 188, 0.32)',// Tinted borders
+    ring: 'rgba(58, 127, 188, 0.28)',
 
-    shadowSm: '0 1px 2px rgba(16, 24, 40, 0.06)',
-    shadowMd: '0 6px 20px rgba(16, 24, 40, 0.10)',
+    overlay: 'rgba(17, 27, 42, 0.42)',
+    shadowSm: '0 1px 2px rgba(17, 27, 42, 0.06)',
+    shadowMd: '0 4px 16px rgba(17, 27, 42, 0.08)',
+    shadowLg: '0 24px 48px -12px rgba(17, 27, 42, 0.22)',
 
-    statusOnline: '#16a34a',
-    statusOffline: '#a1a1aa'
+    statusOnline: '#1E9E5A',
+    statusOffline: '#A1A9B5'
   }
 } as const;
 
-export const THEME_CONFIG = DARK_THEME;
-export type ThemeDefinition = typeof DARK_THEME;
+// 2. Dark Theme Palette — Infosys navy
+export const DARK_THEME = {
+  fonts: SHARED_TYPOGRAPHY,
+  radii: SHARED_RADII,
+  colors: {
+    bgApp: '#0E1520',
+    bgSidebar: '#111A27',
+    bgSurface: '#152030',
+    bgCard: '#1A2638',
+    bgCardHover: '#213049',
+    bgInput: '#1A2638',
+    bgMuted: '#1F2D42',
+
+    textPrimary: '#E8EEF6',
+    textSecondary: '#A9B6C8',
+    textMuted: '#7D8BA0',
+    textInverse: '#0E1520',
+
+    borderSubtle: '#24344B',
+    borderMedium: '#33465F',
+    borderFocus: BRAND.blueSoft,
+
+    btnPrimaryBg: BRAND.blueDeep,
+    btnPrimaryText: '#FFFFFF',
+    btnPrimaryHover: BRAND.blue,
+
+    accent: BRAND.blueSoft,
+
+    colorPrimary: BRAND.blueSoft,
+    colorPrimaryHover: BRAND.blueSofter,
+    colorPrimaryText: BRAND.blueSofter,
+    colorPrimarySubtle: 'rgba(110, 166, 219, 0.14)',
+    colorPrimaryBorder: 'rgba(110, 166, 219, 0.35)',
+    ring: 'rgba(110, 166, 219, 0.35)',
+
+    overlay: 'rgba(4, 8, 14, 0.62)',
+    shadowSm: '0 1px 2px rgba(0, 0, 0, 0.35)',
+    shadowMd: '0 4px 16px rgba(0, 0, 0, 0.35)',
+    shadowLg: '0 24px 48px -12px rgba(0, 0, 0, 0.6)',
+
+    statusOnline: '#34C77B',
+    statusOffline: '#5B6B80'
+  }
+} as const;
+
+export const THEME_CONFIG = LIGHT_THEME;
+export type ThemeDefinition = typeof LIGHT_THEME;
+
+// Bumped key so everyone starts on the new light default once.
+const THEME_STORAGE_KEY = 'social_value_theme_v2';
 
 /**
- * Retrieves the stored theme or defaults to 'dark'.
+ * Retrieves the stored theme or defaults to 'light'.
  */
 export function getInitialTheme(): ThemeMode {
-  if (typeof window === 'undefined') return 'dark';
-  const saved = localStorage.getItem('social_value_theme') as ThemeMode;
-  return saved === 'light' ? 'light' : 'dark';
+  if (typeof window === 'undefined') return 'light';
+  try {
+    return localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light';
+  } catch {
+    return 'light';
+  }
 }
+
+// Theme color key -> CSS custom property
+const COLOR_VARS: Record<keyof ThemeDefinition['colors'], string> = {
+  bgApp: '--bg-app',
+  bgSidebar: '--bg-sidebar',
+  bgSurface: '--bg-surface',
+  bgCard: '--bg-card',
+  bgCardHover: '--bg-card-hover',
+  bgInput: '--bg-input',
+  bgMuted: '--bg-muted',
+  textPrimary: '--text-primary',
+  textSecondary: '--text-secondary',
+  textMuted: '--text-muted',
+  textInverse: '--text-inverse',
+  borderSubtle: '--border-subtle',
+  borderMedium: '--border-medium',
+  borderFocus: '--border-focus',
+  btnPrimaryBg: '--btn-primary-bg',
+  btnPrimaryText: '--btn-primary-text',
+  btnPrimaryHover: '--btn-primary-hover',
+  accent: '--accent',
+  colorPrimary: '--color-primary',
+  colorPrimaryHover: '--color-primary-hover',
+  colorPrimaryText: '--color-primary-text',
+  colorPrimarySubtle: '--color-primary-subtle',
+  colorPrimaryBorder: '--color-primary-border',
+  ring: '--ring',
+  overlay: '--overlay',
+  shadowSm: '--shadow-sm',
+  shadowMd: '--shadow-md',
+  shadowLg: '--shadow-lg',
+  statusOnline: '--status-online',
+  statusOffline: '--status-offline'
+};
 
 /**
  * Automatically applies selected theme tokens to document :root CSS variables.
  */
-export function applyTheme(mode: ThemeMode = 'dark'): void {
+export function applyTheme(mode: ThemeMode = 'light'): void {
   if (typeof document === 'undefined') return;
 
-  const theme = mode === 'light' ? LIGHT_THEME : DARK_THEME;
+  const theme = mode === 'dark' ? DARK_THEME : LIGHT_THEME;
   const root = document.documentElement;
 
   // Persist preference & set attribute for CSS selectors
   root.setAttribute('data-theme', mode);
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('social_value_theme', mode);
+  root.style.colorScheme = mode;
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, mode);
+  } catch {
+    // Storage unavailable (private mode) — theme still applies for this session
   }
 
-  // Set Fonts
+  // Fonts
   root.style.setProperty('--font-sans', theme.fonts.sans);
+  root.style.setProperty('--font-display', theme.fonts.display);
   root.style.setProperty('--font-mono', theme.fonts.mono);
 
-  // Set Colors
-  root.style.setProperty('--bg-app', theme.colors.bgApp);
-  root.style.setProperty('--bg-sidebar', theme.colors.bgSidebar);
-  root.style.setProperty('--bg-surface', theme.colors.bgSurface);
-  root.style.setProperty('--bg-card', theme.colors.bgCard);
-  root.style.setProperty('--bg-card-hover', theme.colors.bgCardHover);
-  root.style.setProperty('--bg-input', theme.colors.bgInput);
-  root.style.setProperty('--bg-muted', theme.colors.bgMuted);
+  // Colors
+  (Object.keys(COLOR_VARS) as Array<keyof ThemeDefinition['colors']>).forEach((key) => {
+    root.style.setProperty(COLOR_VARS[key], theme.colors[key]);
+  });
 
-  root.style.setProperty('--text-primary', theme.colors.textPrimary);
-  root.style.setProperty('--text-secondary', theme.colors.textSecondary);
-  root.style.setProperty('--text-muted', theme.colors.textMuted);
-  root.style.setProperty('--text-inverse', theme.colors.textInverse);
-
-  root.style.setProperty('--border-subtle', theme.colors.borderSubtle);
-  root.style.setProperty('--border-medium', theme.colors.borderMedium);
-  root.style.setProperty('--border-focus', theme.colors.borderFocus);
-
-  root.style.setProperty('--btn-primary-bg', theme.colors.btnPrimaryBg);
-  root.style.setProperty('--btn-primary-text', theme.colors.btnPrimaryText);
-  root.style.setProperty('--btn-primary-hover', theme.colors.btnPrimaryHover);
-
-  root.style.setProperty('--accent', theme.colors.accent);
-
-  // Infosys brand accent system (used app-wide via --color-primary)
-  root.style.setProperty('--color-primary', theme.colors.colorPrimary);
-  root.style.setProperty('--color-primary-hover', theme.colors.colorPrimaryHover);
-  root.style.setProperty('--color-primary-subtle', theme.colors.colorPrimarySubtle);
-  root.style.setProperty('--ring', theme.colors.ring);
-
-  // Elevation
-  root.style.setProperty('--shadow-sm', theme.colors.shadowSm);
-  root.style.setProperty('--shadow-md', theme.colors.shadowMd);
-
-  root.style.setProperty('--status-online', theme.colors.statusOnline);
-  root.style.setProperty('--status-offline', theme.colors.statusOffline);
-
-  // Set Radii
+  // Radii
   root.style.setProperty('--radius-sm', theme.radii.sm);
   root.style.setProperty('--radius-md', theme.radii.md);
   root.style.setProperty('--radius-lg', theme.radii.lg);
