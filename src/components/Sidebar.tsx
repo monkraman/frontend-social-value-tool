@@ -153,13 +153,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }}
       >
       {/* Brand Header */}
-      <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
+      <div style={{ padding: '1.25rem 1.25rem 1rem 1.25rem', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
+        <img
+          src="/infosys-logo.png"
+          alt="Infosys"
+          className="brand-logo"
+          style={{ height: '24px', marginBottom: '0.95rem' }}
+        />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
               Social Value
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', letterSpacing: '0.02em' }}>
               RFP Response Engine
             </div>
           </div>
@@ -169,8 +175,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               fontWeight: 700,
               padding: '0.15rem 0.45rem',
               borderRadius: 'var(--radius-sm)',
-              backgroundColor: 'var(--bg-muted)',
-              color: 'var(--text-secondary)',
+              backgroundColor: 'var(--color-primary-subtle)',
+              color: 'var(--color-primary)',
               letterSpacing: '0.04em'
             }}
           >

@@ -10,9 +10,20 @@
 
 export type ThemeMode = 'dark' | 'light';
 
+/**
+ * Infosys Brand Palette
+ * Canonical corporate blue used for all accents, primary actions and focus states.
+ */
+const BRAND = {
+  blue: '#007CC3',        // Canonical Infosys blue (wordmark)
+  blueDeep: '#005B91',    // Darker shade for light-mode button / hover
+  blueBright: '#2A9FE0',  // Brightened azure for legibility on near-black surfaces
+  blueBrightHi: '#4FB3E8' // Hover state on dark surfaces
+};
+
 // Shared Typography and Corner Radii
 const SHARED_TYPOGRAPHY = {
-  sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  sans: "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif",
   mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
 };
 
@@ -43,15 +54,24 @@ export const DARK_THEME = {
 
     borderSubtle: '#27272a',   // Standard structural borders
     borderMedium: '#3f3f46',   // Input borders, upload zone dash
-    borderFocus: '#71717a',    // Focused input outline
+    borderFocus: BRAND.blueBright, // Focused input outline (Infosys blue)
 
-    btnPrimaryBg: '#fafafa',
-    btnPrimaryText: '#09090b',
-    btnPrimaryHover: '#e4e4e7',
+    btnPrimaryBg: BRAND.blue,      // Infosys-blue primary CTA
+    btnPrimaryText: '#ffffff',
+    btnPrimaryHover: '#1E90D4',
 
-    accent: '#fafafa',
+    accent: BRAND.blueBright,
 
-    statusOnline: '#fafafa',
+    // Brand accent system (consumed as --color-primary across components)
+    colorPrimary: BRAND.blueBright,
+    colorPrimaryHover: BRAND.blueBrightHi,
+    colorPrimarySubtle: 'rgba(42, 159, 224, 0.14)',
+    ring: 'rgba(42, 159, 224, 0.35)',
+
+    shadowSm: '0 1px 2px rgba(0, 0, 0, 0.45)',
+    shadowMd: '0 6px 20px rgba(0, 0, 0, 0.55)',
+
+    statusOnline: '#22c55e',
     statusOffline: '#52525b'
   }
 } as const;
@@ -76,15 +96,24 @@ export const LIGHT_THEME = {
 
     borderSubtle: '#e4e4e7',   // Clean light divider
     borderMedium: '#d4d4d8',   // Medium input borders
-    borderFocus: '#18181b',    // Sharp focused input outline
+    borderFocus: BRAND.blue,   // Infosys-blue focused input outline
 
-    btnPrimaryBg: '#09090b',   // Solid black button
-    btnPrimaryText: '#ffffff', // White button text
-    btnPrimaryHover: '#27272a',
+    btnPrimaryBg: BRAND.blueDeep,  // Deep Infosys blue (AA contrast with white)
+    btnPrimaryText: '#ffffff',     // White button text
+    btnPrimaryHover: BRAND.blue,
 
-    accent: '#09090b',
+    accent: BRAND.blue,
 
-    statusOnline: '#09090b',
+    // Brand accent system (consumed as --color-primary across components)
+    colorPrimary: BRAND.blue,
+    colorPrimaryHover: BRAND.blueDeep,
+    colorPrimarySubtle: 'rgba(0, 124, 195, 0.08)',
+    ring: 'rgba(0, 124, 195, 0.30)',
+
+    shadowSm: '0 1px 2px rgba(16, 24, 40, 0.06)',
+    shadowMd: '0 6px 20px rgba(16, 24, 40, 0.10)',
+
+    statusOnline: '#16a34a',
     statusOffline: '#a1a1aa'
   }
 } as const;
@@ -143,6 +172,16 @@ export function applyTheme(mode: ThemeMode = 'dark'): void {
   root.style.setProperty('--btn-primary-hover', theme.colors.btnPrimaryHover);
 
   root.style.setProperty('--accent', theme.colors.accent);
+
+  // Infosys brand accent system (used app-wide via --color-primary)
+  root.style.setProperty('--color-primary', theme.colors.colorPrimary);
+  root.style.setProperty('--color-primary-hover', theme.colors.colorPrimaryHover);
+  root.style.setProperty('--color-primary-subtle', theme.colors.colorPrimarySubtle);
+  root.style.setProperty('--ring', theme.colors.ring);
+
+  // Elevation
+  root.style.setProperty('--shadow-sm', theme.colors.shadowSm);
+  root.style.setProperty('--shadow-md', theme.colors.shadowMd);
 
   root.style.setProperty('--status-online', theme.colors.statusOnline);
   root.style.setProperty('--status-offline', theme.colors.statusOffline);
