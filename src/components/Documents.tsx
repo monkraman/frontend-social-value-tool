@@ -157,7 +157,7 @@ export const Documents: React.FC = () => {
     setConfirmModalState({
       isOpen: true,
       title: 'Archive Document',
-      badge: 'Soft Delete (Audit Preserved)',
+      badge: 'Can be restored',
       variant: 'warning',
       confirmText: 'Archive Document',
       message: (
@@ -166,7 +166,7 @@ export const Documents: React.FC = () => {
             Are you sure you want to archive <strong>"{filename}"</strong>?
           </p>
           <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            This document will be immediately excluded from all RAG vector similarity searches, but its metadata and audit history will remain preserved in accordance with statutory compliance.
+            It will stop being used in searches and proposals straight away. Its details and audit history are kept, so you can restore it later.
           </p>
         </div>
       ),
@@ -189,9 +189,9 @@ export const Documents: React.FC = () => {
     setConfirmModalState({
       isOpen: true,
       title: 'Permanently Delete Document',
-      badge: 'Irreversible Action',
+      badge: 'Cannot be undone',
       variant: 'danger',
-      confirmText: 'Permanently Erase',
+      confirmText: 'Delete permanently',
       message: (
         <div>
           <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-primary)' }}>
@@ -208,7 +208,7 @@ export const Documents: React.FC = () => {
               lineHeight: 1.45
             }}
           >
-            <strong style={{ color: 'var(--text-primary)' }}>PERMANENT DELETION WARNING:</strong> All text chunks and 768-dimensional vector embeddings for this document will be completely erased from PostgreSQL. This action cannot be undone.
+            <strong style={{ color: 'var(--text-primary)' }}>This is permanent.</strong> Everything extracted from this document will be erased from the repository, and it can't be restored afterwards.
           </div>
         </div>
       ),
@@ -255,9 +255,10 @@ export const Documents: React.FC = () => {
     <div style={{ width: '100%', maxWidth: '1440px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Header */}
       <div>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Documents</h2>
-        <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-          Manage your tender evidence, case studies, and reference materials ({activeDocs.length} files)
+        <div className="eyebrow" style={{ marginBottom: '0.3rem' }}>Knowledge</div>
+        <h2 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>Repository</h2>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
+          Your tender evidence, case studies and reference material, {activeDocs.length} {activeDocs.length === 1 ? 'file' : 'files'} in use.
         </p>
       </div>
 
@@ -270,11 +271,11 @@ export const Documents: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '0.85rem',
-          padding: '1.1rem 1.5rem',
-          border: isDragging ? '2px dashed var(--border-focus)' : '1px dashed var(--border-medium)',
+          gap: '1rem',
+          padding: '1.4rem 1.5rem',
+          border: isDragging ? '2px dashed var(--color-primary)' : '1.5px dashed var(--color-primary-border)',
           borderRadius: 'var(--radius-md)',
-          backgroundColor: isDragging ? 'var(--bg-muted)' : 'var(--bg-surface)',
+          backgroundColor: isDragging ? 'var(--color-primary-subtle)' : 'var(--bg-surface)',
           cursor: isUploading ? 'not-allowed' : 'pointer',
           transition: 'all 0.15s ease',
           position: 'relative'
@@ -289,9 +290,11 @@ export const Documents: React.FC = () => {
           onChange={handleFileUpload}
           disabled={isUploading}
         />
-        <UploadCloud size={24} style={{ color: isDragging ? 'var(--text-primary)' : 'var(--text-secondary)', flexShrink: 0 }} />
+        <span className="icon-badge" style={{ width: '44px', height: '44px' }}>
+          <UploadCloud size={22} />
+        </span>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-          <div style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+          <div style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-primary)' }}>
             {batchStatus ? (
               <span>Uploading {batchStatus.current} of {batchStatus.total}: {batchStatus.filename}...</span>
             ) : isUploading ? (
@@ -302,8 +305,8 @@ export const Documents: React.FC = () => {
               'Upload reference documents'
             )}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            Drag and drop or click to browse (PDF, Word, Excel, Markdown)
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            Drag files here or click to browse. PDF, Word, Excel and Markdown are supported.
           </div>
         </div>
       </div>
@@ -312,10 +315,10 @@ export const Documents: React.FC = () => {
         <div
           style={{
             padding: '0.65rem 0.85rem',
-            backgroundColor: 'var(--bg-card)',
-            border: '1px solid var(--border-medium)',
-            borderRadius: 'var(--radius-sm, 6px)',
-            fontSize: '0.8125rem',
+            backgroundColor: 'var(--color-primary-subtle)',
+            border: '1px solid var(--color-primary-border)',
+            borderRadius: 'var(--radius-md)',
+            fontSize: '0.84rem',
             color: 'var(--text-primary)',
             display: 'flex',
             alignItems: 'center',
@@ -324,7 +327,7 @@ export const Documents: React.FC = () => {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {statusMessage.isError ? <AlertTriangle size={15} style={{ color: 'var(--text-primary)' }} /> : <CheckCircle2 size={15} style={{ color: 'var(--text-primary)' }} />}
+            {statusMessage.isError ? <AlertTriangle size={15} style={{ color: '#D64545' }} /> : <CheckCircle2 size={15} style={{ color: 'var(--color-primary)' }} />}
             <span>{statusMessage.text}</span>
           </div>
           <button
@@ -342,6 +345,7 @@ export const Documents: React.FC = () => {
           backgroundColor: 'var(--bg-surface)',
           border: '1px solid var(--border-subtle)',
           borderRadius: 'var(--radius-md)',
+          boxShadow: 'var(--shadow-sm)',
           overflow: 'hidden'
         }}
       >
@@ -354,39 +358,21 @@ export const Documents: React.FC = () => {
             alignItems: 'center'
           }}
         >
-          <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-            Indexed Document Repository
-          </div>
-          <div style={{ display: 'flex', gap: '0.35rem', backgroundColor: 'var(--bg-muted)', padding: '0.2rem', borderRadius: 'var(--radius-sm, 6px)' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+            Documents
+          </h3>
+          <div className="segmented" role="tablist" aria-label="Document status">
             <button
               onClick={() => handleTabChange('active')}
-              style={{
-                background: activeFilter === 'active' ? 'var(--btn-primary-bg)' : 'transparent',
-                color: activeFilter === 'active' ? 'var(--btn-primary-text)' : 'var(--text-secondary)',
-                border: 'none',
-                borderRadius: 'var(--radius-sm, 4px)',
-                padding: '0.25rem 0.65rem',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                fontWeight: activeFilter === 'active' ? 600 : 500,
-                transition: 'all 0.15s ease'
-              }}
+              className={activeFilter === 'active' ? 'is-active' : ''}
+              style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}
             >
               Active ({activeDocs.length})
             </button>
             <button
               onClick={() => handleTabChange('archived')}
-              style={{
-                background: activeFilter === 'archived' ? 'var(--btn-primary-bg)' : 'transparent',
-                color: activeFilter === 'archived' ? 'var(--btn-primary-text)' : 'var(--text-secondary)',
-                border: 'none',
-                borderRadius: 'var(--radius-sm, 4px)',
-                padding: '0.25rem 0.65rem',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                fontWeight: activeFilter === 'archived' ? 600 : 500,
-                transition: 'all 0.15s ease'
-              }}
+              className={activeFilter === 'archived' ? 'is-active' : ''}
+              style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}
             >
               Archived ({archivedDocs.length})
             </button>
@@ -411,7 +397,7 @@ export const Documents: React.FC = () => {
               <Search size={14} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input
                 type="text"
-                placeholder="Search documents by filename..."
+                placeholder="Search by file name…"
                 value={docSearchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 style={{
@@ -504,18 +490,29 @@ export const Documents: React.FC = () => {
             paginatedDocs.map((doc, idx) => (
               <div
                 key={doc.id}
+                className="row-hover"
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  padding: '0.75rem 1.25rem',
+                  padding: '0.85rem 1.25rem',
                   borderBottom: idx !== paginatedDocs.length - 1 ? '1px solid var(--border-subtle)' : 'none',
                   fontSize: '0.8125rem',
                   opacity: doc.is_archived ? 0.75 : 1
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                  <FileText size={16} style={{ color: doc.is_archived ? 'var(--text-muted)' : 'var(--text-secondary)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                  <span
+                    className="icon-badge"
+                    style={{
+                      width: '34px',
+                      height: '34px',
+                      borderRadius: 'var(--radius-md)',
+                      opacity: doc.is_archived ? 0.6 : 1
+                    }}
+                  >
+                    <FileText size={16} />
+                  </span>
                   <div>
                     <div style={{ color: 'var(--text-primary)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       {doc.filename}
@@ -536,8 +533,11 @@ export const Documents: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      {doc.document_type.toUpperCase()} • {doc.chunks_count} sections • {formatDate(doc.created_at)}
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.1rem' }}>
+                      <span className="tag-mono" style={{ fontSize: '0.66rem', padding: '0.05rem 0.4rem' }}>{doc.document_type.toUpperCase()}</span>
+                      <span>{doc.chunks_count} sections</span>
+                      <span>·</span>
+                      <span>Added {formatDate(doc.created_at)}</span>
                     </div>
                   </div>
                 </div>
@@ -546,19 +546,9 @@ export const Documents: React.FC = () => {
                   {/* Preview Button */}
                   <button
                     onClick={() => handleOpenChunkInspector(doc)}
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-sm, 4px)',
-                      color: 'var(--text-primary)',
-                      cursor: 'pointer',
-                      padding: '0.25rem 0.55rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                      fontSize: '0.75rem'
-                    }}
-                    title="Preview extracted content"
+                    className="btn-secondary"
+                    style={{ padding: '0.3rem 0.65rem', fontSize: '0.76rem', gap: '0.35rem', borderRadius: 'var(--radius-sm)' }}
+                    title="Preview what was extracted from this file"
                   >
                     <Eye size={13} />
                     <span>Preview</span>
@@ -567,19 +557,9 @@ export const Documents: React.FC = () => {
                   {!doc.is_archived ? (
                     <button
                       onClick={() => handleArchive(doc.id, doc.filename)}
-                      style={{
-                        background: 'transparent',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-sm, 4px)',
-                        color: 'var(--text-secondary)',
-                        cursor: 'pointer',
-                        padding: '0.25rem 0.5rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                        fontSize: '0.75rem'
-                      }}
-                      title="Soft delete (exclude from RAG search while preserving audit)"
+                      className="btn-secondary"
+                      style={{ padding: '0.3rem 0.65rem', fontSize: '0.76rem', gap: '0.35rem', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)' }}
+                      title="Stop using this file in searches and proposals (can be restored)"
                     >
                       <Archive size={13} />
                       <span>Archive</span>
@@ -588,41 +568,21 @@ export const Documents: React.FC = () => {
                     <>
                       <button
                         onClick={() => handleRestore(doc.id, doc.filename)}
-                        style={{
-                          background: 'transparent',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: 'var(--radius-sm, 4px)',
-                          color: 'var(--text-primary)',
-                          cursor: 'pointer',
-                          padding: '0.25rem 0.5rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          fontSize: '0.75rem'
-                        }}
-                        title="Restore document to active search"
+                        className="btn-secondary"
+                        style={{ padding: '0.3rem 0.65rem', fontSize: '0.76rem', gap: '0.35rem', borderRadius: 'var(--radius-sm)' }}
+                        title="Put this file back into use"
                       >
                         <RotateCcw size={13} />
                         <span>Restore</span>
                       </button>
                       <button
                         onClick={() => handleHardDelete(doc.id, doc.filename)}
-                        style={{
-                          background: 'transparent',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: 'var(--radius-sm, 4px)',
-                          color: 'var(--text-secondary)',
-                          cursor: 'pointer',
-                          padding: '0.25rem 0.5rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          fontSize: '0.75rem'
-                        }}
-                        title="Permanently erase document & vector chunks from PostgreSQL"
+                        className="btn-secondary"
+                        style={{ padding: '0.3rem 0.65rem', fontSize: '0.76rem', gap: '0.35rem', borderRadius: 'var(--radius-sm)', color: '#C53B3B' }}
+                        title="Erase this file and everything extracted from it"
                       >
                         <Trash2 size={13} />
-                        <span>Hard Delete</span>
+                        <span>Delete</span>
                       </button>
                     </>
                   )}
@@ -734,7 +694,7 @@ export const Documents: React.FC = () => {
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+            backgroundColor: 'var(--overlay)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -754,7 +714,7 @@ export const Documents: React.FC = () => {
               maxHeight: '85vh',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)',
+              boxShadow: 'var(--shadow-lg)',
               overflow: 'hidden'
             }}
             onClick={(e) => e.stopPropagation()}
@@ -770,15 +730,7 @@ export const Documents: React.FC = () => {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div
-                  style={{
-                    padding: '0.5rem',
-                    borderRadius: 'var(--radius-sm, 6px)',
-                    backgroundColor: 'var(--bg-muted)',
-                    border: '1px solid var(--border-subtle)',
-                    color: 'var(--text-primary)'
-                  }}
-                >
+                <div className="icon-badge" style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)' }}>
                   <Layers size={20} />
                 </div>
                 <div>
@@ -786,7 +738,7 @@ export const Documents: React.FC = () => {
                     {inspectingDoc.filename}
                   </h3>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                    {docChunks.length} chunks indexed in pgvector • Format: {inspectingDoc.document_type.toUpperCase()}
+                    {docChunks.length} passages extracted · {inspectingDoc.document_type.toUpperCase()}
                   </div>
                 </div>
               </div>
@@ -811,7 +763,7 @@ export const Documents: React.FC = () => {
               <Search size={15} style={{ color: 'var(--text-muted)' }} />
               <input
                 type="text"
-                placeholder="Search within this document's chunks..."
+                placeholder="Search within this document…"
                 value={chunkFilterQuery}
                 onChange={(e) => setChunkFilterQuery(e.target.value)}
                 style={{
@@ -846,11 +798,11 @@ export const Documents: React.FC = () => {
             >
               {isLoadingChunks ? (
                 <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  Loading vectorized chunks from PostgreSQL...
+                  Loading passages…
                 </div>
               ) : filteredChunks.length === 0 ? (
                 <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                  {chunkFilterQuery ? `No chunks match "${chunkFilterQuery}"` : 'No chunks found for this document.'}
+                  {chunkFilterQuery ? `No passages match "${chunkFilterQuery}"` : 'Nothing was extracted from this document.'}
                 </div>
               ) : (
                 filteredChunks.map((chunk) => {
@@ -860,11 +812,12 @@ export const Documents: React.FC = () => {
                   return (
                     <div
                       key={chunk.id}
+                      className="card-accent"
                       style={{
                         backgroundColor: 'var(--bg-card)',
                         border: '1px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-sm, 6px)',
-                        padding: '1rem',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '1rem 1.15rem',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '0.5rem'
@@ -873,18 +826,8 @@ export const Documents: React.FC = () => {
                       {/* Chunk Header */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span
-                            style={{
-                              backgroundColor: 'var(--bg-muted)',
-                              border: '1px solid var(--border-subtle)',
-                              color: 'var(--text-primary)',
-                              fontWeight: 600,
-                              padding: '0.15rem 0.45rem',
-                              borderRadius: '4px',
-                              fontSize: '0.7rem'
-                            }}
-                          >
-                            Chunk #{chunk.chunk_index + 1}
+                          <span className="tag-mono" style={{ fontSize: '0.7rem' }}>
+                            Passage {chunk.chunk_index + 1}
                           </span>
                           <span style={{ color: 'var(--text-muted)' }}>{wordCount} words</span>
                           {chunk.metadata?.page_number && (
@@ -894,17 +837,13 @@ export const Documents: React.FC = () => {
 
                         <button
                           onClick={() => handleCopyChunk(chunk.id, chunk.content)}
+                          className="btn-secondary"
                           style={{
-                            background: 'transparent',
-                            border: '1px solid var(--border-subtle)',
-                            borderRadius: '4px',
-                            color: isCopied ? 'var(--text-primary)' : 'var(--text-secondary)',
-                            padding: '0.2rem 0.45rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
+                            padding: '0.2rem 0.5rem',
                             gap: '0.3rem',
-                            fontSize: '0.7rem'
+                            fontSize: '0.72rem',
+                            borderRadius: 'var(--radius-sm)',
+                            color: isCopied ? 'var(--color-primary-text)' : undefined
                           }}
                         >
                           {isCopied ? <Check size={11} /> : <Copy size={11} />}
@@ -916,9 +855,9 @@ export const Documents: React.FC = () => {
                       <p
                         style={{
                           margin: 0,
-                          fontSize: '0.8125rem',
+                          fontSize: '0.875rem',
                           color: 'var(--text-secondary)',
-                          lineHeight: 1.5,
+                          lineHeight: 1.65,
                           whiteSpace: 'pre-wrap',
                           fontFamily: 'inherit'
                         }}
@@ -943,7 +882,7 @@ export const Documents: React.FC = () => {
                 color: 'var(--text-muted)'
               }}
             >
-              <span>Showing {filteredChunks.length} of {docChunks.length} chunks</span>
+              <span>Showing {filteredChunks.length} of {docChunks.length} passages</span>
               <button
                 onClick={() => setInspectingDoc(null)}
                 className="btn-secondary"

@@ -9,18 +9,27 @@ import {
   AlertCircle,
   FileText,
   Search,
-  Brain,
   Copy,
   Check,
   Calendar,
   Users,
   PoundSterling,
-  Sparkles,
   ShieldCheck,
   MessageSquarePlus,
   RefreshCw,
   Loader,
-  X
+  X,
+  ListChecks,
+  ScrollText,
+  PencilLine,
+  MapPin,
+  Handshake,
+  UserCheck,
+  CalendarClock,
+  BarChart3,
+  TrendingUp,
+  ClipboardCheck,
+  Info
 } from 'lucide-react';
 import { formatGbp, formatPercent } from '../utils/formatters';
 
@@ -134,6 +143,8 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
   const deliveryCost = currentPkg?.indicative_delivery_cost_gbp || 0;
   const svroiMultiplier = deliveryCost > 0 ? (currentTotal / deliveryCost).toFixed(1) : null;
   const isTargetAchieved = currentCalc?.target_met ?? false;
+  // Thread holds (brief, reply) pairs: the first pair is the original draft, each later pair a revision
+  const revisionCount = Math.max(0, Math.floor(conversationTurnCount / 2) - 1);
 
   // Copy Tender-Ready Text to Clipboard
   const handleCopyTenderText = () => {
@@ -205,17 +216,19 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
             backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-md)',
+            boxShadow: 'var(--shadow-sm)',
             display: 'flex',
             flexDirection: 'column',
             gap: '0.75rem',
             marginTop: '1rem'
           }}
+          className="card-accent"
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontWeight: 600 }}>
-            <AlertCircle size={16} />
-            <span>Non-Tender Query Detected</span>
+            <Info size={17} style={{ color: 'var(--color-primary)' }} />
+            <span>This doesn't look like a tender brief yet</span>
           </div>
-          <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', fontStyle: 'italic', padding: '0.5rem 0.75rem', backgroundColor: 'var(--bg-muted)', borderRadius: 'var(--radius-sm)' }}>
+          <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', fontStyle: 'italic', padding: '0.55rem 0.85rem', backgroundColor: 'var(--color-primary-subtle)', borderLeft: '3px solid var(--color-primary-border)', borderRadius: 'var(--radius-sm)' }}>
             "{promptFeedback.prompt}"
           </div>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', margin: 0 }}>
@@ -230,7 +243,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
               className="btn-primary"
               style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem' }}
             >
-              Insert Client RFP Template
+              Use a sample tender brief
             </button>
             {onNavigateTab && (
               <button
@@ -238,7 +251,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                 className="btn-secondary"
                 style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem' }}
               >
-                <FileText size={12} /> Open Knowledge Documents
+                <FileText size={12} /> Open Repository
               </button>
             )}
             {onNavigateTab && (
@@ -247,7 +260,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                 className="btn-secondary"
                 style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem' }}
               >
-                <Search size={12} /> Open Vector Search
+                <Search size={12} /> Open Evidence Search
               </button>
             )}
           </div>
@@ -271,7 +284,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', fontWeight: 600, fontSize: '0.9rem' }}>
               <AlertCircle size={18} />
-              <span>AI Pipeline Notice & Error</span>
+              <span>We couldn't generate this response</span>
             </div>
             <span
               style={{
@@ -284,7 +297,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                 letterSpacing: '0.02em'
               }}
             >
-              Anti-Hallucination Safe Mode
+              Stopped safely
             </span>
           </div>
 
@@ -304,7 +317,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
           </div>
 
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-            To protect your tender integrity, the system halted generation instead of fabricating unverified initiatives or hallucinated costs.
+            To keep your bid accurate, the tool stopped rather than fill the gaps with unverified initiatives or costs.
           </p>
 
           <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
@@ -314,7 +327,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                 className="btn-primary"
                 style={{ fontSize: '0.75rem', padding: '0.4rem 0.85rem', gap: '0.35rem' }}
               >
-                <RefreshCw size={13} /> Retry Generation
+                <RefreshCw size={13} /> Try again
               </button>
             )}
             {onClearError && (
@@ -332,22 +345,64 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
 
       {/* Empty State */}
       {!result && !isLoading && !promptFeedback && !error && (
-        <div style={{ textAlign: 'center', padding: '3.5rem 1rem 1.5rem 1rem' }}>
-          <div style={{ display: 'inline-flex', padding: '0.6rem', borderRadius: '50%', backgroundColor: 'var(--bg-muted)', marginBottom: '1rem', color: 'var(--text-primary)' }}>
-            <Brain size={28} />
+        <div style={{ textAlign: 'center', padding: '3.5rem 1rem 1.5rem 1rem', animation: 'fadeIn 0.25s ease' }}>
+          <div className="icon-badge" style={{ width: '56px', height: '56px', marginBottom: '1.1rem' }}>
+            <ScrollText size={26} />
           </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+          <div className="eyebrow" style={{ marginBottom: '0.5rem' }}>Bid Studio</div>
+          <h1 style={{ fontSize: '2rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.6rem', lineHeight: 1.2 }}>
             Social Value RFP Response Builder
           </h1>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', maxWidth: '580px', margin: '0 auto 1.5rem auto', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto 1.75rem auto', lineHeight: 1.65 }}>
             Drafts initiative options against your stated priorities, shows POC proxy calculations, and highlights the evidence and delivery checks needed before a bid commitment.
           </p>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+              gap: '0.75rem',
+              maxWidth: '760px',
+              margin: '0 auto 1.75rem auto',
+              textAlign: 'left'
+            }}
+          >
+            {[
+              { n: 1, title: 'Describe the tender', body: 'Client, contract value, term, weighting and the outcomes they care about.' },
+              { n: 2, title: 'Compare three options', body: 'Core, expanded and place-based packages, each with its own figures.' },
+              { n: 3, title: 'Refine and reuse', body: 'Ask for changes, check the evidence, then copy the draft into your bid.' }
+            ].map((step) => (
+              <div
+                key={step.n}
+                style={{
+                  padding: '0.9rem 1rem',
+                  backgroundColor: 'var(--bg-surface)',
+                  border: '1px solid var(--border-subtle)',
+                  borderTop: '3px solid var(--color-primary)',
+                  borderRadius: 'var(--radius-md)',
+                  boxShadow: 'var(--shadow-sm)'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
+                  <span
+                    className="icon-badge"
+                    style={{ width: '22px', height: '22px', fontSize: '0.72rem', fontWeight: 700 }}
+                  >
+                    {step.n}
+                  </span>
+                  <strong style={{ fontSize: '0.875rem' }}>{step.title}</strong>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{step.body}</div>
+              </div>
+            ))}
+          </div>
+
           <button
             onClick={() => setInputText(DEFAULT_SAMPLE_PROMPT)}
             className="btn-secondary"
             style={{ fontSize: '0.8125rem', gap: '0.4rem' }}
           >
-            <Sparkles size={14} /> Insert Client Sample Specification
+            <FileText size={14} /> Use a sample tender brief
           </button>
         </div>
       )}
@@ -355,11 +410,14 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
       {/* Loading Indicator */}
       {isLoading && (
         <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-secondary)' }}>
-          <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-            <Brain size={18} className="spin-icon" /> Synthesizing Social Value Response Packages...
+          <div className="icon-badge" style={{ width: '48px', height: '48px', marginBottom: '1rem' }}>
+            <Loader size={22} className="spin-icon" />
           </div>
-          <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-            Retrieving available documents, mapping candidate measures, and calculating illustrative POC values.
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
+            Preparing your response options…
+          </div>
+          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+            Reading the repository, matching National TOMs measures and working out illustrative values.
           </div>
         </div>
       )}
@@ -372,8 +430,8 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
             <div
               style={{
                 padding: '0.9rem 1.25rem',
-                backgroundColor: 'rgba(34, 197, 94, 0.08)',
-                border: '1px solid rgba(34, 197, 94, 0.35)',
+                backgroundColor: 'var(--color-primary-subtle)',
+                border: '1px solid var(--color-primary-border)',
                 borderRadius: 'var(--radius-md)',
                 display: 'flex',
                 alignItems: 'flex-start',
@@ -386,7 +444,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                   width: '28px',
                   height: '28px',
                   borderRadius: '50%',
-                  backgroundColor: '#22c55e',
+                  backgroundColor: 'var(--btn-primary-bg)',
                   color: '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
@@ -395,24 +453,25 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                   marginTop: '0.1rem'
                 }}
               >
-                <Sparkles size={15} />
+                <PencilLine size={14} />
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem', flexWrap: 'wrap' }}>
                   <strong style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>
-                    {conversationTurnCount > 1 ? `⚡ Refined in Turn ${conversationTurnCount}` : '⚡ Proposal Updated with Feedback'}
+                    {revisionCount > 1 ? `Revision ${revisionCount} applied` : 'Proposal updated with your feedback'}
                   </strong>
                   <span
                     style={{
                       fontSize: '0.68rem',
                       padding: '0.12rem 0.5rem',
                       borderRadius: '999px',
-                      backgroundColor: 'rgba(34, 197, 94, 0.18)',
-                      color: '#15803d',
+                      backgroundColor: 'var(--bg-surface)',
+                      border: '1px solid var(--color-primary-border)',
+                      color: 'var(--color-primary-text)',
                       fontWeight: 600
                     }}
                   >
-                    AI Context Retained
+                    Earlier changes kept
                   </span>
                 </div>
                 <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
@@ -425,36 +484,41 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
           {/* Unified Clean Tender Overview Card */}
           <div
             style={{
-              padding: '1rem 1.25rem',
+              padding: '1.15rem 1.4rem',
               backgroundColor: 'var(--bg-surface)',
               border: '1px solid var(--border-subtle)',
+              borderTop: '3px solid var(--color-primary)',
               borderRadius: 'var(--radius-md)',
+              boxShadow: 'var(--shadow-sm)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '0.85rem'
+              gap: '0.9rem'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
-                <strong style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>
-                  {result.opportunity.client}
-                </strong>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  • {result.opportunity.location}
-                </span>
+              <div>
+                <div className="eyebrow" style={{ marginBottom: '0.2rem' }}>Tender opportunity</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <h2 style={{ fontSize: '1.35rem', color: 'var(--text-primary)', lineHeight: 1.25 }}>
+                    {result.opportunity.client}
+                  </h2>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <MapPin size={13} style={{ color: 'var(--color-primary)' }} /> {result.opportunity.location}
+                  </span>
+                </div>
               </div>
               <span
                 style={{
-                  fontSize: '0.75rem',
+                  fontSize: '0.78rem',
                   fontWeight: 600,
-                  padding: '0.2rem 0.55rem',
-                  borderRadius: 'var(--radius-sm)',
-                  backgroundColor: 'var(--bg-muted)',
-                  color: isTargetAchieved ? 'var(--status-online, #22c55e)' : 'var(--text-primary)',
-                  border: '1px solid var(--border-subtle)'
+                  padding: '0.3rem 0.7rem',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: isTargetAchieved ? 'rgba(30, 158, 90, 0.10)' : 'rgba(202, 138, 4, 0.10)',
+                  color: isTargetAchieved ? 'var(--status-online)' : '#B7791F',
+                  border: `1px solid ${isTargetAchieved ? 'rgba(30, 158, 90, 0.30)' : 'rgba(202, 138, 4, 0.30)'}`
                 }}
               >
-                {isTargetAchieved ? 'Meets Target' : 'Below Target'} ({formatPercent(currentPercent)})
+                {isTargetAchieved ? 'Meets target' : 'Below target'} · {formatPercent(currentPercent)}
               </span>
             </div>
 
@@ -462,28 +526,32 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                gap: '0.85rem',
-                paddingTop: '0.65rem',
+                gap: '1rem',
+                paddingTop: '0.85rem',
                 borderTop: '1px solid var(--border-subtle)'
               }}
             >
               <div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.15rem' }}>Contract Value</span>
-                <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{formatGbp(result.opportunity.contract_value_gbp)}</strong>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginLeft: '0.35rem' }}>({result.opportunity.duration_years} Years)</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.15rem' }}>Contract value</span>
+                <strong className="display-num" style={{ fontSize: '1.15rem', color: 'var(--text-primary)' }}>{formatGbp(result.opportunity.contract_value_gbp)}</strong>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.4rem' }}>over {result.opportunity.duration_years} years</span>
               </div>
 
               <div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.15rem' }}>Social Value Target</span>
-                <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{formatGbp(targetAmount)}</strong>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginLeft: '0.35rem' }}>({result.opportunity.social_value_weighting_percent}% Weighting)</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.15rem' }}>Social value target</span>
+                <strong className="display-num" style={{ fontSize: '1.15rem', color: 'var(--color-primary-text)' }}>{formatGbp(targetAmount)}</strong>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.4rem' }}>{result.opportunity.social_value_weighting_percent}% weighting</span>
               </div>
 
               {result.opportunity.priorities && result.opportunity.priorities.length > 0 && (
                 <div>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.15rem' }}>Key Priorities</span>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                    {result.opportunity.priorities.join(', ')}
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.3rem' }}>Client priorities</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                    {result.opportunity.priorities.map((pr, i) => (
+                      <span key={i} className="badge-mono" style={{ fontSize: '0.74rem' }}>
+                        {pr}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
@@ -492,52 +560,25 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
 
           {/* Package options and quick actions */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.65rem' }}>
-            <div style={{ display: 'flex', gap: '0.35rem', backgroundColor: 'var(--bg-surface)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+            <div className="segmented" role="tablist" aria-label="Response templates" style={{ flexWrap: 'wrap' }}>
               <button
                 onClick={() => setActivePackage('core')}
-                style={{
-                  padding: '0.45rem 0.85rem',
-                  borderRadius: 'var(--radius-sm)',
-                  border: 'none',
-                  background: activePackage === 'core' ? 'var(--btn-primary-bg)' : 'transparent',
-                  color: activePackage === 'core' ? 'var(--btn-primary-text)' : 'var(--text-secondary)',
-                  fontSize: '0.8125rem',
-                  fontWeight: activePackage === 'core' ? 600 : 400,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
+                className={activePackage === 'core' ? 'is-active' : ''}
+                style={{ padding: '0.5rem 0.9rem', fontSize: '0.84rem' }}
               >
                 Template 1: Core (Baseline)
               </button>
               <button
                 onClick={() => setActivePackage('enhanced')}
-                style={{
-                  padding: '0.45rem 0.85rem',
-                  borderRadius: 'var(--radius-sm)',
-                  border: 'none',
-                  background: activePackage === 'enhanced' ? 'var(--btn-primary-bg)' : 'transparent',
-                  color: activePackage === 'enhanced' ? 'var(--btn-primary-text)' : 'var(--text-secondary)',
-                  fontSize: '0.8125rem',
-                  fontWeight: activePackage === 'enhanced' ? 600 : 400,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
+                className={activePackage === 'enhanced' ? 'is-active' : ''}
+                style={{ padding: '0.5rem 0.9rem', fontSize: '0.84rem' }}
               >
                 Template 2: Expanded option
               </button>
               <button
                 onClick={() => setActivePackage('localised')}
-                style={{
-                  padding: '0.45rem 0.85rem',
-                  borderRadius: 'var(--radius-sm)',
-                  border: 'none',
-                  background: activePackage === 'localised' ? 'var(--btn-primary-bg)' : 'transparent',
-                  color: activePackage === 'localised' ? 'var(--btn-primary-text)' : 'var(--text-secondary)',
-                  fontSize: '0.8125rem',
-                  fontWeight: activePackage === 'localised' ? 600 : 400,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
+                className={activePackage === 'localised' ? 'is-active' : ''}
+                style={{ padding: '0.5rem 0.9rem', fontSize: '0.84rem' }}
               >
                 Template 3: Localised (Place Based)
               </button>
@@ -550,7 +591,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                 style={{ padding: '0.45rem 0.85rem', fontSize: '0.75rem', gap: '0.35rem' }}
               >
                 {copiedTender ? <Check size={13} /> : <Copy size={13} />}
-                {copiedTender ? 'Copied to Clipboard!' : 'Copy Tender Response'}
+                {copiedTender ? 'Copied' : 'Copy tender response'}
               </button>
 
               {onExportJson && (
@@ -570,9 +611,9 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                 onClick={() => setShowAuditModal(true)}
                 className="btn-secondary"
                 style={{ padding: '0.45rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
-                title="View AI Reasoning Chain & PostgreSQL Vector Evidence"
+                title="See the sources and steps behind this proposal"
               >
-                <Brain size={13} /> Audit Trail
+                <ListChecks size={13} /> How it was built
               </button>
 
               <button onClick={onReset} className="btn-secondary" style={{ padding: '0.45rem 0.75rem', fontSize: '0.75rem' }}>
@@ -581,33 +622,6 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
             </div>
           </div>
 
-          {/* Refinement Feedback Notice Banner */}
-          {refinementNote && (
-            <div
-              style={{
-                padding: '0.75rem 1rem',
-                backgroundColor: 'var(--bg-surface)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-md)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.75rem',
-                fontSize: '0.8125rem'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
-                <Sparkles size={14} style={{ color: 'var(--text-secondary)' }} />
-                <span>
-                  <strong>Refinement Applied{conversationTurnCount > 1 ? ` (Turn ${conversationTurnCount})` : ''}:</strong> {refinementNote}
-                </span>
-              </div>
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                Proposal updated based on your feedback
-              </span>
-            </div>
-          )}
-
           {/* Active Package Detailed Card */}
           {currentPkg && (
             <div
@@ -615,33 +629,25 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                 backgroundColor: 'var(--bg-surface)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: 'var(--radius-md)',
-                padding: '1.25rem',
+                boxShadow: 'var(--shadow-sm)',
+                padding: '1.5rem',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '1.25rem'
+                gap: '1.5rem'
               }}
             >
               {/* Package Header with Financials & Commercial Assessment */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1rem' }}>
-                <div style={{ maxWidth: '620px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.25rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1.25rem' }}>
+                <div style={{ maxWidth: '640px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                    <h3 style={{ fontSize: '1.4rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0, lineHeight: 1.25 }}>
                       {currentPkg.name}
                     </h3>
-                    <span
-                      style={{
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        padding: '0.15rem 0.45rem',
-                        borderRadius: '4px',
-                        backgroundColor: 'var(--bg-muted)',
-                        color: 'var(--text-secondary)'
-                      }}
-                    >
+                    <span className="badge-mono" style={{ fontSize: '0.72rem' }}>
                       {activePackage === 'core' ? 'Core option' : activePackage === 'enhanced' ? 'Expanded option' : 'Place-focused option'}
                     </span>
                   </div>
-                  <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.35rem', lineHeight: 1.5, margin: '0.35rem 0 0 0' }}>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0.5rem 0 0 0' }}>
                     {currentPkg.rationale}
                   </p>
                 </div>
@@ -649,21 +655,24 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                 {/* Commercial Scorecard Pill */}
                 <div
                   style={{
-                    backgroundColor: 'var(--bg-card)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.75rem 1rem',
+                    backgroundColor: 'var(--color-primary-subtle)',
+                    border: '1px solid var(--color-primary-border)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '0.9rem 1.15rem',
                     textAlign: 'right',
-                    minWidth: '220px'
+                    minWidth: '240px'
                   }}
                 >
-                  <div style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.1rem' }}>
+                    Estimated social value
+                  </div>
+                  <div className="display-num" style={{ fontSize: '1.9rem', fontWeight: 600, color: 'var(--color-primary-text)', lineHeight: 1.15 }}>
                     {formatGbp(currentTotal)}
                   </div>
-                  <div style={{ fontSize: '0.775rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    {formatPercent(currentPercent)} Social Value Commitment
+                  <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    {formatPercent(currentPercent)} of contract value
                   </div>
-                  <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)', marginTop: '0.25rem', paddingTop: '0.25rem', borderTop: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.4rem', paddingTop: '0.4rem', borderTop: '1px solid var(--color-primary-border)' }}>
                     Est. Cost: {deliveryCost > 0 ? formatGbp(deliveryCost) : '£0'} {svroiMultiplier ? `• ${svroiMultiplier}x SVROI` : ''}
                   </div>
                 </div>
@@ -671,8 +680,11 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
 
               {/* Initiatives List */}
               <div>
-                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
-                  Proposed Initiatives ({currentPkg.initiatives.length})
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
+                  <h3 style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>Proposed initiatives</h3>
+                  <span className="badge-mono" style={{ fontSize: '0.72rem', padding: '0.1rem 0.5rem' }}>
+                    {currentPkg.initiatives.length}
+                  </span>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
@@ -681,49 +693,58 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                     return (
                       <div
                         key={idx}
+                        className="card-accent"
                         style={{
-                          padding: '1rem',
+                          padding: '1.1rem 1.2rem',
                           backgroundColor: 'var(--bg-card)',
                           border: '1px solid var(--border-subtle)',
-                          borderRadius: 'var(--radius-sm)',
+                          borderRadius: 'var(--radius-md)',
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: '0.5rem'
+                          gap: '0.6rem'
                         }}
                       >
                         {/* Title Row */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
+                            <span
+                              style={{
+                                width: '24px',
+                                height: '24px',
+                                borderRadius: '50%',
+                                backgroundColor: 'var(--btn-primary-bg)',
+                                color: '#FFFFFF',
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0
+                              }}
+                            >
+                              {idx + 1}
+                            </span>
+                            <strong style={{ fontSize: '0.98rem', color: 'var(--text-primary)' }}>{init.name}</strong>
                             {init.toms_metric_code && (
-                              <span className="tag-mono" style={{ fontWeight: 600 }}>
+                              <span className="tag-mono">
                                 {init.toms_metric_code}
                               </span>
                             )}
-                            <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{init.name}</strong>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>• {init.theme}</span>
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{init.theme}</span>
                           </div>
 
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                             {init.partner ? (
-                              <span
-                                style={{
-                                  fontSize: '0.72rem',
-                                  fontWeight: 500,
-                                  padding: '0.15rem 0.5rem',
-                                  borderRadius: '4px',
-                                  backgroundColor: 'var(--bg-muted)',
-                                  color: 'var(--text-primary)',
-                                  border: '1px solid var(--border-subtle)'
-                                }}
-                              >
-                                Partner: {init.partner}
+                              <span className="badge-mono" style={{ fontSize: '0.74rem', fontWeight: 600 }}>
+                                <Handshake size={12} />
+                                {init.partner}
                               </span>
                             ) : null}
                           </div>
                         </div>
 
                         {/* Description */}
-                        <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
                           {init.description}
                         </p>
 
@@ -733,28 +754,29 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                             display: 'flex',
                             flexWrap: 'wrap',
                             alignItems: 'center',
-                            gap: '0.65rem',
-                            padding: '0.4rem 0.65rem',
+                            gap: '0.75rem',
+                            padding: '0.5rem 0.75rem',
                             backgroundColor: 'var(--bg-surface)',
-                            borderRadius: '4px',
-                            fontSize: '0.75rem',
+                            border: '1px solid var(--border-subtle)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: '0.8rem',
                             color: 'var(--text-secondary)'
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                            <Calendar size={12} />
+                            <Calendar size={13} style={{ color: 'var(--color-primary)' }} />
                             <span>{init.delivery_mechanism}</span>
                           </div>
-                          <span>•</span>
+                          <span style={{ color: 'var(--border-medium)' }}>|</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                            <Users size={12} />
+                            <Users size={13} style={{ color: 'var(--color-primary)' }} />
                             <span>{init.target_beneficiaries}</span>
                           </div>
                           {init.indicative_cost_gbp != null && init.indicative_cost_gbp > 0 && (
                             <>
-                              <span>•</span>
+                              <span style={{ color: 'var(--border-medium)' }}>|</span>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--text-primary)' }}>
-                                <PoundSterling size={12} />
+                                <PoundSterling size={13} style={{ color: 'var(--color-primary)' }} />
                                 <span>Est. Cost: {formatGbp(init.indicative_cost_gbp)}</span>
                               </div>
                             </>
@@ -767,16 +789,16 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                             style={{
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '0.4rem',
-                              fontSize: '0.725rem',
+                              gap: '0.45rem',
+                              fontSize: '0.78rem',
                               color: 'var(--text-secondary)',
-                              backgroundColor: 'var(--bg-surface)',
-                              padding: '0.3rem 0.55rem',
-                              borderRadius: '4px',
-                              border: '1px solid var(--border-subtle)'
+                              backgroundColor: 'var(--color-primary-subtle)',
+                              padding: '0.4rem 0.65rem',
+                              borderRadius: 'var(--radius-sm)',
+                              border: '1px solid var(--color-primary-border)'
                             }}
                           >
-                            <FileText size={12} style={{ color: 'var(--color-primary, #3b82f6)', flexShrink: 0 }} />
+                            <FileText size={12} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
                             <span>
                               <strong style={{ color: 'var(--text-primary)' }}>Evidence:</strong> {init.evidence_source}
                             </span>
@@ -786,12 +808,25 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                         {/* Deterministic Formula Trail */}
                         {calc && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem' }}>
-                            <span className="tag-mono" style={{ color: 'var(--text-primary)' }}>
-                              Formula: {calc.calculation_formula}
+                            <span
+                              style={{
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: '0.74rem',
+                                color: 'var(--text-secondary)',
+                                backgroundColor: 'var(--bg-muted)',
+                                border: '1px solid var(--border-subtle)',
+                                borderRadius: 'var(--radius-sm)',
+                                padding: '0.2rem 0.5rem'
+                              }}
+                            >
+                              {calc.calculation_formula}
                             </span>
-                            <strong style={{ fontSize: '0.825rem', color: 'var(--text-primary)' }}>
-                              POC value: {formatGbp(calc.total_social_value_gbp)}
-                            </strong>
+                            <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>POC value</span>
+                              <strong className="display-num" style={{ fontSize: '1.05rem', color: 'var(--color-primary-text)' }}>
+                                {formatGbp(calc.total_social_value_gbp)}
+                              </strong>
+                            </span>
                           </div>
                         )}
                       </div>
@@ -807,11 +842,11 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                   paddingTop: '1rem'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.65rem' }}>
-                  <ShieldCheck size={16} style={{ color: 'var(--text-primary)' }} />
-                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    Proposed Governance & Reporting Cadence
-                  </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
+                  <ShieldCheck size={18} style={{ color: 'var(--color-primary)' }} />
+                  <h3 style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>
+                    Governance and reporting
+                  </h3>
                 </div>
 
                 <div
@@ -821,38 +856,50 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                     gap: '0.75rem'
                   }}
                 >
-                  <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
-                      👤 Social Value Lead
+                  <div style={{ padding: '0.9rem 1rem', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+                      <span className="icon-badge" style={{ width: '26px', height: '26px' }}>
+                        <UserCheck size={14} />
+                      </span>
+                      Social value lead
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                       {currentPkg.governance?.social_value_lead || 'Dedicated Infosys Social Value Lead assigned upon contract award'}
                     </div>
                   </div>
 
-                  <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
-                      ⏱️ 60-Day Mobilization
+                  <div style={{ padding: '0.9rem 1rem', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+                      <span className="icon-badge" style={{ width: '26px', height: '26px' }}>
+                        <CalendarClock size={14} />
+                      </span>
+                      60-day mobilisation
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                       {currentPkg.governance?.kickoff_cadence || 'Joint Social Value Kick-Off Meeting held within 60 days of award'}
                     </div>
                   </div>
 
-                  <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
-                      📊 Quarterly Reporting
+                  <div style={{ padding: '0.9rem 1rem', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+                      <span className="icon-badge" style={{ width: '26px', height: '26px' }}>
+                        <BarChart3 size={14} />
+                      </span>
+                      Quarterly reporting
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                       {currentPkg.governance?.reporting_frequency || 'Quarterly Social Value Progress & National TOMs Performance Reporting'}
                     </div>
                   </div>
 
-                  <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
-                      📈 Annual Impact Review
+                  <div style={{ padding: '0.9rem 1rem', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+                      <span className="icon-badge" style={{ width: '26px', height: '26px' }}>
+                        <TrendingUp size={14} />
+                      </span>
+                      Annual impact review
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                       {currentPkg.governance?.annual_review || 'Annual SVROI impact evaluation and financial verification audit'}
                     </div>
                   </div>
@@ -860,22 +907,24 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
               </div>
 
               {/* Assumptions & Action Items */}
-              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', fontSize: '0.8125rem' }}>
+              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1.25rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', fontSize: '0.85rem' }}>
                 <div>
-                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
-                    Pre-Submission Action Items
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                    <ClipboardCheck size={16} style={{ color: 'var(--color-primary)' }} />
+                    Before you submit
                   </div>
-                  <ul style={{ paddingLeft: '1.1rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                  <ul className="list-brand" style={{ paddingLeft: '1.15rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
                     {result.validation_required.map((v, i) => (
                       <li key={i}>{v}</li>
                     ))}
                   </ul>
                 </div>
                 <div>
-                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
-                    Commercial & Tender Assumptions
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                    <Info size={16} style={{ color: 'var(--color-primary)' }} />
+                    Commercial and tender assumptions
                   </div>
-                  <ul style={{ paddingLeft: '1.1rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                  <ul className="list-brand" style={{ paddingLeft: '1.15rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
                     {result.assumptions.map((a, i) => (
                       <li key={i}>{a}</li>
                     ))}
@@ -890,15 +939,16 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
       {/* Single Intelligent Sticky Bottom Input (Zero Duplicate Box Confusion) */}
       <div style={{ position: 'sticky', bottom: '1.5rem', marginTop: 'auto', paddingTop: '1rem' }}>
         <div
+          className="composer"
           style={{
             backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
+            border: '1px solid var(--border-medium)',
             borderRadius: 'var(--radius-lg)',
-            padding: '0.85rem 1.15rem',
+            padding: '0.9rem 1.15rem',
             display: 'flex',
             flexDirection: 'column',
             gap: '0.6rem',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.07)'
+            boxShadow: 'var(--shadow-md)'
           }}
         >
           {/* Top Header inside Input Box */}
@@ -906,8 +956,8 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
             {result ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <MessageSquarePlus size={14} style={{ color: 'var(--text-primary)' }} />
-                  Request changes to this proposal
+                  <MessageSquarePlus size={15} style={{ color: 'var(--color-primary)' }} />
+                  Ask for changes to this proposal
                 </span>
                 {conversationTurnCount > 0 && (
                   <span
@@ -915,19 +965,19 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                       fontSize: '0.68rem',
                       padding: '0.1rem 0.45rem',
                       borderRadius: 'var(--radius-sm)',
-                      backgroundColor: 'var(--bg-muted)',
-                      color: 'var(--text-secondary)',
-                      border: '1px solid var(--border-subtle)',
+                      backgroundColor: 'var(--color-primary-subtle)',
+                      color: 'var(--color-primary-text)',
+                      border: '1px solid var(--color-primary-border)',
                       fontWeight: 600
                     }}
                   >
-                    Turn {conversationTurnCount} active
+                    {revisionCount > 0 ? `Revision ${revisionCount}` : 'First draft'}
                   </span>
                 )}
               </div>
             ) : (
               <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                Enter RFP Tender Specification to generate bid
+                Describe the tender you're responding to
               </span>
             )}
 
@@ -946,24 +996,14 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                   }}
                   title="Clear current proposal and start a new tender"
                 >
-                  <RotateCcw size={11} /> Start New RFP
+                  <RotateCcw size={11} /> Start a new bid
                 </button>
               ) : (
                 <button
                   onClick={() => setInputText(DEFAULT_SAMPLE_PROMPT)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-secondary)',
-                    fontSize: '0.75rem',
-                    cursor: 'pointer',
-                    padding: '0.15rem 0.35rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.3rem'
-                  }}
+                  className="btn-link"
                 >
-                  <Sparkles size={12} /> Insert Sample Prompt
+                  <FileText size={12} /> Use sample brief
                 </button>
               )}
               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
@@ -978,7 +1018,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
               value={refineText}
               onChange={(e) => setRefineText(e.target.value)}
               onKeyDown={handleRefineKeyDown}
-              placeholder="Describe what to improve or change (e.g. 'Increase youth training by 20%', 'Shift focus to Net Zero & digital skills', 'Add local VCSE partner')..."
+              placeholder="What should change? For example: increase youth training by 20%, shift the focus to net zero and digital skills, or add a local VCSE partner."
               rows={2}
               disabled={isRefining}
               style={{
@@ -998,7 +1038,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type your Social Value RFP tender prompt here (e.g. 3-year £10M contract for Birmingham City Council with 10% Social Value weighting)..."
+              placeholder="For example: a 3-year £10M contract for Birmingham City Council with a 10% social value weighting, focused on digital inclusion and youth employment."
               rows={2}
               disabled={isLoading}
               style={{
@@ -1025,8 +1065,8 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
             ) : (
               <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                 {result
-                  ? '🧠 AI uses full conversation memory to refine this proposal'
-                  : 'Grounded in National TOMs & repository knowledge'}
+                  ? 'Your earlier requests are remembered as you refine'
+                  : 'Based on National TOMs and your repository'}
               </span>
             )}
 
@@ -1041,11 +1081,11 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                   {isRefining ? (
                     <>
                       <Loader size={13} className="spin-icon" />
-                      Refining Proposal...
+                      Updating proposal…
                     </>
                   ) : (
                     <>
-                      <span>Refine Proposal</span>
+                      <span>Update proposal</span>
                       <RefreshCw size={13} />
                     </>
                   )}
@@ -1060,11 +1100,11 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                   {isLoading ? (
                     <>
                       <Loader size={13} className="spin-icon" />
-                      Generating...
+                      Preparing…
                     </>
                   ) : (
                     <>
-                      <span>Generate Tender Response</span>
+                      <span>Generate response</span>
                       <Send size={13} />
                     </>
                   )}
@@ -1081,7 +1121,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+            backgroundColor: 'var(--overlay)',
             backdropFilter: 'blur(3px)',
             zIndex: 1000,
             display: 'flex',
@@ -1097,10 +1137,10 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
               width: '100%',
               maxWidth: '680px',
               maxHeight: '85vh',
-              backgroundColor: 'var(--bg-surface, #ffffff)',
+              backgroundColor: 'var(--bg-surface)',
               borderRadius: 'var(--radius-lg, 10px)',
               border: '1px solid var(--border-medium)',
-              boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.35)',
+              boxShadow: 'var(--shadow-lg)',
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden'
@@ -1119,28 +1159,15 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div
-                  style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: 'var(--radius-sm, 6px)',
-                    backgroundColor: 'var(--bg-muted)',
-                    border: '1px solid var(--border-subtle)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    color: 'var(--text-primary)'
-                  }}
-                >
-                  <Brain size={18} />
+                <div className="icon-badge" style={{ width: '36px', height: '36px' }}>
+                  <ListChecks size={18} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    AI Reasoning & Evidence Grounding Audit
+                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    How this proposal was built
                   </h3>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-                    5 Verified Steps • Zero Hallucination Arithmetic • PostgreSQL pgvector
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                    The documents consulted and the steps behind each figure
                   </div>
                 </div>
               </div>
@@ -1185,15 +1212,15 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    <FileText size={15} />
-                    <span>Retrieved Knowledge Documents</span>
+                    <FileText size={15} style={{ color: 'var(--color-primary)' }} />
+                    <span>Documents consulted</span>
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                    Retrieved <strong>{result.retrieved_evidence_chunks}</strong> relevant text chunks. Retrieval does not confirm source approval, accuracy or current partner status.
+                    <strong>{result.retrieved_evidence_chunks}</strong> relevant passages were found. Finding a passage doesn't confirm the source is approved, accurate or that a partner is still current.
                   </div>
                   {Array.isArray(result.grounding_summary?.sources_used) && result.grounding_summary.sources_used.length > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.2rem' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Retrieved documents (review):</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Documents to review:</span>
                       {result.grounding_summary.sources_used.map((src: string, idx: number) => (
                         <span key={idx} className="tag-mono" style={{ fontSize: '0.72rem' }}>
                           {src}
@@ -1206,8 +1233,8 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
 
               {/* 5-Step AI Reasoning Steps */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  Transparent AI Reasoning Trail
+                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Step by step
                 </div>
                 {result.ai_reasoning_chain && result.ai_reasoning_chain.length > 0 ? (
                   result.ai_reasoning_chain.map((step) => (
@@ -1228,8 +1255,8 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                           width: '22px',
                           height: '22px',
                           borderRadius: '50%',
-                          backgroundColor: 'var(--bg-muted)',
-                          color: 'var(--text-primary)',
+                          backgroundColor: 'var(--btn-primary-bg)',
+                          color: '#FFFFFF',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -1253,7 +1280,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                   ))
                 ) : (
                   <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                    Deterministic reasoning pipeline verified. All proxy values derived from repository knowledge chunks.
+                    Figures are calculated with fixed rules from repository content.
                   </div>
                 )}
               </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { SearchResponse, DocumentItem } from '../types';
 import { searchVectorKnowledge, fetchDocuments } from '../api/client';
-import { Search as SearchIcon, Filter, AlertTriangle, Copy, Check, Sparkles, FileText } from 'lucide-react';
+import { Search as SearchIcon, Filter, AlertTriangle, Copy, Check, FileText } from 'lucide-react';
 
 export const Search: React.FC = () => {
   const [query, setQuery] = useState('digital inclusion initiatives in Birmingham');
@@ -54,22 +54,35 @@ export const Search: React.FC = () => {
   return (
     <div style={{ width: '100%', maxWidth: '1440px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Semantic Vector Search</h2>
-        <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-          Directly query PostgreSQL pgvector using 768-dimensional embeddings to audit retrieved RAG proposal evidence chunks.
+        <div className="eyebrow" style={{ marginBottom: '0.3rem' }}>Repository</div>
+        <h2 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>Evidence Search</h2>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.35rem', maxWidth: '680px' }}>
+          Find passages in the repository that support a bid, such as case studies, past responses and partner evidence.
         </p>
       </div>
 
       {/* Search Bar & Controls */}
-      <form onSubmit={handleSearch} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <form
+        onSubmit={handleSearch}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.85rem',
+          padding: '1.1rem 1.25rem',
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-md)',
+          boxShadow: 'var(--shadow-sm)'
+        }}
+      >
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: '240px', position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <SearchIcon size={16} style={{ position: 'absolute', left: '0.85rem', color: 'var(--text-muted)' }} />
+            <SearchIcon size={16} style={{ position: 'absolute', left: '0.85rem', color: 'var(--color-primary)' }} />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search RFP proposal knowledge base (e.g. digital inclusion, apprenticeships)..."
+              placeholder="What evidence are you looking for? For example: digital inclusion, apprenticeships"
               style={{ width: '100%', paddingLeft: '2.5rem' }}
             />
           </div>
@@ -97,24 +110,24 @@ export const Search: React.FC = () => {
             value={topK}
             onChange={(e) => setTopK(Number(e.target.value))}
             style={{ width: 'auto', fontSize: '0.8125rem' }}
-            title="Number of top chunks to retrieve"
+            title="Number of passages to show"
           >
-            <option value={3}>3 Chunks</option>
-            <option value={5}>5 Chunks</option>
-            <option value={8}>8 Chunks</option>
-            <option value={12}>12 Chunks</option>
+            <option value={3}>3 results</option>
+            <option value={5}>5 results</option>
+            <option value={8}>8 results</option>
+            <option value={12}>12 results</option>
           </select>
 
           <button type="submit" className="btn-primary" disabled={isSearching}>
             <SearchIcon size={14} />
-            <span>{isSearching ? 'Searching pgvector...' : 'Search'}</span>
+            <span>{isSearching ? 'Searching…' : 'Search'}</span>
           </button>
         </div>
 
         {/* Suggested Quick Queries */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.75rem' }}>
-          <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-            <Sparkles size={12} /> Suggested:
+          <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>
+            Try:
           </span>
           {suggestedQueries.map((q, idx) => (
             <button
@@ -123,14 +136,12 @@ export const Search: React.FC = () => {
               onClick={() => {
                 setQuery(q);
               }}
+              className="btn-secondary"
               style={{
-                background: 'transparent',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-full, 9999px)',
-                padding: '0.15rem 0.6rem',
-                fontSize: '0.725rem',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer'
+                borderRadius: 'var(--radius-full)',
+                padding: '0.2rem 0.7rem',
+                fontSize: '0.76rem',
+                fontWeight: 500
               }}
             >
               {q}
@@ -177,11 +188,11 @@ export const Search: React.FC = () => {
               }}
             >
               <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem', fontSize: '0.9375rem' }}>
-                No relevant evidence chunks found for "{results.query}"
+                Nothing in the repository matches "{results.query}" yet
               </p>
               <p style={{ fontSize: '0.8125rem', maxWidth: '480px', margin: '0 auto', lineHeight: 1.5 }}>
                 {selectedDocId
-                  ? 'No matching text chunks found in the selected document. Try switching to "All Documents" or adjusting your search terms.'
+                  ? 'Nothing matched in the selected document. Try "All Documents" or different wording.'
                   : 'The uploaded documents do not contain matching text. Try keywords like "Digital Inclusion", "Youth", "Birmingham", or upload relevant RFP documents.'}
               </p>
             </div>
@@ -189,10 +200,10 @@ export const Search: React.FC = () => {
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
                 <span>
-                  Retrieved <strong>{results.results.length}</strong> pgvector chunks for <em>"{results.query}"</em>
+                  <strong style={{ color: 'var(--text-primary)' }}>{results.results.length}</strong> passages found for <em>"{results.query}"</em>
                 </span>
                 {selectedDocId && (
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-primary, #3b82f6)' }}>
+                  <span className="badge-mono" style={{ fontSize: '0.72rem' }}>
                     Filtered to selected document
                   </span>
                 )}
@@ -206,19 +217,22 @@ export const Search: React.FC = () => {
                 return (
                   <div
                     key={res.chunk_id || i}
+                    className="card-accent"
                     style={{
-                      padding: '1.1rem',
+                      padding: '1.1rem 1.25rem',
                       backgroundColor: 'var(--bg-surface)',
                       border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-sm)',
+                      borderRadius: 'var(--radius-md)',
+                      boxShadow: 'var(--shadow-sm)',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '0.6rem'
+                      gap: '0.65rem',
+                      animation: 'fadeIn 0.2s ease'
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <FileText size={14} style={{ color: 'var(--text-secondary)' }} />
+                        <FileText size={15} style={{ color: 'var(--color-primary)' }} />
                         <strong style={{ color: 'var(--text-primary)' }}>{res.filename}</strong>
                         {res.chunk_id && (
                           <span className="tag-mono" style={{ fontSize: '0.65rem' }}>
@@ -233,29 +247,27 @@ export const Search: React.FC = () => {
                             fontWeight: 600,
                             padding: '0.15rem 0.55rem',
                             borderRadius: 'var(--radius-full, 9999px)',
-                            backgroundColor: isHighMatch ? 'rgba(34, 197, 94, 0.1)' : 'rgba(234, 179, 8, 0.1)',
-                            color: isHighMatch ? '#16a34a' : '#ca8a04',
-                            fontSize: '0.725rem'
+                            backgroundColor: isHighMatch ? 'var(--color-primary-subtle)' : 'var(--bg-muted)',
+                            color: isHighMatch ? 'var(--color-primary-text)' : 'var(--text-secondary)',
+                            border: `1px solid ${isHighMatch ? 'var(--color-primary-border)' : 'var(--border-subtle)'}`,
+                            fontSize: '0.74rem'
                           }}
+                          title="How closely this passage matches your search"
                         >
-                          Cosine Similarity: {simScore}%
+                          {simScore}% match
                         </span>
 
                         <button
                           onClick={() => handleCopyChunk(res.chunk_id || String(i), res.content)}
+                          className="btn-secondary"
                           style={{
-                            background: 'transparent',
-                            border: '1px solid var(--border-subtle)',
-                            borderRadius: '4px',
-                            color: isCopied ? '#16a34a' : 'var(--text-secondary)',
-                            padding: '0.2rem 0.45rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
+                            padding: '0.2rem 0.5rem',
                             gap: '0.3rem',
-                            fontSize: '0.7rem'
+                            fontSize: '0.72rem',
+                            borderRadius: 'var(--radius-sm)',
+                            color: isCopied ? 'var(--color-primary-text)' : undefined
                           }}
-                          title="Copy chunk text"
+                          title="Copy passage text"
                         >
                           {isCopied ? <Check size={11} /> : <Copy size={11} />}
                           <span>{isCopied ? 'Copied' : 'Copy'}</span>
@@ -263,8 +275,17 @@ export const Search: React.FC = () => {
                       </div>
                     </div>
 
-                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.55, margin: 0 }}>
-                      "{res.content}"
+                    <p
+                      style={{
+                        fontSize: '0.875rem',
+                        color: 'var(--text-secondary)',
+                        lineHeight: 1.65,
+                        margin: 0,
+                        paddingLeft: '0.85rem',
+                        borderLeft: '2px solid var(--color-primary-border)'
+                      }}
+                    >
+                      {res.content}
                     </p>
                   </div>
                 );

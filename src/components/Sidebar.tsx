@@ -10,7 +10,6 @@ import {
   LogIn,
   LogOut,
   Clock,
-  Sparkles,
   ChevronRight,
   Server,
   Cpu,
@@ -106,10 +105,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const navItems: Array<{ id: ActiveTab; label: string; icon: React.ReactNode }> = [
-    { id: 'prompt', label: 'Prompt Studio', icon: <MessageSquare size={16} /> },
-    { id: 'tuner', label: 'Interactive Tuner', icon: <Sliders size={16} /> },
-    { id: 'documents', label: 'Knowledge Documents', icon: <Database size={16} /> },
-    { id: 'search', label: 'Vector Search', icon: <Search size={16} /> }
+    { id: 'prompt', label: 'Bid Studio', icon: <MessageSquare size={17} /> },
+    { id: 'tuner', label: 'Value Tuner', icon: <Sliders size={17} /> },
+    { id: 'documents', label: 'Repository', icon: <Database size={17} /> },
+    { id: 'search', label: 'Evidence Search', icon: <Search size={17} /> }
   ];
 
   const getInitials = (name?: string) => {
@@ -153,19 +152,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }}
       >
       {/* Brand Header */}
-      <div style={{ padding: '1.25rem 1.25rem 1rem 1.25rem', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
-        <img
-          src="/infosys-logo.png"
-          alt="Infosys"
-          className="brand-logo"
-          style={{ height: '24px', marginBottom: '0.95rem' }}
-        />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ padding: '1.35rem 1.5rem 1rem 1.5rem', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
+        <img src="/infosys-logo.png" alt="Infosys" className="brand-logo logo-on-light" style={{ height: '32px' }} />
+        <img src="/infosys-logo-dark.png" alt="Infosys" className="brand-logo logo-on-dark" style={{ height: '32px' }} />
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'space-between',
+            marginTop: '0.95rem',
+            paddingTop: '0.75rem',
+            borderTop: '1px solid var(--border-subtle)'
+          }}
+        >
           <div>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '1rem',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                lineHeight: 1.2
+              }}
+            >
               Social Value
             </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', letterSpacing: '0.02em' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
               RFP Response Engine
             </div>
           </div>
@@ -176,7 +188,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               padding: '0.15rem 0.45rem',
               borderRadius: 'var(--radius-sm)',
               backgroundColor: 'var(--color-primary-subtle)',
-              color: 'var(--color-primary)',
+              color: 'var(--color-primary-text)',
               letterSpacing: '0.04em'
             }}
           >
@@ -186,40 +198,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* New Prompt Button */}
-      <div style={{ padding: '1rem 1.25rem 0.5rem 1.25rem', flexShrink: 0 }}>
+      <div style={{ padding: '0.95rem 1.25rem 0.5rem 1.25rem', flexShrink: 0 }}>
         <button
           onClick={onNewPrompt}
-          className="btn-secondary"
-          style={{ width: '100%', justifyContent: 'flex-start', padding: '0.5rem 0.75rem' }}
+          className="btn-primary"
+          style={{ width: '100%', justifyContent: 'center', padding: '0.6rem 0.75rem', fontSize: '0.84rem' }}
         >
           <Plus size={16} />
-          <span>New Prompt</span>
+          <span>New bid response</span>
         </button>
       </div>
 
       {/* Navigation List */}
-      <nav style={{ padding: '0.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.2rem', flexShrink: 0 }}>
+      <nav style={{ padding: '0.4rem 0.75rem 0.6rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.15rem', flexShrink: 0 }}>
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
           return (
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.65rem',
-                padding: '0.55rem 0.75rem',
-                borderRadius: 'var(--radius-md)',
-                border: 'none',
-                background: isActive ? 'var(--bg-muted)' : 'transparent',
-                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                fontSize: '0.8125rem',
-                fontWeight: isActive ? 600 : 400,
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'background 0.15s ease'
-              }}
+              className={`nav-item${isActive ? ' is-active' : ''}`}
+              aria-current={isActive ? 'page' : undefined}
             >
               {item.icon}
               <span>{item.label}</span>
@@ -250,28 +249,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Clock size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              Recent Searches
+            <Clock size={12} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
+            <span className="eyebrow" style={{ color: 'var(--text-muted)' }}>
+              Recent bids
             </span>
           </div>
           {rfpHistory.length > 0 && (
             <button
               onClick={() => setShowHistoryDrawer(true)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                padding: '0.15rem 0.35rem',
-                cursor: 'pointer',
-                color: 'var(--text-secondary)',
-                borderRadius: 'var(--radius-sm)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                fontSize: '0.68rem',
-                fontWeight: 500
-              }}
-              title="View all search history"
+              className="btn-link"
+              style={{ fontSize: '0.7rem' }}
+              title="View all recent bids"
             >
               <span>View all</span>
               <PanelLeftOpen size={11} />
@@ -291,14 +279,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }}
         >
           {isLoadingHistory && (
-            <div style={{ padding: '0.5rem 0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-              Loading searches…
+            <div style={{ padding: '0.5rem 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              Loading recent bids…
             </div>
           )}
 
           {!isLoadingHistory && rfpHistory.length === 0 && (
-            <div style={{ padding: '0.75rem 0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center' }}>
-              No recent searches yet
+            <div style={{ padding: '0.75rem 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+              Your recent bids will appear here
             </div>
           )}
 
@@ -310,48 +298,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onTabChange('prompt');
               }}
               title={item.raw_prompt}
+              className="row-hover"
               style={{
                 display: 'flex',
                 alignItems: 'flex-start',
-                gap: '0.5rem',
-                padding: '0.45rem 0.55rem',
+                gap: '0.55rem',
+                padding: '0.5rem 0.55rem',
                 borderRadius: 'var(--radius-md)',
                 border: 'none',
                 background: 'transparent',
                 color: 'var(--text-secondary)',
-                fontSize: '0.76rem',
+                fontSize: '0.78rem',
                 cursor: 'pointer',
                 textAlign: 'left',
-                transition: 'background 0.13s ease',
                 width: '100%',
                 flexShrink: 0
               }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = 'var(--bg-muted)';
-                (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = 'transparent';
-                (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
-              }}
             >
-              <Sparkles size={11} style={{ flexShrink: 0, marginTop: '2px', opacity: 0.6 }} />
+              <FileText size={13} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--color-primary)' }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
                   style={{
-                    fontSize: '0.76rem',
+                    fontSize: '0.8rem',
                     lineHeight: 1.35,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    fontWeight: 500
+                    fontWeight: 600,
+                    color: 'var(--text-primary)'
                   }}
                 >
                   {item.client_name
                     ? `${item.client_name}${item.location ? ` · ${item.location}` : ''}`
                     : truncatePrompt(item.raw_prompt)}
                 </div>
-                <div style={{ fontSize: '0.67rem', color: 'var(--text-muted)', marginTop: '1px' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '1px' }}>
                   {item.contract_value_gbp
                     ? `£${(item.contract_value_gbp / 1000000).toFixed(1)}M · `
                     : ''}
@@ -376,7 +357,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 borderRadius: 'var(--radius-sm)'
               }}
             >
-              <span>View All Searches ({rfpHistory.length})</span>
+              <span>View all bids ({rfpHistory.length})</span>
               <ArrowUpRight size={11} />
             </button>
           )}
@@ -417,8 +398,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     width: '26px',
                     height: '26px',
                     borderRadius: '50%',
-                    backgroundColor: 'var(--text-primary)',
-                    color: 'var(--text-inverse)',
+                    backgroundColor: 'var(--btn-primary-bg)',
+                    color: '#FFFFFF',
                     fontSize: '0.72rem',
                     fontWeight: 700,
                     display: 'flex',
@@ -451,8 +432,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         textTransform: 'uppercase',
                         padding: '0.05rem 0.3rem',
                         borderRadius: 'var(--radius-sm)',
-                        backgroundColor: 'var(--bg-muted)',
-                        color: 'var(--text-secondary)'
+                        backgroundColor: 'var(--color-primary-subtle)',
+                        color: 'var(--color-primary-text)'
                       }}
                     >
                       {user.role}
@@ -566,7 +547,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.35)',
+            backgroundColor: 'var(--overlay)',
             backdropFilter: 'blur(1.5px)',
             zIndex: 80
           }}
@@ -583,12 +564,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             width: '340px',
             backgroundColor: 'var(--bg-surface)',
             borderRight: '1px solid var(--border-medium)',
-            boxShadow: '8px 0 32px rgba(0, 0, 0, 0.22)',
+            boxShadow: 'var(--shadow-lg)',
             zIndex: 85,
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            animation: 'fadeIn 0.18s ease'
+            animation: 'slideIn 0.18s ease'
           }}
         >
           {/* Drawer Header */}
@@ -603,13 +584,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Clock size={16} style={{ color: 'var(--color-primary, #3b82f6)' }} />
+              <Clock size={16} style={{ color: 'var(--color-primary)' }} />
               <div>
                 <h3 style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  Recent Tender Searches
+                  Recent bids
                 </h3>
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                  {rfpHistory.length} recorded tender opportunities
+                  {rfpHistory.length} bid responses, newest first
                 </span>
               </div>
             </div>
@@ -635,7 +616,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Search size={13} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input
                 type="text"
-                placeholder="Search by client, location, prompt..."
+                placeholder="Search by client, place or brief…"
                 value={historySearchQuery}
                 onChange={(e) => setHistorySearchQuery(e.target.value)}
                 style={{
@@ -656,7 +637,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {drawerFilteredHistory.length === 0 ? (
               <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                No tender searches matching "{historySearchQuery}"
+                No bids match "{historySearchQuery}"
               </div>
             ) : (
               drawerFilteredHistory.map((item) => (
@@ -671,7 +652,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     padding: '0.75rem',
                     borderRadius: 'var(--radius-md)',
                     border: '1px solid var(--border-subtle)',
-                    backgroundColor: 'var(--bg-card)',
+                    backgroundColor: 'var(--bg-surface)',
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
@@ -679,12 +660,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     transition: 'all 0.15s ease'
                   }}
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-primary, #3b82f6)';
-                    (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-muted)';
+                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-primary)';
+                    (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-primary-subtle)';
                   }}
                   onMouseLeave={(e) => {
                     (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-subtle)';
-                    (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-card)';
+                    (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-surface)';
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -730,8 +711,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </p>
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.2rem' }}>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--color-primary, #3b82f6)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                      Restore into Studio <ArrowUpRight size={11} />
+                    <span style={{ fontSize: '0.72rem', color: 'var(--color-primary-text)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                      Open in Bid Studio <ArrowUpRight size={11} />
                     </span>
                   </div>
                 </div>
@@ -741,7 +722,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Drawer Footer */}
           <div style={{ padding: '0.65rem 1rem', borderTop: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-card)', fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>Click any bid to restore</span>
+            <span>Select a bid to reopen it</span>
             <button
               onClick={() => setShowHistoryDrawer(false)}
               className="btn-secondary"
@@ -760,7 +741,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+            backgroundColor: 'var(--overlay)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -780,7 +761,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               transition: 'max-width 0.2s ease',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)',
+              boxShadow: 'var(--shadow-lg)',
               overflow: 'hidden'
             }}
             onClick={(e) => e.stopPropagation()}
@@ -795,7 +776,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <Activity size={18} style={{ color: 'var(--color-primary, #3b82f6)' }} />
+                <Activity size={18} style={{ color: 'var(--color-primary)' }} />
                 <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                   System Diagnostics & Audit Hub
                 </h3>
@@ -817,7 +798,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   fontSize: '0.78rem',
                   fontWeight: diagTab === 'overview' ? 600 : 500,
                   border: 'none',
-                  borderBottom: diagTab === 'overview' ? '2px solid var(--color-primary, #3b82f6)' : '2px solid transparent',
+                  borderBottom: diagTab === 'overview' ? '2px solid var(--color-primary)' : '2px solid transparent',
                   background: 'transparent',
                   color: diagTab === 'overview' ? 'var(--text-primary)' : 'var(--text-muted)',
                   cursor: 'pointer',
@@ -839,7 +820,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   fontSize: '0.78rem',
                   fontWeight: diagTab === 'audit' ? 600 : 500,
                   border: 'none',
-                  borderBottom: diagTab === 'audit' ? '2px solid var(--color-primary, #3b82f6)' : '2px solid transparent',
+                  borderBottom: diagTab === 'audit' ? '2px solid var(--color-primary)' : '2px solid transparent',
                   background: 'transparent',
                   color: diagTab === 'audit' ? 'var(--text-primary)' : 'var(--text-muted)',
                   cursor: 'pointer',
@@ -879,7 +860,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <Server size={15} style={{ color: 'var(--text-primary)' }} />
+                    <Server size={15} style={{ color: 'var(--color-primary)' }} />
                     <strong style={{ color: 'var(--text-primary)' }}>Vector Database Engine</strong>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.35rem', color: 'var(--text-secondary)' }}>
@@ -908,7 +889,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <Cpu size={15} style={{ color: 'var(--text-primary)' }} />
+                    <Cpu size={15} style={{ color: 'var(--color-primary)' }} />
                     <strong style={{ color: 'var(--text-primary)' }}>LLM & Embedding Provider</strong>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.35rem', color: 'var(--text-secondary)' }}>
@@ -942,7 +923,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <FileText size={15} style={{ color: 'var(--text-primary)' }} />
+                      <FileText size={15} style={{ color: 'var(--color-primary)' }} />
                       <strong style={{ color: 'var(--text-primary)' }}>Audit & Retention Compliance</strong>
                     </div>
                     <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '4px', backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', fontWeight: 600 }}>
@@ -1082,7 +1063,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                   fontWeight: 700,
                                   padding: '0.1rem 0.35rem',
                                   borderRadius: '3px',
-                                  backgroundColor: isErr ? '#ef4444' : isWarn ? '#f59e0b' : '#3b82f6',
+                                  backgroundColor: isErr ? '#ef4444' : isWarn ? '#f59e0b' : 'var(--btn-primary-bg)',
                                   color: '#ffffff'
                                 }}
                               >

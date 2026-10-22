@@ -36,23 +36,26 @@ export const LoginScreen: React.FC = () => {
         backgroundColor: 'var(--bg-app)',
         color: 'var(--text-primary)',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
+        gap: '1.25rem',
         padding: '1.5rem'
       }}
     >
       <div
         style={{
           width: '100%',
-          maxWidth: '380px',
+          maxWidth: '400px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.5rem',
+          gap: '1.4rem',
           backgroundColor: 'var(--bg-surface)',
           border: '1px solid var(--border-subtle)',
+          borderTop: '4px solid var(--color-primary)',
           borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-md)',
-          padding: '2rem'
+          boxShadow: 'var(--shadow-lg)',
+          padding: '2.25rem 2.25rem 2rem 2.25rem'
         }}
       >
         <div
@@ -61,25 +64,23 @@ export const LoginScreen: React.FC = () => {
             borderBottom: '1px solid var(--border-subtle)'
           }}
         >
-          <img
-            src="/infosys-logo.png"
-            alt="Infosys"
-            className="brand-logo"
-            style={{ height: '30px', marginBottom: '1.25rem' }}
-          />
+          <img src="/infosys-logo.png" alt="Infosys" className="brand-logo logo-on-light" style={{ height: '40px', marginBottom: '1.6rem' }} />
+          <img src="/infosys-logo-dark.png" alt="Infosys" className="brand-logo logo-on-dark" style={{ height: '40px', marginBottom: '1.6rem' }} />
+          <div className="eyebrow" style={{ marginBottom: '0.4rem' }}>
+            Social Value · RFP Response Engine
+          </div>
           <h1
             style={{
-              fontSize: '1.25rem',
+              fontSize: '1.6rem',
               fontWeight: 600,
               color: 'var(--text-primary)',
-              letterSpacing: '-0.02em',
-              marginBottom: '0.25rem'
+              marginBottom: '0.3rem'
             }}
           >
-            Sign in
+            Welcome back
           </h1>
-          <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-            to continue to Social Value RFP Engine
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+            Sign in to continue building your social value responses.
           </p>
         </div>
 
@@ -101,11 +102,11 @@ export const LoginScreen: React.FC = () => {
         {/* Demo / Superadmin Credentials Helper */}
         <div
           style={{
-            padding: '0.65rem 0.85rem',
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-sm)',
-            fontSize: '0.75rem',
+            padding: '0.7rem 0.9rem',
+            backgroundColor: 'var(--color-primary-subtle)',
+            border: '1px solid var(--color-primary-border)',
+            borderRadius: 'var(--radius-md)',
+            fontSize: '0.78rem',
             color: 'var(--text-secondary)',
             display: 'flex',
             justifyContent: 'space-between',
@@ -113,8 +114,8 @@ export const LoginScreen: React.FC = () => {
           }}
         >
           <div>
-            <div><strong>Default Superadmin:</strong></div>
-            <div style={{ color: 'var(--text-muted)', fontFamily: 'monospace' }}>admin@infosys.com / admin123</div>
+            <div><strong>Demo superadmin account</strong></div>
+            <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontSize: '0.74rem', marginTop: '0.1rem' }}>admin@infosys.com / admin123</div>
           </div>
           <button
             type="button"
@@ -122,17 +123,10 @@ export const LoginScreen: React.FC = () => {
               setEmail('admin@infosys.com');
               setPassword('admin123');
             }}
-            style={{
-              background: 'transparent',
-              border: '1px solid var(--border-medium)',
-              borderRadius: '4px',
-              padding: '0.25rem 0.5rem',
-              color: 'var(--color-primary, #3b82f6)',
-              cursor: 'pointer',
-              fontSize: '0.75rem'
-            }}
+            className="btn-secondary"
+            style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', borderRadius: 'var(--radius-sm)' }}
           >
-            Auto-fill
+            Use demo
           </button>
         </div>
 
@@ -142,9 +136,9 @@ export const LoginScreen: React.FC = () => {
               style={{
                 display: 'block',
                 fontSize: '0.8125rem',
-                fontWeight: 500,
+                fontWeight: 600,
                 color: 'var(--text-primary)',
-                marginBottom: '0.35rem'
+                marginBottom: '0.4rem'
               }}
             >
               Email address
@@ -166,9 +160,9 @@ export const LoginScreen: React.FC = () => {
               style={{
                 display: 'block',
                 fontSize: '0.8125rem',
-                fontWeight: 500,
+                fontWeight: 600,
                 color: 'var(--text-primary)',
-                marginBottom: '0.35rem'
+                marginBottom: '0.4rem'
               }}
             >
               Password
@@ -190,20 +184,20 @@ export const LoginScreen: React.FC = () => {
             className="btn-primary"
             style={{
               width: '100%',
-              padding: '0.6rem 1rem',
-              marginTop: '0.5rem',
+              padding: '0.75rem 1rem',
+              marginTop: '0.4rem',
               justifyContent: 'center',
-              fontSize: '0.875rem',
-              fontWeight: 500
+              fontSize: '0.9rem',
+              fontWeight: 600
             }}
           >
             {isLoading ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                <span>Signing in...</span>
+                <span>Signing you in…</span>
               </>
             ) : (
-              'Sign In'
+              'Sign in'
             )}
           </button>
         </form>

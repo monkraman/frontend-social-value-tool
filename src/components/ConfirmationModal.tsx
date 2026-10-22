@@ -42,12 +42,14 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
   const isDanger = variant === 'danger';
 
+  const DANGER = '#C53B3B';
+
   const icon = isDanger ? (
-    <Trash2 size={18} style={{ color: 'var(--text-primary)' }} />
+    <Trash2 size={18} />
   ) : variant === 'warning' ? (
-    <Archive size={18} style={{ color: 'var(--text-primary)' }} />
+    <Archive size={18} />
   ) : (
-    <HelpCircle size={18} style={{ color: 'var(--text-primary)' }} />
+    <HelpCircle size={18} />
   );
 
   return (
@@ -55,7 +57,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+        backgroundColor: 'var(--overlay)',
         backdropFilter: 'blur(3px)',
         zIndex: 1000,
         display: 'flex',
@@ -72,10 +74,10 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         style={{
           width: '100%',
           maxWidth: '460px',
-          backgroundColor: 'var(--bg-surface, #ffffff)',
+          backgroundColor: 'var(--bg-surface)',
           borderRadius: 'var(--radius-lg, 10px)',
           border: '1px solid var(--border-medium)',
-          boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.35)',
+          boxShadow: 'var(--shadow-lg)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column'
@@ -95,39 +97,32 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div
+              className="icon-badge"
               style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: 'var(--radius-sm, 6px)',
-                backgroundColor: 'var(--bg-muted)',
-                border: '1px solid var(--border-subtle)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                color: 'var(--text-primary)'
+                width: '38px',
+                height: '38px',
+                backgroundColor: isDanger ? 'rgba(197, 59, 59, 0.10)' : undefined,
+                color: isDanger ? DANGER : undefined
               }}
             >
               {icon}
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                 {title}
               </h3>
               {badge && (
                 <span
                   style={{
                     display: 'inline-block',
-                    marginTop: '0.15rem',
-                    fontSize: '0.625rem',
+                    marginTop: '0.25rem',
+                    fontSize: '0.68rem',
                     fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                    padding: '0.1rem 0.4rem',
-                    borderRadius: '4px',
-                    backgroundColor: 'var(--bg-muted)',
-                    border: '1px solid var(--border-subtle)',
-                    color: 'var(--text-muted)'
+                    padding: '0.1rem 0.5rem',
+                    borderRadius: 'var(--radius-full)',
+                    backgroundColor: isDanger ? 'rgba(197, 59, 59, 0.10)' : 'var(--color-primary-subtle)',
+                    border: `1px solid ${isDanger ? 'rgba(197, 59, 59, 0.30)' : 'var(--color-primary-border)'}`,
+                    color: isDanger ? DANGER : 'var(--color-primary-text)'
                   }}
                 >
                   {badge}
@@ -153,7 +148,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         </div>
 
         {/* Modal Content */}
-        <div style={{ padding: '1.25rem 1.4rem', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+        <div style={{ padding: '1.25rem 1.4rem', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
           {typeof message === 'string' ? <p style={{ margin: 0 }}>{message}</p> : message}
         </div>
 
@@ -190,10 +185,11 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               padding: '0.5rem 1.15rem',
               fontSize: '0.8125rem',
               fontWeight: 600,
-              borderRadius: 'var(--radius-md, 8px)',
-              border: '1px solid var(--btn-primary-bg)',
-              backgroundColor: 'var(--btn-primary-bg)',
-              color: 'var(--btn-primary-text)',
+              borderRadius: 'var(--radius-md)',
+              border: `1px solid ${isDanger ? DANGER : 'var(--btn-primary-bg)'}`,
+              backgroundColor: isDanger ? DANGER : 'var(--btn-primary-bg)',
+              color: '#FFFFFF',
+              boxShadow: 'var(--shadow-sm)',
               cursor: isLoading ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -202,7 +198,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             }}
           >
             {isLoading && <Loader2 size={14} className="spin" />}
-            <span>{isLoading ? 'Processing...' : confirmText}</span>
+            <span>{isLoading ? 'Working…' : confirmText}</span>
           </button>
         </div>
       </div>
