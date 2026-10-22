@@ -44,13 +44,29 @@ export const LoginScreen: React.FC = () => {
       <div
         style={{
           width: '100%',
-          maxWidth: '360px',
+          maxWidth: '380px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.5rem'
+          gap: '1.5rem',
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-md)',
+          padding: '2rem'
         }}
       >
-        <div>
+        <div
+          style={{
+            paddingBottom: '1.25rem',
+            borderBottom: '1px solid var(--border-subtle)'
+          }}
+        >
+          <img
+            src="/infosys-logo.png"
+            alt="Infosys"
+            className="brand-logo"
+            style={{ height: '30px', marginBottom: '1.25rem' }}
+          />
           <h1
             style={{
               fontSize: '1.25rem',

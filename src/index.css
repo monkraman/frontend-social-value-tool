@@ -35,10 +35,20 @@
   --btn-primary-hover: #e4e4e7;
 
   /* Accent */
-  --accent: #fafafa;
+  --accent: #2A9FE0;
+
+  /* Infosys Brand Accent System */
+  --color-primary: #2A9FE0;
+  --color-primary-hover: #4FB3E8;
+  --color-primary-subtle: rgba(42, 159, 224, 0.14);
+  --ring: rgba(42, 159, 224, 0.35);
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.55);
 
   /* Status Indicators */
-  --status-online: #fafafa;
+  --status-online: #22c55e;
   --status-offline: #52525b;
 
   /* Radii */
@@ -104,6 +114,15 @@ input, textarea, select {
 
 input:focus, textarea:focus, select:focus {
   border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+/* Accessible focus ring for interactive elements */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* Minimalist Action Buttons */
@@ -119,13 +138,19 @@ input:focus, textarea:focus, select:focus {
   padding: 0.55rem 1rem;
   font-size: 0.8125rem;
   font-weight: 600;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: opacity 0.15s ease, background-color 0.15s ease;
+  box-shadow: var(--shadow-sm);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 }
 
 .btn-primary:hover {
   background-color: var(--btn-primary-hover);
-  opacity: 0.95;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
 }
 
 .btn-primary:disabled {
@@ -190,4 +215,22 @@ input:focus, textarea:focus, select:focus {
 }
 .spin-icon {
   animation: spin 1s linear infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Infosys Brand Logo */
+.brand-logo {
+  display: block;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Elevated surface helper */
+.elevated {
+  box-shadow: var(--shadow-md);
 }
