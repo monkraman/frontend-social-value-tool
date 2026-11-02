@@ -3,6 +3,10 @@ import type {
   ResponseGenerationResult,
   DocumentItem,
   TOMsMetric,
+  TomsMetricCreate,
+  TomsMetricUpdate,
+  OpportunityRecommendRequest,
+  OpportunityRecommendResponse,
   SearchResponse,
   PackageCalculation,
   UserProfile,
@@ -435,6 +439,71 @@ export async function fetchTomsMetrics(): Promise<TOMsMetric[]> {
       { code: 'NT45', name: 'Refurbished IT Hardware Donations', theme: 'Environment & Inclusion', unit: 'devices', unit_value_gbp: 450.0, description: 'Laptops/desktops refurbished and gifted to community learners' }
     ];
   }
+}
+
+export async function createTomsMetric(metric: TomsMetricCreate): Promise<TOMsMetric> {
+  const res = await fetch(`${API_BASE_URL}/calculations/metrics`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(metric)
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ detail: 'Failed to create metric' }));
+    throw new Error(errorData.detail || `HTTP ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function updateTomsMetric(code: string, metric: TomsMetricUpdate): Promise<TOMsMetric> {
+  const res = await fetch(`${API_BASE_URL}/calculations/metrics/${encodeURIComponent(code)}`, {
+    method: 'PUT',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(metric)
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ detail: 'Failed to update metric' }));
+    throw new Error(errorData.detail || `HTTP ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function deleteTomsMetric(code: string): Promise<{ message: string }> {
+  const res = await fetch(`${API_BASE_URL}/calculations/metrics/${encodeURIComponent(code)}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ detail: 'Failed to delete metric' }));
+    throw new Error(errorData.detail || `HTTP ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function resetDefaultTomsMetrics(): Promise<{ message: string }> {
+  const res = await fetch(`${API_BASE_URL}/calculations/reset-defaults`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ detail: 'Failed to reset metrics' }));
+    throw new Error(errorData.detail || `HTTP ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function recommendOpportunities(
+  req: OpportunityRecommendRequest
+): Promise<OpportunityRecommendResponse> {
+  const res = await fetch(`${API_BASE_URL}/calculations/recommend`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(req)
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ detail: 'Failed to generate recommendations' }));
+    throw new Error(errorData.detail || `HTTP ${res.status}`);
+  }
+  return await res.json();
 }
 
 export async function calculatePackageSimulation(

@@ -4,6 +4,7 @@ import { PromptStudio } from './components/PromptStudio';
 import { Tuner } from './components/Tuner';
 import { Documents } from './components/Documents';
 import { Search } from './components/Search';
+import { TomsCatalog } from './components/TomsCatalog';
 import { LoginScreen } from './components/LoginScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -227,6 +228,14 @@ const AppContent: React.FC = () => {
           />
         )}
         {activeTab === 'tuner' && <Tuner />}
+        {activeTab === 'toms' && (
+          <TomsCatalog
+            onSendToPrompt={(promptText) => {
+              setCurrentPrompt(promptText);
+              setActiveTab('prompt');
+            }}
+          />
+        )}
         {activeTab === 'documents' && <Documents />}
         {activeTab === 'search' && <Search />}
       </main>

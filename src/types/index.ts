@@ -145,13 +145,82 @@ export interface PromptHistoryItem {
 
 
 export interface TOMsMetric {
+  id?: number;
   code: string;
   name: string;
   theme: string;
+  outcome?: string;
   unit: string;
   unit_value_gbp: number;
   description: string;
+  evidence_required?: string;
+  ppn_mapping?: string;
+  source?: string;
   is_synthetic?: boolean;
+  is_active?: boolean;
+}
+
+export interface TomsMetricCreate {
+  code: string;
+  name: string;
+  theme: string;
+  outcome?: string;
+  unit: string;
+  unit_value_gbp: number;
+  description?: string;
+  evidence_required?: string;
+  ppn_mapping?: string;
+  source?: string;
+}
+
+export interface TomsMetricUpdate {
+  name?: string;
+  theme?: string;
+  outcome?: string;
+  unit?: string;
+  unit_value_gbp?: number;
+  description?: string;
+  evidence_required?: string;
+  ppn_mapping?: string;
+  source?: string;
+  is_active?: boolean;
+}
+
+export interface OpportunityRecommendRequest {
+  industry: string;
+  contract_value_gbp: number;
+  duration_years: number;
+  target_weighting_percent: number;
+  location?: string;
+  focus_areas?: string[];
+}
+
+export interface OpportunityRecommendationItem {
+  toms_code: string;
+  initiative_name: string;
+  theme: string;
+  ppn_mac: string;
+  unit: string;
+  unit_value_gbp: number;
+  annual_volume: number;
+  duration_years: number;
+  total_volume: number;
+  total_social_value_gbp: number;
+  why_recommended: string;
+  delivery_approach: string;
+  evidence_needed: string;
+}
+
+export interface OpportunityRecommendResponse {
+  contract_value_gbp: number;
+  duration_years: number;
+  target_weighting_percent: number;
+  target_social_value_gbp: number;
+  total_recommended_social_value_gbp: number;
+  achieved_weighting_percent: number;
+  target_met: boolean;
+  recommendations: OpportunityRecommendationItem[];
+  executive_summary: string;
 }
 
 export interface SearchResultItem {

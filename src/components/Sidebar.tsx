@@ -20,14 +20,15 @@ import {
   FileText,
   RefreshCw,
   PanelLeftOpen,
-  ArrowUpRight
+  ArrowUpRight,
+  Target
 } from 'lucide-react';
 import type { ThemeMode } from '../constants/theme';
 import type { PromptHistoryItem, BackendHealthData, AuditLogItem, AuditSummary } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { fetchAuditLogs, fetchAuditSummary } from '../api/client';
 
-export type ActiveTab = 'prompt' | 'tuner' | 'documents' | 'search';
+export type ActiveTab = 'prompt' | 'tuner' | 'toms' | 'documents' | 'search';
 
 export interface SidebarProps {
   activeTab: ActiveTab;
@@ -107,6 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems: Array<{ id: ActiveTab; label: string; icon: React.ReactNode }> = [
     { id: 'prompt', label: 'Bid Studio', icon: <MessageSquare size={17} /> },
     { id: 'tuner', label: 'Value Tuner', icon: <Sliders size={17} /> },
+    { id: 'toms', label: 'TOMS & Frameworks', icon: <Target size={17} /> },
     { id: 'documents', label: 'Repository', icon: <Database size={17} /> },
     { id: 'search', label: 'Evidence Search', icon: <Search size={17} /> }
   ];
