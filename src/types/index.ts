@@ -223,6 +223,30 @@ export interface OpportunityRecommendResponse {
   executive_summary: string;
 }
 
+export interface RegionalPartner {
+  id: number;
+  location: string;
+  partner_name: string;
+  theme: string;
+  toms_code?: string;
+  focus_area?: string;
+  contact_info?: string;
+  description?: string;
+  is_approved: boolean;
+  created_at?: string;
+}
+
+export interface RegionalPartnerCreate {
+  location: string;
+  partner_name: string;
+  theme: string;
+  toms_code?: string;
+  focus_area?: string;
+  contact_info?: string;
+  description?: string;
+  is_approved?: boolean;
+}
+
 export interface SearchResultItem {
   chunk_id: string;
   similarity: number;

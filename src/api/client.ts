@@ -17,7 +17,9 @@ import type {
   DocumentChunkItem,
   BackendHealthData,
   AuditLogItem,
-  AuditSummary
+  AuditSummary,
+  RegionalPartner,
+  RegionalPartnerCreate
 } from '../types';
 
 function resolveApiBaseUrl(): string {
@@ -501,6 +503,65 @@ export async function recommendOpportunities(
   });
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({ detail: 'Failed to generate recommendations' }));
+    throw new Error(errorData.detail || `HTTP ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function fetchRegionalPartners(
+  location?: string,
+  theme?: string,
+  search?: string
+): Promise<RegionalPartner[]> {
+  const params = new URLSearchParams();
+  if (location && location !== 'All') params.append('location', location);
+  if (theme && theme !== 'All') params.append('theme', theme);
+  if (search) params.append('search', search);
+
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  const res = await fetch(`${API_BASE_URL}/calculations/partners${qs}`, {
+    headers: getAuthHeaders()
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.json();
+}
+
+export async function createRegionalPartner(partner: RegionalPartnerCreate): Promise<RegionalPartner> {
+  const res = await fetch(`${API_BASE_URL}/calculations/partners`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(partner)
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ detail: 'Failed to create partner' }));
+    throw new Error(errorData.detail || `HTTP ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function updateRegionalPartner(
+  id: number,
+  partner: Partial<RegionalPartnerCreate>
+): Promise<RegionalPartner> {
+  const res = await fetch(`${API_BASE_URL}/calculations/partners/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(partner)
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ detail: 'Failed to update partner' }));
+    throw new Error(errorData.detail || `HTTP ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function deleteRegionalPartner(id: number): Promise<{ message: string }> {
+  const res = await fetch(`${API_BASE_URL}/calculations/partners/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ detail: 'Failed to delete partner' }));
     throw new Error(errorData.detail || `HTTP ${res.status}`);
   }
   return await res.json();

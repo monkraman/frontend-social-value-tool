@@ -5,6 +5,7 @@ import { Tuner } from './components/Tuner';
 import { Documents } from './components/Documents';
 import { Search } from './components/Search';
 import { TomsCatalog } from './components/TomsCatalog';
+import { PartnersEcosystem } from './components/PartnersEcosystem';
 import { LoginScreen } from './components/LoginScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -236,6 +237,7 @@ const AppContent: React.FC = () => {
             }}
           />
         )}
+        {activeTab === 'partners' && <PartnersEcosystem />}
         {activeTab === 'documents' && <Documents />}
         {activeTab === 'search' && <Search />}
       </main>
