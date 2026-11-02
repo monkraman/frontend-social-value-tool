@@ -22,8 +22,11 @@ import {
   Edit3,
   Trash2,
   X,
-  RefreshCw
+  RefreshCw,
+  List,
+  LayoutGrid
 } from 'lucide-react';
+import { Pagination } from './Pagination';
 
 export const PartnersEcosystem: React.FC = () => {
   const toast = useToast();
@@ -33,6 +36,11 @@ export const PartnersEcosystem: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedLocation, setSelectedLocation] = useState<string>('All');
   const [selectedTheme, setSelectedTheme] = useState<string>('All');
+
+  // View & Pagination State
+  const [viewMode, setViewMode] = useState<'list' | 'cards'>('list');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(8);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -108,6 +116,17 @@ export const PartnersEcosystem: React.FC = () => {
     });
     return ['All', ...Array.from(set).sort()];
   }, [partners]);
+
+  // Reset to first page when search or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedLocation, selectedTheme, searchQuery]);
+
+  // Paginated partners slice
+  const paginatedPartners = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredPartners.slice(start, start + pageSize);
+  }, [filteredPartners, currentPage, pageSize]);
 
   // Theme badges
   const getThemeBadge = (theme: string) => {
@@ -354,8 +373,67 @@ export const PartnersEcosystem: React.FC = () => {
             )}
           </div>
 
-          <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-            Showing <strong>{filteredPartners.length}</strong> of <strong>{partners.length}</strong> partners
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              Showing <strong>{filteredPartners.length}</strong> of <strong>{partners.length}</strong> partners
+            </div>
+
+            {/* View Mode Switcher */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: 'var(--bg-surface-subtle)',
+                padding: '2px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border-subtle)'
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                title="List / Table View"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  padding: '0.25rem 0.55rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  border: 'none',
+                  borderRadius: '4px',
+                  backgroundColor: viewMode === 'list' ? 'var(--bg-surface)' : 'transparent',
+                  color: viewMode === 'list' ? 'var(--color-primary)' : 'var(--text-muted)',
+                  boxShadow: viewMode === 'list' ? 'var(--shadow-sm)' : 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <List size={14} />
+                <span>List</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('cards')}
+                title="Cards Grid View"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  padding: '0.25rem 0.55rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  border: 'none',
+                  borderRadius: '4px',
+                  backgroundColor: viewMode === 'cards' ? 'var(--bg-surface)' : 'transparent',
+                  color: viewMode === 'cards' ? 'var(--color-primary)' : 'var(--text-muted)',
+                  boxShadow: viewMode === 'cards' ? 'var(--shadow-sm)' : 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <LayoutGrid size={14} />
+                <span>Cards</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -419,7 +497,7 @@ export const PartnersEcosystem: React.FC = () => {
       </div>
 
       {/* ──────────────────────────────────────────────────────────────────────────── */}
-      {/* PARTNERS GRID */}
+      {/* PARTNERS LIST OR GRID WITH PAGINATION */}
       {/* ──────────────────────────────────────────────────────────────────────────── */}
       {isLoading ? (
         <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
@@ -443,146 +521,348 @@ export const PartnersEcosystem: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-            gap: '1rem'
-          }}
-        >
-          {filteredPartners.map((p) => {
-            const badge = getThemeBadge(p.theme);
-
-            return (
-              <div
-                key={p.id}
-                style={{
-                  backgroundColor: 'var(--bg-surface)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '1.25rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.75rem',
-                  boxShadow: 'var(--shadow-sm)',
-                  position: 'relative'
-                }}
-              >
-                {/* Header row */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-                    <span
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem',
-                        fontSize: '0.74rem',
-                        fontWeight: 700,
-                        padding: '0.15rem 0.5rem',
-                        backgroundColor: 'var(--bg-surface-subtle)',
-                        borderRadius: '4px',
-                        border: '1px solid var(--border-subtle)',
-                        color: 'var(--text-primary)'
-                      }}
-                    >
-                      <MapPin size={11} style={{ color: 'var(--color-primary)' }} />
-                      <span>{p.location}</span>
-                    </span>
-
-                    <span
-                      style={{
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        padding: '0.15rem 0.45rem',
-                        backgroundColor: badge.bg,
-                        color: badge.color,
-                        border: `1px solid ${badge.border}`,
-                        borderRadius: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem'
-                      }}
-                    >
-                      {badge.icon}
-                      <span>{badge.label}</span>
-                    </span>
-
-                    {p.toms_code && (
-                      <span
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {viewMode === 'list' ? (
+            /* ── Professional List / Table Format ── */
+            <div
+              style={{
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                overflowX: 'auto',
+                boxShadow: 'var(--shadow-sm)'
+              }}
+            >
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.84rem' }}>
+                <thead>
+                  <tr
+                    style={{
+                      borderBottom: '1px solid var(--border-subtle)',
+                      backgroundColor: 'var(--bg-surface-subtle)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '0.74rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em'
+                    }}
+                  >
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Partner Organization</th>
+                    <th style={{ padding: '0.75rem 0.85rem', fontWeight: 600 }}>Region</th>
+                    <th style={{ padding: '0.75rem 0.85rem', fontWeight: 600 }}>Theme</th>
+                    <th style={{ padding: '0.75rem 0.85rem', fontWeight: 600 }}>TOMs</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, minWidth: '240px' }}>
+                      Focus Area & Scope
+                    </th>
+                    <th style={{ padding: '0.75rem 0.85rem', fontWeight: 600 }}>Status</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedPartners.map((p) => {
+                    const badge = getThemeBadge(p.theme);
+                    return (
+                      <tr
+                        key={p.id}
                         style={{
-                          fontSize: '0.68rem',
-                          fontWeight: 700,
-                          fontFamily: 'monospace',
-                          padding: '0.12rem 0.4rem',
-                          backgroundColor: 'rgba(0,0,0,0.03)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: '3px',
-                          color: 'var(--text-secondary)'
+                          borderBottom: '1px solid var(--border-subtle)',
+                          transition: 'background-color 0.15s ease'
                         }}
                       >
-                        {p.toms_code}
-                      </span>
-                    )}
-                  </div>
+                        {/* Partner Name & Description */}
+                        <td style={{ padding: '0.85rem 1rem', verticalAlign: 'top' }}>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+                            {p.partner_name}
+                          </div>
+                          {p.contact_info && (
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                              {p.contact_info}
+                            </div>
+                          )}
+                        </td>
 
-                  {/* Actions */}
-                  <div style={{ display: 'flex', gap: '0.3rem' }}>
-                    <button
-                      onClick={() => handleOpenEdit(p)}
-                      className="btn-secondary"
-                      style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem' }}
-                      title="Edit Partner"
-                    >
-                      <Edit3 size={13} />
-                    </button>
-                    <button
-                      onClick={() => setDeleteModalState({ isOpen: true, partner: p })}
-                      className="btn-secondary"
-                      style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', color: '#dc2626' }}
-                      title="Delete Partner"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </div>
+                        {/* Region */}
+                        <td style={{ padding: '0.85rem 0.85rem', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              fontSize: '0.74rem',
+                              fontWeight: 600,
+                              padding: '0.2rem 0.5rem',
+                              backgroundColor: 'var(--bg-surface-subtle)',
+                              borderRadius: '4px',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'var(--text-primary)'
+                            }}
+                          >
+                            <MapPin size={11} style={{ color: 'var(--color-primary)' }} />
+                            <span>{p.location}</span>
+                          </span>
+                        </td>
 
-                {/* Partner Name */}
-                <div>
-                  <h4 style={{ fontSize: '1.02rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>
-                    {p.partner_name}
-                  </h4>
-                  {p.focus_area && (
-                    <div style={{ fontSize: '0.78rem', color: 'var(--color-primary)', fontWeight: 500, marginTop: '0.2rem' }}>
-                      {p.focus_area}
+                        {/* Theme */}
+                        <td style={{ padding: '0.85rem 0.85rem', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                          <span
+                            style={{
+                              fontSize: '0.7rem',
+                              fontWeight: 600,
+                              padding: '0.15rem 0.45rem',
+                              backgroundColor: badge.bg,
+                              color: badge.color,
+                              border: `1px solid ${badge.border}`,
+                              borderRadius: '4px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem'
+                            }}
+                          >
+                            {badge.icon}
+                            <span>{badge.label}</span>
+                          </span>
+                        </td>
+
+                        {/* TOMs Code */}
+                        <td style={{ padding: '0.85rem 0.85rem', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                          {p.toms_code ? (
+                            <span
+                              style={{
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                fontFamily: 'monospace',
+                                padding: '0.15rem 0.45rem',
+                                backgroundColor: 'var(--bg-surface-subtle)',
+                                border: '1px solid var(--border-subtle)',
+                                borderRadius: '3px',
+                                color: 'var(--text-secondary)'
+                              }}
+                            >
+                              {p.toms_code}
+                            </span>
+                          ) : (
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>—</span>
+                          )}
+                        </td>
+
+                        {/* Focus Area & Description */}
+                        <td style={{ padding: '0.85rem 1rem', verticalAlign: 'top' }}>
+                          {p.focus_area && (
+                            <div style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--color-primary)' }}>
+                              {p.focus_area}
+                            </div>
+                          )}
+                          {p.description && (
+                            <div
+                              style={{
+                                fontSize: '0.77rem',
+                                color: 'var(--text-secondary)',
+                                marginTop: '0.2rem',
+                                lineHeight: 1.4
+                              }}
+                            >
+                              {p.description}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Status */}
+                        <td style={{ padding: '0.85rem 0.85rem', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              fontSize: '0.72rem',
+                              color: '#059669',
+                              fontWeight: 600,
+                              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                              padding: '0.2rem 0.45rem',
+                              borderRadius: '4px'
+                            }}
+                          >
+                            <CheckCircle2 size={12} />
+                            <span>Approved</span>
+                          </span>
+                        </td>
+
+                        {/* Actions */}
+                        <td style={{ padding: '0.85rem 1rem', verticalAlign: 'top', textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', gap: '0.35rem' }}>
+                            <button
+                              onClick={() => handleOpenEdit(p)}
+                              className="btn-secondary"
+                              style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem' }}
+                              title="Edit Partner"
+                            >
+                              <Edit3 size={13} />
+                            </button>
+                            <button
+                              onClick={() => setDeleteModalState({ isOpen: true, partner: p })}
+                              className="btn-secondary"
+                              style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', color: '#dc2626' }}
+                              title="Delete Partner"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            /* ── Cards Grid Format ── */
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+                gap: '1rem'
+              }}
+            >
+              {paginatedPartners.map((p) => {
+                const badge = getThemeBadge(p.theme);
+                return (
+                  <div
+                    key={p.id}
+                    style={{
+                      backgroundColor: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '1.25rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.75rem',
+                      boxShadow: 'var(--shadow-sm)',
+                      position: 'relative'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                        <span
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            fontSize: '0.74rem',
+                            fontWeight: 700,
+                            padding: '0.15rem 0.5rem',
+                            backgroundColor: 'var(--bg-surface-subtle)',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border-subtle)',
+                            color: 'var(--text-primary)'
+                          }}
+                        >
+                          <MapPin size={11} style={{ color: 'var(--color-primary)' }} />
+                          <span>{p.location}</span>
+                        </span>
+
+                        <span
+                          style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                            padding: '0.15rem 0.45rem',
+                            backgroundColor: badge.bg,
+                            color: badge.color,
+                            border: `1px solid ${badge.border}`,
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                          }}
+                        >
+                          {badge.icon}
+                          <span>{badge.label}</span>
+                        </span>
+
+                        {p.toms_code && (
+                          <span
+                            style={{
+                              fontSize: '0.68rem',
+                              fontWeight: 700,
+                              fontFamily: 'monospace',
+                              padding: '0.12rem 0.4rem',
+                              backgroundColor: 'rgba(0,0,0,0.03)',
+                              border: '1px solid var(--border-subtle)',
+                              borderRadius: '3px',
+                              color: 'var(--text-secondary)'
+                            }}
+                          >
+                            {p.toms_code}
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0.3rem' }}>
+                        <button
+                          onClick={() => handleOpenEdit(p)}
+                          className="btn-secondary"
+                          style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem' }}
+                          title="Edit Partner"
+                        >
+                          <Edit3 size={13} />
+                        </button>
+                        <button
+                          onClick={() => setDeleteModalState({ isOpen: true, partner: p })}
+                          className="btn-secondary"
+                          style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', color: '#dc2626' }}
+                          title="Delete Partner"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </div>
 
-                {/* Description */}
-                {p.description && (
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.45, margin: 0 }}>
-                    {p.description}
-                  </p>
-                )}
+                    <div>
+                      <h4 style={{ fontSize: '1.02rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                        {p.partner_name}
+                      </h4>
+                      {p.focus_area && (
+                        <div style={{ fontSize: '0.78rem', color: 'var(--color-primary)', fontWeight: 500, marginTop: '0.2rem' }}>
+                          {p.focus_area}
+                        </div>
+                      )}
+                    </div>
 
-                {/* Pre-approved badge footer */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.3rem',
-                    fontSize: '0.72rem',
-                    color: '#059669',
-                    marginTop: 'auto',
-                    paddingTop: '0.35rem'
-                  }}
-                >
-                  <CheckCircle2 size={12} />
-                  <span>Approved for tender method statements</span>
-                </div>
-              </div>
-            );
-          })}
+                    {p.description && (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.45, margin: 0 }}>
+                        {p.description}
+                      </p>
+                    )}
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        fontSize: '0.72rem',
+                        color: '#059669',
+                        marginTop: 'auto',
+                        paddingTop: '0.35rem'
+                      }}
+                    >
+                      <CheckCircle2 size={12} />
+                      <span>Approved for tender method statements</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Reusable Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredPartners.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            pageSizeOptions={[8, 16, 24, 50]}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setCurrentPage(1);
+            }}
+            itemLabel="partners"
+          />
         </div>
       )}
 

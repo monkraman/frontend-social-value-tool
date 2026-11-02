@@ -6,6 +6,7 @@ import { Documents } from './components/Documents';
 import { Search } from './components/Search';
 import { TomsCatalog } from './components/TomsCatalog';
 import { PartnersEcosystem } from './components/PartnersEcosystem';
+import { OpportunityFinder } from './components/OpportunityFinder';
 import { LoginScreen } from './components/LoginScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -226,6 +227,14 @@ const AppContent: React.FC = () => {
             refineError={refineError}
             refinementNote={refinementNote}
             conversationTurnCount={threadLength}
+          />
+        )}
+        {activeTab === 'opportunity' && (
+          <OpportunityFinder
+            onSendToBidStudio={(promptText) => {
+              setCurrentPrompt(promptText);
+              setActiveTab('prompt');
+            }}
           />
         )}
         {activeTab === 'tuner' && <Tuner />}

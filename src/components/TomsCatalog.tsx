@@ -34,8 +34,11 @@ import {
   Coins,
   Download,
   Check,
-  X
+  X,
+  List,
+  LayoutGrid
 } from 'lucide-react';
+import { Pagination } from './Pagination';
 
 interface TomsCatalogProps {
   onSendToPrompt?: (promptText: string) => void;
@@ -48,6 +51,11 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = ({ onSendToPrompt }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedTheme, setSelectedTheme] = useState<string>('All');
+
+  // View & Pagination state
+  const [viewMode, setViewMode] = useState<'list' | 'cards'>('list');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(8);
 
   // Opportunity Finder drawer state
   const [showAdvisor, setShowAdvisor] = useState<boolean>(false);
@@ -133,6 +141,17 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = ({ onSendToPrompt }) => {
     });
     return counts;
   }, [metrics]);
+
+  // Reset page when theme or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedTheme, searchQuery]);
+
+  // Paginated metrics slice
+  const paginatedMetrics = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredMetrics.slice(start, start + pageSize);
+  }, [filteredMetrics, currentPage, pageSize]);
 
   // Helper theme icons & styles
   const getThemeBadge = (theme: string) => {
@@ -764,9 +783,67 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = ({ onSendToPrompt }) => {
             )}
           </div>
 
-          {/* Measure Counter */}
-          <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-            Showing <strong>{filteredMetrics.length}</strong> of <strong>{metrics.length}</strong> verified measures
+          {/* Measure Counter & View Mode Switcher */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              Showing <strong>{filteredMetrics.length}</strong> of <strong>{metrics.length}</strong> verified measures
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: 'var(--bg-surface-subtle)',
+                padding: '2px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border-subtle)'
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                title="List / Table View"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  padding: '0.25rem 0.55rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  border: 'none',
+                  borderRadius: '4px',
+                  backgroundColor: viewMode === 'list' ? 'var(--bg-surface)' : 'transparent',
+                  color: viewMode === 'list' ? 'var(--color-primary)' : 'var(--text-muted)',
+                  boxShadow: viewMode === 'list' ? 'var(--shadow-sm)' : 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <List size={14} />
+                <span>List</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('cards')}
+                title="Cards Grid View"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  padding: '0.25rem 0.55rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  border: 'none',
+                  borderRadius: '4px',
+                  backgroundColor: viewMode === 'cards' ? 'var(--bg-surface)' : 'transparent',
+                  color: viewMode === 'cards' ? 'var(--color-primary)' : 'var(--text-muted)',
+                  boxShadow: viewMode === 'cards' ? 'var(--shadow-sm)' : 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <LayoutGrid size={14} />
+                <span>Cards</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -826,177 +903,352 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = ({ onSendToPrompt }) => {
           </button>
         </div>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
-            gap: '1rem'
-          }}
-        >
-          {filteredMetrics.map((m) => {
-            const badge = getThemeBadge(m.theme);
-            const isNHSBenchmark = m.code.startsWith('NHS');
-
-            return (
-              <div
-                key={m.code}
-                style={{
-                  backgroundColor: 'var(--bg-surface)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '1.25rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.75rem',
-                  boxShadow: 'var(--shadow-sm)',
-                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                  position: 'relative'
-                }}
-              >
-                {/* Header row: Code, Theme badge, and Action Buttons */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-                    <span
-                      style={{
-                        fontFamily: 'monospace',
-                        fontWeight: 700,
-                        fontSize: '0.8rem',
-                        padding: '0.18rem 0.5rem',
-                        backgroundColor: 'var(--bg-surface-subtle)',
-                        borderRadius: '4px',
-                        border: '1px solid var(--border-subtle)',
-                        color: 'var(--text-primary)'
-                      }}
-                    >
-                      {m.code}
-                    </span>
-
-                    <span
-                      style={{
-                        fontSize: '0.72rem',
-                        fontWeight: 600,
-                        padding: '0.15rem 0.45rem',
-                        backgroundColor: badge.bg,
-                        color: badge.color,
-                        border: `1px solid ${badge.border}`,
-                        borderRadius: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.3rem'
-                      }}
-                    >
-                      {badge.icon}
-                      <span>{badge.label}</span>
-                    </span>
-
-                    {isNHSBenchmark && (
-                      <span
-                        style={{
-                          fontSize: '0.68rem',
-                          fontWeight: 600,
-                          padding: '0.12rem 0.35rem',
-                          backgroundColor: 'rgba(5, 150, 105, 0.1)',
-                          color: '#059669',
-                          borderRadius: '3px',
-                          border: '1px solid rgba(5, 150, 105, 0.2)'
-                        }}
-                      >
-                        NHS Schedule 3b/8
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div style={{ display: 'flex', gap: '0.3rem' }}>
-                    <button
-                      onClick={() => handleOpenEdit(m)}
-                      className="btn-secondary"
-                      style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem' }}
-                      title="Edit / Reconfigure"
-                    >
-                      <Edit3 size={13} />
-                    </button>
-                    <button
-                      onClick={() => setDeleteModalState({ isOpen: true, metric: m })}
-                      className="btn-secondary"
-                      style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', color: '#dc2626' }}
-                      title="Deactivate Measure"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Title */}
-                <div>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>
-                    {m.name}
-                  </h4>
-                  {m.outcome && (
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                      <em>{m.outcome}</em>
-                    </div>
-                  )}
-                </div>
-
-                {/* Proxy Price Ribbon */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'baseline',
-                    gap: '0.4rem',
-                    padding: '0.5rem 0.75rem',
-                    backgroundColor: 'var(--bg-surface-subtle)',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-subtle)'
-                  }}
-                >
-                  <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-primary)' }}>
-                    {formatGbp(m.unit_value_gbp)}
-                  </span>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                    per {m.unit}
-                  </span>
-                </div>
-
-                {/* PPN 06/20 Mapping */}
-                {m.ppn_mapping && (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    <strong>PPN 06/20 Model: </strong>
-                    <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{m.ppn_mapping}</span>
-                  </div>
-                )}
-
-                {/* Description */}
-                {m.description && (
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.45, margin: 0 }}>
-                    {m.description}
-                  </p>
-                )}
-
-                {/* Evidence Required */}
-                {m.evidence_required && (
-                  <div
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {viewMode === 'list' ? (
+            /* ── Professional List / Table Format ── */
+            <div
+              style={{
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                overflowX: 'auto',
+                boxShadow: 'var(--shadow-sm)'
+              }}
+            >
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.84rem' }}>
+                <thead>
+                  <tr
                     style={{
+                      borderBottom: '1px solid var(--border-subtle)',
+                      backgroundColor: 'var(--bg-surface-subtle)',
+                      color: 'var(--text-secondary)',
                       fontSize: '0.74rem',
-                      color: 'var(--text-tertiary)',
-                      backgroundColor: 'rgba(0,0,0,0.015)',
-                      padding: '0.5rem 0.65rem',
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px dashed var(--border-subtle)',
-                      marginTop: 'auto'
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 600, marginBottom: '0.2rem', color: 'var(--text-secondary)' }}>
-                      <FileCheck size={12} />
-                      <span>Audited Evidence Required (Schedule 3b):</span>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Code & Theme</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, minWidth: '220px' }}>Measure Name & Scope</th>
+                    <th style={{ padding: '0.75rem 0.85rem', fontWeight: 600 }}>Proxy Valuation (£)</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, minWidth: '200px' }}>PPN 06/20 Model Criteria</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, minWidth: '220px' }}>Schedule 3b Evidence</th>
+                    <th style={{ padding: '0.75rem 0.85rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedMetrics.map((m) => {
+                    const badge = getThemeBadge(m.theme);
+                    const isNHSBenchmark = m.code.startsWith('NHS');
+
+                    return (
+                      <tr
+                        key={m.code}
+                        style={{
+                          borderBottom: '1px solid var(--border-subtle)',
+                          transition: 'background-color 0.15s ease'
+                        }}
+                      >
+                        {/* Code & Theme */}
+                        <td style={{ padding: '0.85rem 1rem', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' }}>
+                            <span
+                              style={{
+                                fontFamily: 'monospace',
+                                fontWeight: 700,
+                                fontSize: '0.8rem',
+                                padding: '0.18rem 0.5rem',
+                                backgroundColor: 'var(--bg-surface-subtle)',
+                                borderRadius: '4px',
+                                border: '1px solid var(--border-subtle)',
+                                color: 'var(--text-primary)'
+                              }}
+                            >
+                              {m.code}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 600,
+                                padding: '0.12rem 0.45rem',
+                                backgroundColor: badge.bg,
+                                color: badge.color,
+                                border: `1px solid ${badge.border}`,
+                                borderRadius: '4px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem'
+                              }}
+                            >
+                              {badge.icon}
+                              <span>{badge.label}</span>
+                            </span>
+                            {isNHSBenchmark && (
+                              <span
+                                style={{
+                                  fontSize: '0.66rem',
+                                  fontWeight: 600,
+                                  padding: '0.1rem 0.35rem',
+                                  backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                                  color: '#059669',
+                                  borderRadius: '3px',
+                                  border: '1px solid rgba(5, 150, 105, 0.2)'
+                                }}
+                              >
+                                NHS Schedule 8
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Measure Name & Outcome */}
+                        <td style={{ padding: '0.85rem 1rem', verticalAlign: 'top' }}>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.88rem' }}>
+                            {m.name}
+                          </div>
+                          {m.outcome && (
+                            <div style={{ fontSize: '0.76rem', color: 'var(--color-primary)', fontWeight: 500, marginTop: '0.2rem' }}>
+                              {m.outcome}
+                            </div>
+                          )}
+                          {m.description && (
+                            <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '0.2rem', lineHeight: 1.4 }}>
+                              {m.description}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Proxy Valuation */}
+                        <td style={{ padding: '0.85rem 0.85rem', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.94rem', color: 'var(--color-primary)' }}>
+                            {formatGbp(m.unit_value_gbp)}
+                          </div>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                            per {m.unit}
+                          </div>
+                        </td>
+
+                        {/* PPN Criteria */}
+                        <td style={{ padding: '0.85rem 1rem', verticalAlign: 'top' }}>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                            {m.ppn_mapping || '—'}
+                          </div>
+                        </td>
+
+                        {/* Evidence Required */}
+                        <td style={{ padding: '0.85rem 1rem', verticalAlign: 'top' }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                            {m.evidence_required || '—'}
+                          </div>
+                        </td>
+
+                        {/* Actions */}
+                        <td style={{ padding: '0.85rem 0.85rem', verticalAlign: 'top', textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', gap: '0.3rem' }}>
+                            <button
+                              onClick={() => handleOpenEdit(m)}
+                              className="btn-secondary"
+                              style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem' }}
+                              title="Edit / Reconfigure"
+                            >
+                              <Edit3 size={13} />
+                            </button>
+                            <button
+                              onClick={() => setDeleteModalState({ isOpen: true, metric: m })}
+                              className="btn-secondary"
+                              style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', color: '#dc2626' }}
+                              title="Deactivate Measure"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            /* ── Cards Grid Format ── */
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
+                gap: '1rem'
+              }}
+            >
+              {paginatedMetrics.map((m) => {
+                const badge = getThemeBadge(m.theme);
+                const isNHSBenchmark = m.code.startsWith('NHS');
+
+                return (
+                  <div
+                    key={m.code}
+                    style={{
+                      backgroundColor: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '1.25rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.75rem',
+                      boxShadow: 'var(--shadow-sm)',
+                      transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                      position: 'relative'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                        <span
+                          style={{
+                            fontFamily: 'monospace',
+                            fontWeight: 700,
+                            fontSize: '0.8rem',
+                            padding: '0.18rem 0.5rem',
+                            backgroundColor: 'var(--bg-surface-subtle)',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border-subtle)',
+                            color: 'var(--text-primary)'
+                          }}
+                        >
+                          {m.code}
+                        </span>
+
+                        <span
+                          style={{
+                            fontSize: '0.72rem',
+                            fontWeight: 600,
+                            padding: '0.15rem 0.45rem',
+                            backgroundColor: badge.bg,
+                            color: badge.color,
+                            border: `1px solid ${badge.border}`,
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.3rem'
+                          }}
+                        >
+                          {badge.icon}
+                          <span>{badge.label}</span>
+                        </span>
+
+                        {isNHSBenchmark && (
+                          <span
+                            style={{
+                              fontSize: '0.68rem',
+                              fontWeight: 600,
+                              padding: '0.12rem 0.35rem',
+                              backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                              color: '#059669',
+                              borderRadius: '3px',
+                              border: '1px solid rgba(5, 150, 105, 0.2)'
+                            }}
+                          >
+                            NHS Schedule 3b/8
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0.3rem' }}>
+                        <button
+                          onClick={() => handleOpenEdit(m)}
+                          className="btn-secondary"
+                          style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem' }}
+                          title="Edit / Reconfigure"
+                        >
+                          <Edit3 size={13} />
+                        </button>
+                        <button
+                          onClick={() => setDeleteModalState({ isOpen: true, metric: m })}
+                          className="btn-secondary"
+                          style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', color: '#dc2626' }}
+                          title="Deactivate Measure"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
-                    {m.evidence_required}
+
+                    <div>
+                      <h4 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                        {m.name}
+                      </h4>
+                      {m.outcome && (
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                          <em>{m.outcome}</em>
+                        </div>
+                      )}
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'baseline',
+                        gap: '0.4rem',
+                        padding: '0.5rem 0.75rem',
+                        backgroundColor: 'var(--bg-surface-subtle)',
+                        borderRadius: 'var(--radius-sm)'
+                      }}
+                    >
+                      <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-primary)' }}>
+                        {formatGbp(m.unit_value_gbp)}
+                      </span>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                        per {m.unit}
+                      </span>
+                    </div>
+
+                    {m.ppn_mapping && (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        <strong>PPN 06/20 Model: </strong>
+                        <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{m.ppn_mapping}</span>
+                      </div>
+                    )}
+
+                    {m.description && (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.45, margin: 0 }}>
+                        {m.description}
+                      </p>
+                    )}
+
+                    {m.evidence_required && (
+                      <div
+                        style={{
+                          fontSize: '0.74rem',
+                          color: 'var(--text-tertiary)',
+                          backgroundColor: 'rgba(0,0,0,0.015)',
+                          padding: '0.5rem 0.65rem',
+                          borderRadius: 'var(--radius-sm)',
+                          border: '1px dashed var(--border-subtle)',
+                          marginTop: 'auto'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 600, marginBottom: '0.2rem', color: 'var(--text-secondary)' }}>
+                          <FileCheck size={12} />
+                          <span>Audited Evidence Required (Schedule 3b):</span>
+                        </div>
+                        {m.evidence_required}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
+
+          {/* Reusable Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredMetrics.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            pageSizeOptions={[8, 16, 24, 50]}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setCurrentPage(1);
+            }}
+            itemLabel="measures"
+          />
         </div>
       )}
 
