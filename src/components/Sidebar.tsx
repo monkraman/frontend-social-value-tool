@@ -107,12 +107,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     loadAuditData();
   };
 
-  const navItems: Array<{ id: ActiveTab; label: string; icon: React.ReactNode }> = [
-    { id: 'prompt', label: 'Bid Studio', icon: <MessageSquare size={17} /> },
+  const primaryNavItems: Array<{ id: ActiveTab; label: string; icon: React.ReactNode }> = [
     { id: 'opportunity', label: 'Opportunity Finder', icon: <Sparkles size={17} /> },
-    { id: 'tuner', label: 'Value Tuner', icon: <Sliders size={17} /> },
     { id: 'toms', label: 'TOMS Catalog', icon: <Target size={17} /> },
     { id: 'partners', label: 'Regional Partners', icon: <Building size={17} /> },
+    { id: 'tuner', label: 'Value Tuner', icon: <Sliders size={17} /> }
+  ];
+
+  const legacyNavItems: Array<{ id: ActiveTab; label: string; icon: React.ReactNode }> = [
+    { id: 'prompt', label: 'Bid Studio', icon: <MessageSquare size={17} /> },
     { id: 'documents', label: 'Repository', icon: <Database size={17} /> },
     { id: 'search', label: 'Evidence Search', icon: <Search size={17} /> }
   ];
@@ -203,10 +206,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* New Prompt Button */}
+      {/* New Prompt Button -> Points to Opportunity Finder */}
       <div style={{ padding: '0.95rem 1.25rem 0.5rem 1.25rem', flexShrink: 0 }}>
         <button
-          onClick={onNewPrompt}
+          onClick={() => {
+            onTabChange('opportunity');
+            onNewPrompt();
+          }}
           className="btn-primary"
           style={{ width: '100%', justifyContent: 'center', padding: '0.6rem 0.75rem', fontSize: '0.84rem' }}
         >
@@ -217,7 +223,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Navigation List */}
       <nav style={{ padding: '0.4rem 0.75rem 0.6rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.15rem', flexShrink: 0 }}>
-        {navItems.map((item) => {
+        {primaryNavItems.map((item) => {
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => onTabChange(item.id)}
+              className={`nav-item${isActive ? ' is-active' : ''}`}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
+
+        <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '0.45rem 0.4rem 0.35rem 0.4rem' }} />
+
+        {legacyNavItems.map((item) => {
           const isActive = activeTab === item.id;
           return (
             <button

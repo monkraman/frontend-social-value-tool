@@ -22,7 +22,7 @@ const DEFAULT_INITIAL_PROMPT =
 const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('prompt');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('opportunity');
   const [currentPrompt, setCurrentPrompt] = useState<string>(DEFAULT_INITIAL_PROMPT);
   const [promptFeedback, setPromptFeedback] = useState<{
     type: 'non_rfp' | 'navigated';
@@ -186,6 +186,7 @@ const AppContent: React.FC = () => {
     setResult(null);
     setRefinementNote(null);
     resetSession();
+    setActiveTab('opportunity');
   };
 
   // ────────────────────────────────────────────────────────────────────────────

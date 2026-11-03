@@ -4,8 +4,7 @@ import {
   createTomsMetric,
   updateTomsMetric,
   deleteTomsMetric,
-  resetDefaultTomsMetrics,
-  recommendOpportunities
+  resetDefaultTomsMetrics
 } from '../api/client';
 import { useToast } from '../context/ToastContext';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -13,27 +12,23 @@ import { formatGbp } from '../utils/formatters';
 import type {
   TOMsMetric,
   TomsMetricCreate,
-  TomsMetricUpdate,
-  OpportunityRecommendResponse
+  TomsMetricUpdate
 } from '../types';
 import {
   Plus,
   Search,
-  Sparkles,
   RefreshCw,
   Edit3,
   Trash2,
   HelpCircle,
   FileCheck,
   Award,
-  ArrowRight,
   ShieldAlert,
   Leaf,
   Briefcase,
   Users,
   Coins,
   Download,
-  Check,
   X,
   List,
   LayoutGrid
@@ -44,7 +39,7 @@ interface TomsCatalogProps {
   onSendToPrompt?: (promptText: string) => void;
 }
 
-export const TomsCatalog: React.FC<TomsCatalogProps> = ({ onSendToPrompt }) => {
+export const TomsCatalog: React.FC<TomsCatalogProps> = () => {
   const toast = useToast();
 
   const [metrics, setMetrics] = useState<TOMsMetric[]>([]);
@@ -57,16 +52,6 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = ({ onSendToPrompt }) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(8);
 
-  // Opportunity Finder drawer state
-  const [showAdvisor, setShowAdvisor] = useState<boolean>(false);
-  const [advisorIndustry, setAdvisorIndustry] = useState<string>('IT & Digital Services');
-  const [advisorLocation, setAdvisorLocation] = useState<string>('Manchester / North West');
-  const [advisorContractValue, setAdvisorContractValue] = useState<number>(5000000);
-  const [advisorDurationYears, setAdvisorDurationYears] = useState<number>(3);
-  const [advisorWeighting, setAdvisorWeighting] = useState<number>(10);
-  const [isGeneratingRecs, setIsGeneratingRecs] = useState<boolean>(false);
-  const [advisorResults, setAdvisorResults] = useState<OpportunityRecommendResponse | null>(null);
-  const [copiedBidText, setCopiedBidText] = useState<boolean>(false);
 
   // Add / Edit Modal state
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -309,60 +294,6 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = ({ onSendToPrompt }) => {
     }
   };
 
-  // Run Opportunity Finder (Bid Advisor for document-less clients)
-  const handleGenerateAdvisorRecs = async () => {
-    setIsGeneratingRecs(true);
-    try {
-      const res = await recommendOpportunities({
-        industry: advisorIndustry,
-        contract_value_gbp: advisorContractValue,
-        duration_years: advisorDurationYears,
-        target_weighting_percent: advisorWeighting,
-        location: advisorLocation
-      });
-      setAdvisorResults(res);
-      toast.success('Social Value commitments optimized for tender bid!');
-    } catch (err: any) {
-      toast.error('Could not generate recommendations: ' + (err.message || 'Server error'));
-    } finally {
-      setIsGeneratingRecs(false);
-    }
-  };
-
-  // Compile recommended initiatives into tender proposal prompt
-  const handleSendAdvisorToBidStudio = () => {
-    if (!advisorResults) return;
-
-    const initiativesList = advisorResults.recommendations
-      .map(
-        (r, idx) =>
-          `${idx + 1}. **${r.initiative_name}** (${r.toms_code} / ${r.ppn_mac})\n` +
-          `   - Volume: ${r.annual_volume} ${r.unit}/yr (${r.total_volume} total over ${r.duration_years} yrs)\n` +
-          `   - Social Value Return: ${formatGbp(r.total_social_value_gbp)} (£${r.unit_value_gbp}/${r.unit})\n` +
-          `   - Delivery Approach: ${r.delivery_approach}\n` +
-          `   - Verifiable Audit Evidence: ${r.evidence_needed}`
-      )
-      .join('\n\n');
-
-    const promptText =
-      `I am preparing a Social Value bid proposal for a public sector tender in ${advisorLocation}.\n\n` +
-      `Contract Details:\n` +
-      `- Industry: ${advisorIndustry}\n` +
-      `- Contract Value: ${formatGbp(advisorContractValue)} across ${advisorDurationYears} years\n` +
-      `- Social Value Weighting: ${advisorWeighting}% (Statutory Target: ${formatGbp(advisorResults.target_social_value_gbp)})\n\n` +
-      `Using National TOMs proxy valuations and Schedule 8/Schedule 3b standards, generate a complete Method Statement and Performance KPI table covering these 5 audited commitments delivering ${formatGbp(advisorResults.total_recommended_social_value_gbp)} (${advisorResults.achieved_weighting_percent}%):\n\n` +
-      `${initiativesList}\n\n` +
-      `Ensure the response includes delivery governance, milestone cadence, partner integration, and PPN 06/20 Model Award Criteria alignment.`;
-
-    if (onSendToPrompt) {
-      onSendToPrompt(promptText);
-    } else {
-      navigator.clipboard.writeText(promptText);
-      setCopiedBidText(true);
-      setTimeout(() => setCopiedBidText(false), 3000);
-      toast.info('Bid draft prompt copied to clipboard!');
-    }
-  };
 
   // Export catalog
   const handleExportCatalog = () => {
@@ -405,22 +336,7 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = ({ onSendToPrompt }) => {
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <button
-            onClick={() => setShowAdvisor(!showAdvisor)}
-            className="btn-primary"
-            style={{
-              fontSize: '0.82rem',
-              backgroundColor: showAdvisor ? 'var(--color-primary-text)' : undefined,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem'
-            }}
-          >
-            <Sparkles size={15} />
-            <span>{showAdvisor ? 'Hide Opportunity Finder' : 'Tender Opportunity Finder'}</span>
-          </button>
-
-          <button onClick={handleOpenAdd} className="btn-secondary" style={{ fontSize: '0.82rem' }}>
+          <button onClick={handleOpenAdd} className="btn-primary" style={{ fontSize: '0.82rem' }}>
             <Plus size={15} /> Add Measure
           </button>
 
@@ -438,295 +354,6 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = ({ onSendToPrompt }) => {
           </button>
         </div>
       </div>
-
-      {/* ──────────────────────────────────────────────────────────────────────────── */}
-      {/* TENDER OPPORTUNITY FINDER (Interactive Bid Advisor for Document-less Clients) */}
-      {/* ──────────────────────────────────────────────────────────────────────────── */}
-      {showAdvisor && (
-        <div
-          style={{
-            padding: '1.5rem',
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--color-primary-subtle, rgba(59,130,246,0.3))',
-            borderTop: '4px solid var(--color-primary)',
-            borderRadius: 'var(--radius-md)',
-            boxShadow: 'var(--shadow-md)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1.25rem'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <div>
-              <span
-                style={{
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  color: 'var(--color-primary)'
-                }}
-              >
-                No Documents Needed
-              </span>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
-                AI Social Value Bid Opportunity Advisor
-              </h3>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                Tell us your contract scope. The advisor matches statutory TOMs proxy values and Schedule 8/3b benchmarks
-                to formulate a guaranteed winning Social Value strategy.
-              </p>
-            </div>
-
-            <button
-              onClick={handleGenerateAdvisorRecs}
-              className="btn-primary"
-              disabled={isGeneratingRecs}
-              style={{ fontSize: '0.85rem', padding: '0.6rem 1.1rem' }}
-            >
-              <Sparkles size={15} className={isGeneratingRecs ? 'spin-icon' : ''} />
-              <span>{isGeneratingRecs ? 'Analyzing Catalog…' : 'Generate Tender Commitments'}</span>
-            </button>
-          </div>
-
-          {/* Form Inputs Grid */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-              gap: '1rem',
-              backgroundColor: 'var(--bg-surface-subtle, rgba(0,0,0,0.02))',
-              padding: '1.1rem',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border-subtle)'
-            }}
-          >
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                Bidder Industry / Service Area
-              </label>
-              <input
-                type="text"
-                value={advisorIndustry}
-                onChange={(e) => setAdvisorIndustry(e.target.value)}
-                placeholder="e.g. IT Services, Facilities, Construction"
-                className="input-field"
-                style={{ width: '100%', fontSize: '0.84rem' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                Target Public Authority / Location
-              </label>
-              <input
-                type="text"
-                value={advisorLocation}
-                onChange={(e) => setAdvisorLocation(e.target.value)}
-                placeholder="e.g. Birmingham City Council, NHS Trust"
-                className="input-field"
-                style={{ width: '100%', fontSize: '0.84rem' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                Contract Value (£)
-              </label>
-              <input
-                type="number"
-                value={advisorContractValue}
-                onChange={(e) => setAdvisorContractValue(Number(e.target.value))}
-                step="500000"
-                min="100000"
-                className="input-field"
-                style={{ width: '100%', fontSize: '0.84rem' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                Contract Duration (Years)
-              </label>
-              <input
-                type="number"
-                value={advisorDurationYears}
-                onChange={(e) => setAdvisorDurationYears(Number(e.target.value))}
-                min="1"
-                max="10"
-                className="input-field"
-                style={{ width: '100%', fontSize: '0.84rem' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                Social Value Weighting (%)
-              </label>
-              <input
-                type="number"
-                value={advisorWeighting}
-                onChange={(e) => setAdvisorWeighting(Number(e.target.value))}
-                min="5"
-                max="30"
-                step="1"
-                className="input-field"
-                style={{ width: '100%', fontSize: '0.84rem' }}
-              />
-            </div>
-          </div>
-
-          {/* Results Display */}
-          {advisorResults && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
-              {/* Summary Metric Ribbon */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                  gap: '0.75rem',
-                  padding: '1rem',
-                  backgroundColor: 'var(--color-primary-subtle, rgba(59,130,246,0.06))',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border-subtle)'
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Statutory SV Target</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    {formatGbp(advisorResults.target_social_value_gbp)}
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                    ({advisorResults.target_weighting_percent}% of contract)
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Delivered Social Value</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#059669' }}>
-                    {formatGbp(advisorResults.total_recommended_social_value_gbp)}
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 600 }}>
-                    {advisorResults.achieved_weighting_percent}% Achieved ({advisorResults.target_met ? 'Target Met!' : 'Shortfall'})
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Recommended Pillars</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    {advisorResults.recommendations.length} Initiatives
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                    Work, Planet, Community, Economy
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                  <button
-                    onClick={handleSendAdvisorToBidStudio}
-                    className="btn-primary"
-                    style={{
-                      fontSize: '0.8rem',
-                      padding: '0.55rem 0.85rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.4rem'
-                    }}
-                  >
-                    {copiedBidText ? <Check size={14} /> : <ArrowRight size={14} />}
-                    <span>{onSendToPrompt ? 'Draft in Bid Studio' : 'Copy Bid Prompt'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Executive Summary text */}
-              <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', padding: '0.5rem 0' }}>
-                <strong>Strategic Overview: </strong> {advisorResults.executive_summary}
-              </div>
-
-              {/* Recommendations Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '0.85rem' }}>
-                {advisorResults.recommendations.map((rec, i) => {
-                  const badge = getThemeBadge(rec.theme);
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        padding: '1rem',
-                        backgroundColor: 'var(--bg-surface)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-sm)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.5rem'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span
-                            style={{
-                              fontSize: '0.72rem',
-                              fontWeight: 700,
-                              fontFamily: 'monospace',
-                              padding: '0.15rem 0.45rem',
-                              backgroundColor: 'var(--bg-surface-subtle)',
-                              borderRadius: '4px',
-                              border: '1px solid var(--border-subtle)'
-                            }}
-                          >
-                            {rec.toms_code}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: '0.7rem',
-                              fontWeight: 600,
-                              padding: '0.15rem 0.45rem',
-                              backgroundColor: badge.bg,
-                              color: badge.color,
-                              border: `1px solid ${badge.border}`,
-                              borderRadius: '4px'
-                            }}
-                          >
-                            {badge.label}
-                          </span>
-                        </div>
-                        <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#059669' }}>
-                          {formatGbp(rec.total_social_value_gbp)}
-                        </span>
-                      </div>
-
-                      <div style={{ fontWeight: 600, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
-                        {rec.initiative_name}
-                      </div>
-
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                        <strong>Target: </strong> {rec.annual_volume} {rec.unit}/yr ({rec.total_volume} {rec.unit} over {rec.duration_years} yrs) @ £{rec.unit_value_gbp}/{rec.unit}
-                      </div>
-
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                        <strong>Delivery: </strong> {rec.delivery_approach}
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize: '0.74rem',
-                          color: 'var(--text-tertiary)',
-                          backgroundColor: 'var(--bg-surface-subtle)',
-                          padding: '0.4rem 0.6rem',
-                          borderRadius: '4px',
-                          border: '1px dashed var(--border-subtle)'
-                        }}
-                      >
-                        <strong>Audit Evidence: </strong> {rec.evidence_needed}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* ──────────────────────────────────────────────────────────────────────────── */}
       {/* FILTER & SEARCH BAR */}
