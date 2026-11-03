@@ -1,6 +1,7 @@
 {
   "navigationFallback": {
-    "rewrite": "/index.html"
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*", "*.{png,svg,jpg,jpeg,gif,ico,css,js,json}"]
   },
   "responseOverrides": {
     "404": {
@@ -11,6 +12,8 @@
     "Cache-Control": "public, max-age=3600"
   },
   "mimeTypes": {
-    ".json": "application/json"
+    ".json": "application/json",
+    ".js": "text/javascript",
+    ".mjs": "text/javascript"
   }
 }

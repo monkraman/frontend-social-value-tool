@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { recommendOpportunities } from '../api/client';
 import { useToast } from '../context/ToastContext';
 import { Pagination } from './Pagination';
-import { formatGbp, formatPercent } from '../utils/formatters';
+import { formatGbp } from '../utils/formatters';
 import type {
   OpportunityRecommendRequest,
   OpportunityRecommendResponse,
@@ -14,8 +14,6 @@ import {
   Sliders,
   MessageSquare,
   ArrowRight,
-  CheckCircle2,
-  AlertCircle,
   Briefcase,
   Users,
   Leaf,
@@ -24,14 +22,10 @@ import {
   Calendar,
   PoundSterling,
   Percent,
-  Copy,
   Check,
   List,
   LayoutGrid,
-  FileCheck,
-  Building,
-  RotateCcw,
-  Info
+  Building
 } from 'lucide-react';
 
 export interface OpportunityFinderProps {
