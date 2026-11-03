@@ -13,12 +13,7 @@ import { TenderPackageViewer } from './TenderPackageViewer';
 import {
   Sparkles,
   Sliders,
-  MessageSquare,
-  Building,
-  MapPin,
-  Calendar,
-  PoundSterling,
-  Percent
+  MessageSquare
 } from 'lucide-react';
 
 export interface OpportunityFinderProps {
@@ -391,11 +386,6 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
     }
   };
 
-  // Auto-run search on first mount
-  useEffect(() => {
-    handleExecuteSearch();
-  }, []);
-
   return (
     <div style={{ width: '100%', maxWidth: '1440px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Top Header */}
@@ -427,7 +417,7 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
           overflow: 'hidden'
         }}
       >
-        {/* Mode Switcher Tabs & Search Button */}
+        {/* Mode Switcher Tabs */}
         <div
           style={{
             display: 'flex',
@@ -483,20 +473,10 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
               <span>Structured Tender Fields</span>
             </button>
           </div>
-
-          <button
-            onClick={handleExecuteSearch}
-            className="btn-primary"
-            disabled={isLoading}
-            style={{ fontSize: '0.82rem', padding: '0.45rem 1.1rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}
-          >
-            <Sparkles size={14} className={isLoading ? 'spin-icon' : ''} />
-            <span>{isLoading ? 'Formulating 3 Packages…' : 'Find & Rank Opportunities'}</span>
-          </button>
         </div>
 
         {/* Tab Body */}
-        <div style={{ padding: '1.25rem' }}>
+        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
           {inputMode === 'prompt' ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               {/* Presets */}
@@ -540,53 +520,6 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
                   borderRadius: 'var(--radius-sm)'
                 }}
               />
-
-              {/* Live Parameters Preview */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1.25rem',
-                  flexWrap: 'wrap',
-                  padding: '0.65rem 0.85rem',
-                  backgroundColor: 'var(--bg-surface-subtle)',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border-subtle)',
-                  fontSize: '0.78rem'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-secondary)' }}>
-                  <Building size={13} style={{ color: 'var(--color-primary)' }} />
-                  <span>Authority:</span>
-                  <strong style={{ color: 'var(--text-primary)' }}>{formData.client}</strong>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-secondary)' }}>
-                  <MapPin size={13} style={{ color: 'var(--color-primary)' }} />
-                  <span>Region:</span>
-                  <strong style={{ color: 'var(--text-primary)' }}>{formData.location}</strong>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-secondary)' }}>
-                  <PoundSterling size={13} style={{ color: 'var(--color-primary)' }} />
-                  <span>Value:</span>
-                  <strong style={{ color: 'var(--text-primary)' }}>{formatGbp(formData.contractValue)}</strong>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-secondary)' }}>
-                  <Calendar size={13} style={{ color: 'var(--color-primary)' }} />
-                  <span>Duration:</span>
-                  <strong style={{ color: 'var(--text-primary)' }}>{formData.durationYears} Years</strong>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-secondary)' }}>
-                  <Percent size={13} style={{ color: 'var(--color-primary)' }} />
-                  <span>Target SV:</span>
-                  <strong style={{ color: '#059669' }}>
-                    {formData.weightingPercent}% ({formatGbp(formData.contractValue * (formData.weightingPercent / 100))})
-                  </strong>
-                </div>
-              </div>
             </div>
           ) : (
             /* Structured Fields Mode */
@@ -688,8 +621,60 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
               </div>
             </div>
           )}
+
+          {/* Action Button: Moved to Bottom with Professional Styling */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              paddingTop: '0.85rem',
+              borderTop: '1px solid var(--border-subtle)'
+            }}
+          >
+            <button
+              onClick={handleExecuteSearch}
+              className="btn-primary"
+              disabled={isLoading}
+              style={{
+                fontSize: '0.88rem',
+                padding: '0.65rem 1.4rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontWeight: 600
+              }}
+            >
+              <Sparkles size={16} className={isLoading ? 'spin-icon' : ''} />
+              <span>{isLoading ? 'Formulating 3 Packages…' : 'Generate 3 Response Templates'}</span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Initial Empty State (When user has not generated yet) */}
+      {!packagesResult && !isLoading && (
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '3rem 1.5rem',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px dashed var(--border-subtle)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--text-secondary)'
+          }}
+        >
+          <div className="icon-badge" style={{ width: '44px', height: '44px', margin: '0 auto 0.85rem auto' }}>
+            <Sparkles size={20} style={{ color: 'var(--color-primary)' }} />
+          </div>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+            Ready to Formulate Social Value Proposals
+          </h3>
+          <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', maxWidth: '560px', margin: '0 auto', lineHeight: 1.55 }}>
+            Select a quick preset above or customize your tender parameters, then click <strong>"Generate 3 Response Templates"</strong> to calculate audit-defensible Core, Expanded, and Place-based proposal options.
+          </p>
+        </div>
+      )}
 
       {/* Loading Indicator */}
       {isLoading && (
