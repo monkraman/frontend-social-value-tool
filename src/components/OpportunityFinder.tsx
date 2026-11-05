@@ -13,7 +13,10 @@ import { TenderPackageViewer } from './TenderPackageViewer';
 import {
   Sparkles,
   Sliders,
-  MessageSquare
+  MessageSquare,
+  Check,
+  TrendingUp,
+  Filter
 } from 'lucide-react';
 
 export interface OpportunityFinderProps {
@@ -74,6 +77,26 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
     priorities: 'digital inclusion and youth employment',
     industry: 'IT & Digital Services'
   });
+
+  // Available TOMs Catalog for User-driven Focus Selection
+  const AVAILABLE_TOMS_OPTIONS = [
+    { code: 'NT1', name: 'Apprenticeships (Weeks)', svroi: '40x' },
+    { code: 'NT3', name: 'Youth Employment (NEET)', svroi: '35x' },
+    { code: 'NT8', name: 'Digital Inclusion Clinics', svroi: '18x' },
+    { code: 'NT10', name: 'STEM & Tech Volunteering', svroi: '15x' },
+    { code: 'NT14', name: 'Local SME & VCSE Supply', svroi: '4.5x' },
+    { code: 'NT20', name: 'Refurbished Device Donation', svroi: '12x' },
+    { code: 'NT31', name: 'Green Computing & Carbon', svroi: '10x' }
+  ];
+
+  // User-selected TOMs (Default: All active)
+  const [selectedTomsCodes, setSelectedTomsCodes] = useState<string[]>([
+    'NT1',
+    'NT3',
+    'NT8',
+    'NT10',
+    'NT14'
+  ]);
 
   // 3-Package Results State
   const [packagesResult, setPackagesResult] = useState<ResponseGenerationResult | null>(null);
@@ -167,8 +190,17 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
     const years = p.durationYears;
     const loc = p.location;
 
+    // Filter by User's Preferred TOMs Selection if specified
+    const rawRecommendations = recs.recommendations;
+    const filteredRecs = selectedTomsCodes.length > 0
+      ? rawRecommendations.filter(r => selectedTomsCodes.includes(r.toms_code))
+      : rawRecommendations;
+
+    // Fallback to all if user unselected everything
+    const activeRecs = filteredRecs.length > 0 ? filteredRecs : rawRecommendations;
+
     // 1. Localised Package (Place-Based)
-    const localInits: InitiativeItem[] = recs.recommendations.map((r) => ({
+    const localInits: InitiativeItem[] = activeRecs.map((r) => ({
       name: `${loc} ${r.initiative_name}`,
       theme: r.theme,
       location: loc,
@@ -184,12 +216,15 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
       commercial_viability: 'High ROI Place-Based Co-funding'
     }));
 
-    const totalLocalSv = recs.total_recommended_social_value_gbp;
+    const totalLocalSv = localInits.reduce((acc, _cur, idx) => {
+      const recItem = activeRecs[idx];
+      return acc + (recItem ? recItem.total_social_value_gbp : 0);
+    }, 0) || recs.total_recommended_social_value_gbp;
     const totalLocalCost = localInits.reduce((acc, cur) => acc + (cur.indicative_cost_gbp || 0), 0);
 
     const localisedPackage: SocialValuePackage = {
       name: 'Localised Package (Place-Based Regional Ecosystem)',
-      rationale: `Targeted place-based commitments designed specifically for ${loc} priority wards with pre-approved accredited delivery partners.`,
+      rationale: `Targeted place-based commitments designed specifically for ${loc} priority wards using selected TOMs (${selectedTomsCodes.join(', ')}) with pre-approved accredited delivery partners.`,
       expected_impact: [
         `Direct economic & skills multiplier across ${loc}`,
         `Engages accredited partners: ${localInits.map(i => i.partner).filter(Boolean).slice(0, 3).join(', ')}`,
@@ -201,7 +236,7 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
       commercial_viability_summary: `Estimated delivery investment of ${formatGbp(totalLocalCost)} produces ${formatGbp(totalLocalSv)} Social Value (${(totalLocalSv / Math.max(1, totalLocalCost)).toFixed(1)}x SVROI).`,
       financial_calculation: {
         package_name: 'Localised Package',
-        initiatives: recs.recommendations.map(r => ({
+        initiatives: activeRecs.map(r => ({
           initiative_name: r.initiative_name,
           toms_code: r.toms_code,
           metric_name: r.initiative_name,
@@ -622,6 +657,88 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
               </div>
             </div>
           )}
+
+          {/* Preferred TOMs Selector & SVROI Ranking Bar */}
+          <div
+            style={{
+              padding: '0.85rem 1rem',
+              backgroundColor: 'var(--bg-surface-subtle)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-sm)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.6rem'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                <Filter size={13} style={{ color: 'var(--color-primary)' }} />
+                <span>Preferred TOMs Selection (User Defined Scope):</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.74rem', color: '#059669', fontWeight: 600 }}>
+                <TrendingUp size={13} />
+                <span>Ranked by Highest Value per £1 (SVROI)</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
+              {AVAILABLE_TOMS_OPTIONS.map((t) => {
+                const isSelected = selectedTomsCodes.includes(t.code);
+                return (
+                  <button
+                    key={t.code}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        // Prevent unselecting all
+                        if (selectedTomsCodes.length > 1) {
+                          setSelectedTomsCodes(selectedTomsCodes.filter(c => c !== t.code));
+                        } else {
+                          toast.warning('At least 1 TOMs measure must be selected.');
+                        }
+                      } else {
+                        setSelectedTomsCodes([...selectedTomsCodes, t.code]);
+                      }
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      padding: '0.3rem 0.65rem',
+                      borderRadius: '999px',
+                      fontSize: '0.75rem',
+                      fontWeight: isSelected ? 600 : 500,
+                      border: '1px solid',
+                      borderColor: isSelected ? 'var(--color-primary)' : 'var(--border-subtle)',
+                      backgroundColor: isSelected ? 'var(--color-primary-subtle)' : 'var(--bg-surface)',
+                      color: isSelected ? 'var(--color-primary)' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {isSelected && <Check size={12} />}
+                    <strong>{t.code}</strong>
+                    <span>{t.name}</span>
+                    <span
+                      style={{
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        padding: '0.1rem 0.35rem',
+                        borderRadius: '6px',
+                        backgroundColor: isSelected ? 'rgba(5, 150, 105, 0.15)' : 'var(--bg-surface-subtle)',
+                        color: isSelected ? '#059669' : 'var(--text-muted)'
+                      }}
+                    >
+                      {t.svroi} ROI
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              * Only initiatives matching your active TOMs selections above will be synthesized into the 3 response templates.
+            </div>
+          </div>
 
           {/* Action Button: Moved to Bottom with Professional Styling */}
           <div

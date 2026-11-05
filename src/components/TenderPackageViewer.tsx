@@ -404,6 +404,28 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
                             <PoundSterling size={13} style={{ color: 'var(--color-primary)' }} />
                             <span>Est. Cost: {formatGbp(init.indicative_cost_gbp)}</span>
                           </div>
+                          {calc && calc.total_social_value_gbp > 0 && (
+                            <>
+                              <span style={{ color: 'var(--border-medium)' }}>|</span>
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  padding: '0.15rem 0.5rem',
+                                  borderRadius: '999px',
+                                  backgroundColor: (calc.total_social_value_gbp / init.indicative_cost_gbp) >= 10 ? 'rgba(5, 150, 105, 0.12)' : 'rgba(217, 119, 6, 0.12)',
+                                  color: (calc.total_social_value_gbp / init.indicative_cost_gbp) >= 10 ? '#059669' : '#d97706',
+                                  fontWeight: 700,
+                                  fontSize: '0.76rem'
+                                }}
+                                title="Value per £1 (SVROI): Social Value £ ÷ Infosys Delivery Cost £"
+                              >
+                                <TrendingUp size={12} />
+                                <span>£{(calc.total_social_value_gbp / init.indicative_cost_gbp).toFixed(1)} Value per £1</span>
+                              </div>
+                            </>
+                          )}
                         </>
                       )}
                     </div>
