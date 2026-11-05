@@ -144,6 +144,26 @@ export interface PromptHistoryItem {
 }
 
 
+export interface MasterInitiative {
+  id: string;
+  pillar: string;
+  mac: string;
+  name: string;
+  description: string;
+  committed_volume: string;
+  period?: string;
+  beneficiaries?: string;
+  delivered_by: string;
+  attribution?: string;
+  sch8_ref?: string;
+  sch3b_ref?: string;
+  scorecard_id?: string;
+  in_scorecard?: string;
+  valuation_status?: string;
+  defensible_value_gbp: number;
+  notes?: string;
+}
+
 export interface TOMsMetric {
   id?: number;
   code: string;

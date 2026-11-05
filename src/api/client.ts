@@ -19,8 +19,11 @@ import type {
   AuditLogItem,
   AuditSummary,
   RegionalPartner,
-  RegionalPartnerCreate
+  RegionalPartnerCreate,
+  MasterInitiative
 } from '../types';
+import { MASTER_INITIATIVES } from '../constants/masterInitiatives';
+import { DEFAULT_TOMS_2025 } from '../constants/toms2025Defaults';
 
 function resolveApiBaseUrl(): string {
   let envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
@@ -430,16 +433,47 @@ export async function fetchTomsMetrics(): Promise<TOMsMetric[]> {
       headers: getAuthHeaders()
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    const data = await res.json();
+    return Array.isArray(data) && data.length > 0 ? data : DEFAULT_TOMS_2025;
   } catch {
-    return [
-      { code: 'NT1', name: 'Apprenticeships (16-24 yrs)', theme: 'Jobs & Skills', unit: 'weeks', unit_value_gbp: 385.0, description: 'Number of apprentice training weeks provided' },
-      { code: 'NT3', name: 'Youth Mentoring & Careers Advice', theme: 'Jobs & Skills', unit: 'sessions', unit_value_gbp: 275.0, description: 'Hours of career guidance to local schools/colleges' },
-      { code: 'NT8', name: 'Digital Skills & Literacy Clinics', theme: 'Digital Inclusion', unit: 'workshops', unit_value_gbp: 1250.0, description: 'Workshops delivering digital inclusion to disadvantaged citizens' },
-      { code: 'NT12', name: 'Voluntary Sector Volunteering Hours', theme: 'Community', unit: 'hours', unit_value_gbp: 21.0, description: 'Employee volunteer hours invested in local community initiatives' },
-      { code: 'NT31', name: 'Local SME & VCSE Supply Chain Spend', theme: 'Local Economy', unit: '£ spend', unit_value_gbp: 1.0, description: 'Tier 2 supply chain procurement awarded to local regional businesses' },
-      { code: 'NT45', name: 'Refurbished IT Hardware Donations', theme: 'Environment & Inclusion', unit: 'devices', unit_value_gbp: 450.0, description: 'Laptops/desktops refurbished and gifted to community learners' }
-    ];
+    return DEFAULT_TOMS_2025;
+  }
+}
+
+export async function fetchMasterInitiatives(
+  pillar?: string,
+  search?: string
+): Promise<MasterInitiative[]> {
+  try {
+    let url = `${API_BASE_URL}/calculations/initiatives`;
+    const params = new URLSearchParams();
+    if (pillar && pillar.toLowerCase() !== 'all') params.append('pillar', pillar);
+    if (search) params.append('search', search);
+    const queryString = params.toString();
+    if (queryString) url += `?${queryString}`;
+
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data) && data.length > 0 ? data : MASTER_INITIATIVES;
+  } catch {
+    let results = [...MASTER_INITIATIVES];
+    if (pillar && pillar.toLowerCase() !== 'all') {
+      const p = pillar.toLowerCase().trim();
+      results = results.filter((x) => x.pillar.toLowerCase().includes(p));
+    }
+    if (search) {
+      const s = search.toLowerCase().trim();
+      results = results.filter(
+        (x) =>
+          x.id.toLowerCase().includes(s) ||
+          x.name.toLowerCase().includes(s) ||
+          x.description.toLowerCase().includes(s) ||
+          x.delivered_by.toLowerCase().includes(s) ||
+          x.mac.toLowerCase().includes(s)
+      );
+    }
+    return results;
   }
 }
 
