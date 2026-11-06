@@ -20,7 +20,10 @@ import {
   Info,
   ListChecks,
   X,
-  FileText
+  FileText,
+  Sliders,
+  Minus,
+  Plus
 } from 'lucide-react';
 import { formatGbp, formatPercent } from '../utils/formatters';
 
@@ -44,6 +47,8 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
   const [activePackage, setActivePackage] = useState<'core' | 'enhanced' | 'localised'>(initialPackage);
   const [showAuditModal, setShowAuditModal] = useState<boolean>(false);
   const [copiedTender, setCopiedTender] = useState<boolean>(false);
+  const [isTunerMode, setIsTunerMode] = useState<boolean>(false);
+  const [customVolumes, setCustomVolumes] = useState<Record<string, number>>({});
   const toast = useToast();
 
   const targetAmount = propTargetAmount || result.opportunity.target_social_value_gbp || 
@@ -57,23 +62,56 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
       : result.localised_package;
 
   const currentCalc = currentPkg?.financial_calculation;
-  const currentTotal = currentCalc ? currentCalc.total_social_value_gbp : 0;
-  const currentPercent = currentCalc ? currentCalc.social_value_percentage : 0;
-  const isTargetAchieved = currentCalc ? currentCalc.target_met : false;
+  const duration = result.opportunity.duration_years || 3;
+  const contractVal = result.opportunity.contract_value_gbp || 1;
+
+  // Dynamically compute initiatives with custom tuned volume if modified
+  const effectiveInits = (currentPkg?.initiatives || []).map((init, idx) => {
+    const key = `${activePackage}_${idx}`;
+    const vol = customVolumes[key] !== undefined ? customVolumes[key] : init.annual_volume;
+    const baseCalc = currentCalc?.initiatives?.[idx];
+    const unitVal = baseCalc?.unit_value_gbp || 1.0;
+    const totalVol = vol * duration;
+    const totalSv = Math.round(totalVol * unitVal);
+    return {
+      ...init,
+      effectiveVol: vol,
+      calc: {
+        ...(baseCalc || {}),
+        annual_volume: vol,
+        total_volume: totalVol,
+        total_social_value_gbp: totalSv,
+        unit: baseCalc?.unit || 'units'
+      }
+    };
+  });
+
+  const currentTotal = effectiveInits.reduce((acc, item) => acc + (item.calc.total_social_value_gbp || 0), 0) || (currentCalc?.total_social_value_gbp ?? 0);
+  const currentPercent = (currentTotal / contractVal) * 100;
+  const isTargetAchieved = currentTotal >= targetAmount;
+
+  const handleVolumeChange = (idx: number, newVol: number) => {
+    const key = `${activePackage}_${idx}`;
+    setCustomVolumes(prev => ({
+      ...prev,
+      [key]: Math.max(0, newVol)
+    }));
+  };
 
   const handleCopyTenderText = () => {
     if (!currentPkg) return;
 
-    const initiativesSummary = currentPkg.initiatives
+    const initiativesSummary = effectiveInits
       .map(
-        (init, i) =>
-          `${i + 1}. ${init.name} (${init.toms_metric_code || 'TOMs'})\n` +
-          `   Theme: ${init.theme}\n` +
-          `   Partner: ${init.partner || 'Infosys Core Ecosystem'}\n` +
-          `   Mechanism: ${init.delivery_mechanism}\n` +
-          `   Target Beneficiaries: ${init.target_beneficiaries}\n` +
-          (init.indicative_cost_gbp ? `   Estimated Cost: ${formatGbp(init.indicative_cost_gbp)}\n` : '') +
-          `   Evidence: ${init.evidence_source || 'Verified Method Statement'}`
+        (item, i) =>
+          `${i + 1}. ${item.name} (${item.toms_metric_code || 'TOMs'})\n` +
+          `   Theme: ${item.theme}\n` +
+          `   Partner: ${item.partner || 'Infosys Core Ecosystem'}\n` +
+          `   Mechanism: ${item.delivery_mechanism}\n` +
+          `   Annual Commitment: ${item.effectiveVol} ${item.calc.unit}/yr (${item.calc.total_volume} total over ${duration} yrs)\n` +
+          `   Committed Social Value: ${formatGbp(item.calc.total_social_value_gbp)}\n` +
+          `   Target Beneficiaries: ${item.target_beneficiaries}\n` +
+          `   Evidence: ${item.evidence_source || 'Verified Method Statement'}`
       )
       .join('\n\n');
 
@@ -300,18 +338,62 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
             </div>
           </div>
 
-          {/* Initiatives List */}
+          {/* Initiatives List Header with Optional Tweak Numbers Tool */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
-              <h3 style={{ fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 600 }}>Proposed initiatives</h3>
-              <span className="badge-mono" style={{ fontSize: '0.72rem', padding: '0.1rem 0.5rem' }}>
-                {currentPkg.initiatives.length}
-              </span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.85rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h3 style={{ fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 600 }}>Proposed initiatives</h3>
+                <span className="badge-mono" style={{ fontSize: '0.72rem', padding: '0.1rem 0.5rem' }}>
+                  {effectiveInits.length}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsTunerMode(!isTunerMode)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    fontSize: '0.76rem',
+                    fontWeight: 600,
+                    padding: '0.22rem 0.65rem',
+                    borderRadius: '999px',
+                    border: isTunerMode ? '1px solid var(--color-primary)' : '1px solid var(--border-medium)',
+                    backgroundColor: isTunerMode ? 'var(--color-primary-subtle)' : 'var(--bg-surface)',
+                    color: isTunerMode ? 'var(--color-primary)' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Tune initiative target numbers to match specific RFP requirements"
+                >
+                  <Sliders size={12} />
+                  <span>{isTunerMode ? 'Tuner Active' : 'Tweak Numbers'}</span>
+                </button>
+
+                {Object.keys(customVolumes).length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setCustomVolumes({})}
+                    style={{
+                      fontSize: '0.72rem',
+                      color: 'var(--text-muted)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              {currentPkg.initiatives.map((init, idx) => {
-                const calc = currentCalc?.initiatives[idx];
+              {effectiveInits.map((item, idx) => {
+                const calc = item.calc;
                 return (
                   <div
                     key={idx}
@@ -346,20 +428,20 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
                         >
                           {idx + 1}
                         </span>
-                        <strong style={{ fontSize: '0.98rem', color: 'var(--text-primary)' }}>{init.name}</strong>
-                        {init.toms_metric_code && (
+                        <strong style={{ fontSize: '0.98rem', color: 'var(--text-primary)' }}>{item.name}</strong>
+                        {item.toms_metric_code && (
                           <span className="tag-mono">
-                            {init.toms_metric_code}
+                            {item.toms_metric_code}
                           </span>
                         )}
-                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{init.theme}</span>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{item.theme}</span>
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        {init.partner ? (
+                        {item.partner ? (
                           <span className="badge-mono" style={{ fontSize: '0.74rem', fontWeight: 600 }}>
                             <Handshake size={12} />
-                            {init.partner}
+                            {item.partner}
                           </span>
                         ) : null}
                       </div>
@@ -367,7 +449,7 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
 
                     {/* Description */}
                     <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
-                      {init.description}
+                      {item.description}
                     </p>
 
                     {/* Clean Operational Breakdown Bar */}
@@ -387,13 +469,87 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         <Calendar size={13} style={{ color: 'var(--color-primary)' }} />
-                        <span>{init.delivery_mechanism}</span>
+                        <span>{item.delivery_mechanism}</span>
                       </div>
                       <span style={{ color: 'var(--border-medium)' }}>|</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         <Users size={13} style={{ color: 'var(--color-primary)' }} />
-                        <span>{init.target_beneficiaries}</span>
+                        <span>{item.target_beneficiaries}</span>
                       </div>
+
+                      {/* Interactive Volume Tuner Stepper when Tuner Mode is Active */}
+                      {isTunerMode && (
+                        <>
+                          <span style={{ color: 'var(--border-medium)' }}>|</span>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.3rem',
+                              backgroundColor: 'var(--bg-card)',
+                              border: '1px solid var(--border-medium)',
+                              borderRadius: '4px',
+                              padding: '0.12rem 0.4rem'
+                            }}
+                          >
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Tweak:</span>
+                            <button
+                              type="button"
+                              onClick={() => handleVolumeChange(idx, Math.max(0, item.effectiveVol - (item.effectiveVol > 100 ? 50 : (item.effectiveVol > 10 ? 5 : 1))))}
+                              style={{
+                                border: '1px solid var(--border-subtle)',
+                                backgroundColor: 'var(--bg-hover)',
+                                borderRadius: '3px',
+                                width: '20px',
+                                height: '20px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: 'var(--text-primary)'
+                              }}
+                            >
+                              <Minus size={11} />
+                            </button>
+                            <input
+                              type="number"
+                              value={item.effectiveVol}
+                              onChange={(e) => handleVolumeChange(idx, Math.max(0, parseFloat(e.target.value) || 0))}
+                              style={{
+                                width: '55px',
+                                textAlign: 'center',
+                                border: '1px solid var(--border-subtle)',
+                                borderRadius: '3px',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                padding: '0.1rem',
+                                color: 'var(--text-primary)',
+                                backgroundColor: 'var(--bg-surface)'
+                              }}
+                            />
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{calc.unit}/yr</span>
+                            <button
+                              type="button"
+                              onClick={() => handleVolumeChange(idx, item.effectiveVol + (item.effectiveVol >= 100 ? 50 : (item.effectiveVol >= 10 ? 5 : 1)))}
+                              style={{
+                                border: '1px solid var(--border-subtle)',
+                                backgroundColor: 'var(--bg-hover)',
+                                borderRadius: '3px',
+                                width: '20px',
+                                height: '20px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: 'var(--text-primary)'
+                              }}
+                            >
+                              <Plus size={11} />
+                            </button>
+                          </div>
+                        </>
+                      )}
+
                       {calc && calc.total_social_value_gbp > 0 && (
                         <>
                           <span style={{ color: 'var(--border-medium)' }}>|</span>
@@ -419,7 +575,7 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
                     </div>
 
                     {/* RAG Evidence Grounding Source */}
-                    {init.evidence_source && (
+                    {item.evidence_source && (
                       <div
                         style={{
                           display: 'flex',
@@ -435,7 +591,7 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
                       >
                         <FileText size={12} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
                         <span>
-                          <strong style={{ color: 'var(--text-primary)' }}>Evidence:</strong> {init.evidence_source}
+                          <strong style={{ color: 'var(--text-primary)' }}>Evidence:</strong> {item.evidence_source}
                         </span>
                       </div>
                     )}
