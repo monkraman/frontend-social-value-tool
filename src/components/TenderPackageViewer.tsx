@@ -8,7 +8,7 @@ import {
   Check,
   Calendar,
   Users,
-  PoundSterling,
+  CheckCircle2,
   ShieldCheck,
   MapPin,
   Handshake,
@@ -61,9 +61,6 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
   const currentPercent = currentCalc ? currentCalc.social_value_percentage : 0;
   const isTargetAchieved = currentCalc ? currentCalc.target_met : false;
 
-  const deliveryCost = currentPkg?.indicative_delivery_cost_gbp ?? 0;
-  const svroiMultiplier = deliveryCost > 0 ? (currentTotal / deliveryCost).toFixed(1) : null;
-
   const handleCopyTenderText = () => {
     if (!currentPkg) return;
 
@@ -87,7 +84,6 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
       `Contract Value: ${formatGbp(result.opportunity.contract_value_gbp)} over ${result.opportunity.duration_years} years\n` +
       `Target Social Value: ${formatGbp(targetAmount)} (${result.opportunity.social_value_weighting_percent}%)\n` +
       `Offered Social Value: ${formatGbp(currentTotal)} (${formatPercent(currentPercent)})\n` +
-      (deliveryCost > 0 ? `Indicative Internal Delivery Cost: ${formatGbp(deliveryCost)} (${svroiMultiplier}x SVROI)\n` : '') +
       `\n## Strategic Rationale\n${currentPkg.rationale}\n\n` +
       `## Proposed Initiatives\n${initiativesSummary}\n\n` +
       `## Governance & Accountability\n` +
@@ -297,8 +293,9 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
               <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 {formatPercent(currentPercent)} of contract value
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.4rem', paddingTop: '0.4rem', borderTop: '1px solid var(--color-primary-border)' }}>
-                Est. Cost: {deliveryCost > 0 ? formatGbp(deliveryCost) : '£0'} {svroiMultiplier ? `• ${svroiMultiplier}x SVROI` : ''}
+              <div style={{ fontSize: '0.75rem', color: isTargetAchieved ? '#059669' : 'var(--text-muted)', marginTop: '0.4rem', paddingTop: '0.4rem', borderTop: '1px solid var(--color-primary-border)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.35rem', fontWeight: 600 }}>
+                <CheckCircle2 size={13} />
+                <span>{isTargetAchieved ? '100% Meets PPN 06/20 Target' : `Target: ${formatGbp(targetAmount)}`}</span>
               </div>
             </div>
           </div>
@@ -397,35 +394,26 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
                         <Users size={13} style={{ color: 'var(--color-primary)' }} />
                         <span>{init.target_beneficiaries}</span>
                       </div>
-                      {init.indicative_cost_gbp != null && init.indicative_cost_gbp > 0 && (
+                      {calc && calc.total_social_value_gbp > 0 && (
                         <>
                           <span style={{ color: 'var(--border-medium)' }}>|</span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--text-primary)' }}>
-                            <PoundSterling size={13} style={{ color: 'var(--color-primary)' }} />
-                            <span>Est. Cost: {formatGbp(init.indicative_cost_gbp)}</span>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: '999px',
+                              backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                              color: '#059669',
+                              fontWeight: 600,
+                              fontSize: '0.76rem'
+                            }}
+                            title="National TOMs Social Value Contribution"
+                          >
+                            <TrendingUp size={12} />
+                            <span>Social Value: {formatGbp(calc.total_social_value_gbp)}</span>
                           </div>
-                          {calc && calc.total_social_value_gbp > 0 && (
-                            <>
-                              <span style={{ color: 'var(--border-medium)' }}>|</span>
-                              <div
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '0.35rem',
-                                  padding: '0.15rem 0.5rem',
-                                  borderRadius: '999px',
-                                  backgroundColor: (calc.total_social_value_gbp / init.indicative_cost_gbp) >= 10 ? 'rgba(5, 150, 105, 0.12)' : 'rgba(217, 119, 6, 0.12)',
-                                  color: (calc.total_social_value_gbp / init.indicative_cost_gbp) >= 10 ? '#059669' : '#d97706',
-                                  fontWeight: 700,
-                                  fontSize: '0.76rem'
-                                }}
-                                title="Value per £1 (SVROI): Social Value £ ÷ Infosys Delivery Cost £"
-                              >
-                                <TrendingUp size={12} />
-                                <span>£{(calc.total_social_value_gbp / init.indicative_cost_gbp).toFixed(1)} Value per £1</span>
-                              </div>
-                            </>
-                          )}
                         </>
                       )}
                     </div>

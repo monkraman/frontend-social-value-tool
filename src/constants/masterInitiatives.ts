@@ -1,9 +1,8 @@
 import type { MasterInitiative } from '../types';
 
 /**
- * 37 Master Social Value Initiatives committed by Infosys
- * for the NHS Future Workplace Services (FWS) tender and Public Sector Frameworks.
- * Audited and structured across PPN 06/20 themes (SV1 Climate, SV2 Economy, SV3 Equal Opportunity).
+ * Descriptive Master Initiatives Library from NHS FWS Knowledge Base.
+ * Commercial costs, internal budgets, and defensible financial valuations are kept confidential/hidden.
  */
 export const MASTER_INITIATIVES: MasterInitiative[] = [
   {
@@ -13,17 +12,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Sustainable IT Framework (Phases 1\u20133)",
     "description": "RGESN maturity assessment, Sopht GreenOps platform, baseline dashboards, targeted trainings, scenario analysis, action plan, GDSA case study, monitoring, advisory and communications (deliverables D1\u2013D10).",
     "committed_volume": "10 deliverables (D1\u2013D10)",
-    "period": "Phase 1 by Y2 Q4; Phase 2 by Y3 Q2; Phase 3 from month 31",
-    "beneficiaries": "NHS (FWS transformation perimeter)",
-    "delivered_by": "Infosys / Sopht",
-    "attribution": "Direct",
-    "sch8_ref": "1.18\u20131.24",
-    "sch3b_ref": "KPI9a(i) \u00a77.1.1\u20137.1.6; KPI9a(ii) \u00a77.1.7\u20137.1.9",
-    "scorecard_id": "KPI-01 to KPI-10",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Phase 3 KPI (tCO2e metric) still to be agreed by Month 24."
+    "delivered_by": "Infosys / Sopht"
   },
   {
     "id": "INI-02",
@@ -32,17 +21,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Carbon emissions baselining & supplier-attributed monitoring",
     "description": "Scope 1/2/3 baseline at contract start, refreshed each FY; spend-allocated supplier emissions; annual NHS-specific emissions dashboard; independent verification.",
     "committed_volume": "Annual baseline + dashboard",
-    "period": "Each FY, contract term",
-    "beneficiaries": "NHSBSA",
-    "delivered_by": "Monk Spaces / Infosys",
-    "attribution": "Direct",
-    "sch8_ref": "1.13, 1.39\u20131.41",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-01, OBL-02, ACT-02",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Enabling: this is what makes any future carbon (NT31/NT31a) claim possible."
+    "delivered_by": "Monk Spaces / Infosys"
   },
   {
     "id": "INI-03",
@@ -51,17 +30,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Net Zero Leadership training",
     "description": "Interactive workshops with the Centre for Sustainable Healthcare for board-level NHS leaders.",
     "committed_volume": "280 participants",
-    "period": "2027\u20132036",
-    "beneficiaries": "NHS board-level leaders",
-    "delivered_by": "CSH / Oracle",
-    "attribution": "Partner-led (indirect)",
-    "sch8_ref": "1.15(a)",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-03",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Schedule 8 per-year rates do not reconcile to 280 (see Cross-check)."
+    "delivered_by": "CSH / Oracle"
   },
   {
     "id": "INI-04",
@@ -70,17 +39,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Health & Nature online module",
     "description": "30-minute online module on nature and health for NHS staff.",
     "committed_volume": "50,000 participants",
-    "period": "First 3 years from Y2",
-    "beneficiaries": "NHS staff",
-    "delivered_by": "Oracle / CSH",
-    "attribution": "Partner-led (indirect)",
-    "sch8_ref": "1.15(b)",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-04",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": ""
+    "delivered_by": "Oracle / CSH"
   },
   {
     "id": "INI-05",
@@ -89,17 +48,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Mandatory Sustainability & Green IT training (Infosys workforce)",
     "description": "Mandatory 4-hour training on Infosys Lex for the full contract workforce.",
     "committed_volume": "100% of contract workforce \u00d7 4 hrs",
-    "period": "Within 6 months of joining",
-    "beneficiaries": "Infosys employees",
-    "delivered_by": "Infosys",
-    "attribution": "Direct",
-    "sch8_ref": "1.15(c)",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-05",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Scorecard shows 186 of 266 completed (70%)."
+    "delivered_by": "Infosys"
   },
   {
     "id": "INI-06",
@@ -108,17 +57,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "CSH Green Space & Health training course",
     "description": "Oracle funds NHS staff on Green Health Routes to attend a 6-hour CSH course plus workshops.",
     "committed_volume": "280 NHS staff",
-    "period": "C3 end +1 to +9 years",
-    "beneficiaries": "NHS staff at Green Health Route sites",
-    "delivered_by": "Oracle (funds) / CSH",
-    "attribution": "Partner-led (indirect)",
-    "sch8_ref": "1.15(d)",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-06",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Schedule 8 increments do not reconcile to 280 (see Cross-check)."
+    "delivered_by": "Oracle (funds) / CSH"
   },
   {
     "id": "INI-07",
@@ -127,17 +66,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Data centre efficiency programme",
     "description": "PUE 1.3 by Jan 2030; ISO 50001/14001; Climate Neutral Data Centre Pact; 100% renewable data centres.",
     "committed_volume": "Compliance throughout",
-    "period": "Contract term",
-    "beneficiaries": "\u2014",
-    "delivered_by": "Oracle / Infosys",
-    "attribution": "Partner-led (indirect)",
-    "sch8_ref": "1.25",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-07",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": ""
+    "delivered_by": "Oracle / Infosys"
   },
   {
     "id": "INI-08",
@@ -146,17 +75,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Energy-efficient (green) coding across FWS",
     "description": "Developer training on sustainable coding and Green IT awareness for all Infosys developers on the contract.",
     "committed_volume": "All Infosys developers",
-    "period": "Contract term",
-    "beneficiaries": "Infosys developers",
-    "delivered_by": "Infosys / Sopht",
-    "attribution": "Direct",
-    "sch8_ref": "1.26",
-    "sch3b_ref": "KPI9a(i) D4",
-    "scorecard_id": "KPI-04, OBL-08",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": ""
+    "delivered_by": "Infosys / Sopht"
   },
   {
     "id": "INI-09",
@@ -165,17 +84,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Nudge Programme \u2014 Workforce Sustainable Behaviour app",
     "description": "Voluntary app nudging NHS staff to cut commuting, travel and paper footprint.",
     "committed_volume": "200,000 active users; >40% of eligible users",
-    "period": "From Y3 to end of term",
-    "beneficiaries": "NHS staff",
-    "delivered_by": "Infosys DX",
-    "attribution": "Direct",
-    "sch8_ref": "1.6, 1.26(a)",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-09",
-    "in_scorecard": "Yes",
-    "valuation_status": "Indicative only",
-    "defensible_value_gbp": 0.0,
-    "notes": "Schedule 8 cites ~70 kg CO2 per person from a Swedish study \u2014 indicative only."
+    "delivered_by": "Infosys DX"
   },
   {
     "id": "INI-10",
@@ -184,17 +93,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Commitment to renewables",
     "description": "Partners prioritise renewable electricity; avoid ~150 tCO2e scope 2 per year across 15 years.",
     "committed_volume": "150 tCO2e/yr \u00d7 15 yrs",
-    "period": "Contract term",
-    "beneficiaries": "\u2014",
-    "delivered_by": "Oracle / Infosys",
-    "attribution": "Partner-led (indirect)",
-    "sch8_ref": "1.27",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-10",
-    "in_scorecard": "Yes",
-    "valuation_status": "Indicative only",
-    "defensible_value_gbp": 0.0,
-    "notes": "Oracle UK data centres already 100% renewable (business as usual)."
+    "delivered_by": "Oracle / Infosys"
   },
   {
     "id": "INI-11",
@@ -203,17 +102,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Supplier emissions transparency",
     "description": "Supplier screening and ESG assessments; target 50% cut in scope 2 & 3 supply-chain emissions.",
     "committed_volume": "50% reduction",
-    "period": "Contract term",
-    "beneficiaries": "\u2014",
-    "delivered_by": "Infosys",
-    "attribution": "Direct",
-    "sch8_ref": "1.28",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-11",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Corporate ESG target, not contract-specific."
+    "delivered_by": "Infosys"
   },
   {
     "id": "INI-12",
@@ -222,17 +111,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "IT equipment recovery (Design for Environment)",
     "description": "Oracle recovers 100% of data-centre IT equipment, <0.1% to landfill.",
     "committed_volume": "100% recovery",
-    "period": "Contract term",
-    "beneficiaries": "\u2014",
-    "delivered_by": "Oracle",
-    "attribution": "Partner-led (indirect)",
-    "sch8_ref": "1.29(a)",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-12",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": ""
+    "delivered_by": "Oracle"
   },
   {
     "id": "INI-13",
@@ -241,17 +120,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Social Value Scorecard & Oracle Carbon Calculator",
     "description": "Periodic scorecard; OCI carbon calculator tracking 50% of emissions within 5 years.",
     "committed_volume": "Scorecard live Y1; calculator from Y3",
-    "period": "Contract term",
-    "beneficiaries": "NHSBSA",
-    "delivered_by": "Infosys / Oracle / Monk Spaces",
-    "attribution": "Direct",
-    "sch8_ref": "1.31\u20131.33",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-13, ACT-03",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Reporting and enabling."
+    "delivered_by": "Infosys / Oracle / Monk Spaces"
   },
   {
     "id": "INI-14",
@@ -260,17 +129,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Green Health Routes (5) and Oracle donation",
     "description": "Oracle funds and resources five community biodiverse green spaces / NHS green health routes in deprived areas; \u00a385,000 donation.",
     "committed_volume": "5 routes; \u00a385,000",
-    "period": "One route every two years, 2026\u20132034",
-    "beneficiaries": "Patients, staff and communities near NHS sites",
-    "delivered_by": "Oracle / CSH (NHS Forest)",
-    "attribution": "Partner-led (indirect)",
-    "sch8_ref": "1.6, 1.35\u20131.37(a)",
-    "sch3b_ref": "SPI11 \u00a717",
-    "scorecard_id": "SPI-01",
-    "in_scorecard": "Yes",
-    "valuation_status": "Valued \u2014 defensible",
-    "defensible_value_gbp": 85000.0,
-    "notes": "\u00a385,000 donation is not tracked in the scorecard."
+    "delivered_by": "Oracle / CSH (NHS Forest)"
   },
   {
     "id": "INI-15",
@@ -279,17 +138,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Community Innovation Fund",
     "description": "\u00a325,000 every other year across five regions for workforce, wellbeing and sustainability projects.",
     "committed_volume": "\u00a3125,000 (5 \u00d7 \u00a325,000)",
-    "period": "2026, 2028, 2030, 2032, 2034",
-    "beneficiaries": "Community projects in 5 regions",
-    "delivered_by": "Infosys (NHSBSA on steering group)",
-    "attribution": "Direct",
-    "sch8_ref": "1.37(b), 1.38",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-19",
-    "in_scorecard": "Yes",
-    "valuation_status": "Valued \u2014 defensible",
-    "defensible_value_gbp": 125000.0,
-    "notes": "Cost tracker forecasts an extra \u00a350,000 not in Schedule 8."
+    "delivered_by": "Infosys (NHSBSA on steering group)"
   },
   {
     "id": "INI-16",
@@ -298,17 +147,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Reforestation donation",
     "description": "One-off separately funded reforestation donation.",
     "committed_volume": "\u00a325,000",
-    "period": "Once from 2026",
-    "beneficiaries": "Environment / community",
-    "delivered_by": "Infosys",
-    "attribution": "Direct",
-    "sch8_ref": "1.37(b), 1.38",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-20",
-    "in_scorecard": "Yes",
-    "valuation_status": "Valued \u2014 defensible",
-    "defensible_value_gbp": 25000.0,
-    "notes": "Must not also be counted as a carbon offset."
+    "delivered_by": "Infosys"
   },
   {
     "id": "INI-17",
@@ -317,17 +156,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "FWS Ambassador Programme (apprenticeships)",
     "description": "80 Level 3/4 apprentices from under-represented / deprived groups providing on-site FWS support; ~10% progress to Level 4.",
     "committed_volume": "80 people; 1,920 months",
-    "period": "Cohorts 2027\u20132030",
-    "beneficiaries": "People facing barriers to work / deprived areas",
-    "delivered_by": "Infosys (employer) / QA Consulting (training)",
-    "attribution": "Direct",
-    "sch8_ref": "2.7(a), 2.12\u20132.33",
-    "sch3b_ref": "KPI9b \u00a77.2; SPI13 \u00a719",
-    "scorecard_id": "KPI-11",
-    "in_scorecard": "Yes",
-    "valuation_status": "Valued \u2014 defensible",
-    "defensible_value_gbp": 2576953.6,
-    "notes": "Cost tracker has 1,800 person-months vs 1,920 committed (see Cross-check)."
+    "delivered_by": "Infosys (employer) / QA Consulting (training)"
   },
   {
     "id": "INI-18",
@@ -336,17 +165,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "E-Waste Pipeline for prison leavers",
     "description": "11 prison leavers / ex-offenders trained and employed refurbishing devices for the device prescribing programme.",
     "committed_volume": "11 people; 264 months",
-    "period": "Within KPI9b reference points",
-    "beneficiaries": "Ex-offenders",
-    "delivered_by": "Good Things Foundation (Infosys contractually responsible)",
-    "attribution": "Supply chain (Infosys accountable)",
-    "sch8_ref": "2.58\u20132.65",
-    "sch3b_ref": "KPI9b \u00a77.2",
-    "scorecard_id": "KPI-12",
-    "in_scorecard": "Yes",
-    "valuation_status": "Valued \u2014 defensible",
-    "defensible_value_gbp": 615142.0,
-    "notes": "Only \u00a3110k cost line found for 264 months of paid work (see Cross-check)."
+    "delivered_by": "Good Things Foundation (Infosys contractually responsible)"
   },
   {
     "id": "INI-19",
@@ -355,17 +174,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Device Prescribing Pilot Programme",
     "description": "Primary-care referrals to volunteer digital consultants who prescribe refurbished devices, connectivity and access to the National Digital Inclusion Network.",
     "committed_volume": "500 consultations; 500 devices; 500 connectivity packages; 29,850 hrs digital basics",
-    "period": "24-month pilot",
-    "beneficiaries": "People in digital poverty in deprived areas",
-    "delivered_by": "Infosys / Good Things Foundation",
-    "attribution": "Direct",
-    "sch8_ref": "2.7, 2.34\u20132.57",
-    "sch3b_ref": "SPI12 \u00a718",
-    "scorecard_id": "SPI-02",
-    "in_scorecard": "Yes",
-    "valuation_status": "Valued \u2014 defensible",
-    "defensible_value_gbp": 295488.0,
-    "notes": "Volunteer arithmetic in Schedule 8 does not reconcile (see Cross-check)."
+    "delivered_by": "Infosys / Good Things Foundation"
   },
   {
     "id": "INI-20",
@@ -374,17 +183,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Springboard (NHS-Tech online learning)",
     "description": "Certified tech training and learning hours on Infosys Springboard for high-barrier resident / patient groups.",
     "committed_volume": "10,000 hrs p.a.; ~2,500 learners",
-    "period": "Annual",
-    "beneficiaries": "Residents / patients facing barriers",
-    "delivered_by": "Infosys",
-    "attribution": "Direct",
-    "sch8_ref": "2.7(b), 2.8",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "\u2014",
-    "in_scorecard": "No",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Not in the scorecard and not costed in the tracker."
+    "delivered_by": "Infosys"
   },
   {
     "id": "INI-21",
@@ -393,17 +192,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Work-Ready Clubs & Maker Zones",
     "description": "Weekly after-school clubs for 16\u201318 year-olds; two Maker Zones in the North West.",
     "committed_volume": "18,000 hrs/yr; 200 candidates (2.8) vs ~1,000\u20131,200 participants (2.72)",
-    "period": "Five years",
-    "beneficiaries": "16\u201318 year-olds in disadvantaged communities",
-    "delivered_by": "Oracle / Onside Youth",
-    "attribution": "Partner-led (indirect)",
-    "sch8_ref": "2.7(c), 2.66\u20132.76",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-15",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Participant numbers inconsistent inside Schedule 8."
+    "delivered_by": "Oracle / Onside Youth"
   },
   {
     "id": "INI-22",
@@ -412,17 +201,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Springpod virtual work experience",
     "description": "Live and pre-recorded virtual work experience for NHS / NHS-tech settings.",
     "committed_volume": "5,000 hrs/yr; 50 NHS candidates",
-    "period": "Annual",
-    "beneficiaries": "Young people and Tech Returners facing barriers",
-    "delivered_by": "Springpod / QA Consulting (Infosys-funded)",
-    "attribution": "Direct",
-    "sch8_ref": "2.69(b), 2.75(b)",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-16",
-    "in_scorecard": "Yes",
-    "valuation_status": "Conditional only",
-    "defensible_value_gbp": 0.0,
-    "notes": ""
+    "delivered_by": "Springpod / QA Consulting (Infosys-funded)"
   },
   {
     "id": "INI-23",
@@ -431,17 +210,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Tech Returners programme",
     "description": "12-week online reskilling, mentoring and job-placement support for experienced professionals returning after a career break.",
     "committed_volume": "Rolling cohorts (no volume stated)",
-    "period": "Rolling",
-    "beneficiaries": "People returning to work",
-    "delivered_by": "Infosys / Oracle",
-    "attribution": "Direct",
-    "sch8_ref": "2.69(c), 2.75(c)",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-17",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "No cohort size or hours committed \u2014 cannot be valued yet."
+    "delivered_by": "Infosys / Oracle"
   },
   {
     "id": "INI-24",
@@ -450,17 +219,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Young learners in further education (Sutton Trust + MAT)",
     "description": "Cash donations and health-tech learning content via Sutton Trust Online and a Multi-Academy Trust; summer schools.",
     "committed_volume": "~225 students/yr; 1,350 hrs/yr; MAT 200 learners",
-    "period": "From Y3\u20134",
-    "beneficiaries": "Students from lower-income backgrounds",
-    "delivered_by": "Infosys / Oracle / Sutton Trust / MAT",
-    "attribution": "Direct",
-    "sch8_ref": "2.7(d), 2.77\u20132.89",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-18, ACT-04",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Schedule 8 names Oracle (2.7d) and Infosys (2.84) as funder."
+    "delivered_by": "Infosys / Oracle / Sutton Trust / MAT"
   },
   {
     "id": "INI-25",
@@ -469,17 +228,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Accessibility review",
     "description": "Quarterly accessibility review.",
     "committed_volume": "Per quarter",
-    "period": "Contract term",
-    "beneficiaries": "\u2014",
-    "delivered_by": "Infosys",
-    "attribution": "Direct",
-    "sch8_ref": "2.8",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "\u2014",
-    "in_scorecard": "No",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Governance activity; not in the scorecard."
+    "delivered_by": "Infosys"
   },
   {
     "id": "INI-26",
@@ -488,17 +237,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "FWS free of modern slavery (MSAT \u226580%)",
     "description": "Bi-annual Home Office MSAT \u226580% (Green RAG); top-3 suppliers complete MSAT; policies, audits, training.",
     "committed_volume": "MSAT \u226580%, twice a year",
-    "period": "1 Apr and 1 Oct annually",
-    "beneficiaries": "Workers in the supply chain",
-    "delivered_by": "Infosys",
-    "attribution": "Direct",
-    "sch8_ref": "3.4\u20133.23",
-    "sch3b_ref": "KPI9c \u00a77.3",
-    "scorecard_id": "KPI-13",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Latest MSAT: Infosys 82%, Oracle 99%."
+    "delivered_by": "Infosys"
   },
   {
     "id": "INI-27",
@@ -507,17 +246,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Unseen NHS Clinical Modern Slavery Detection training & Learning Academy",
     "description": "Infosys funds Unseen (Hope for Justice) to deliver clinical detection training and an awareness academy for NHS staff.",
     "committed_volume": "\u22652,400 trained",
-    "period": "2027 to end of term",
-    "beneficiaries": "NHS clinical and patient-facing staff",
-    "delivered_by": "Infosys (funds) / Unseen",
-    "attribution": "Direct",
-    "sch8_ref": "3.24\u20133.31, 3.34(a)",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-21, OBL-22",
-    "in_scorecard": "Yes",
-    "valuation_status": "Conditional only",
-    "defensible_value_gbp": 0.0,
-    "notes": ""
+    "delivered_by": "Infosys (funds) / Unseen"
   },
   {
     "id": "INI-28",
@@ -526,17 +255,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Oracle \u00d7 Unseen e-learning for NHS procurement staff",
     "description": "Two additional modules for NHS procurement staff.",
     "committed_volume": "\u2265600 NHS staff",
-    "period": "From Y2",
-    "beneficiaries": "NHS procurement staff",
-    "delivered_by": "Oracle / Unseen",
-    "attribution": "Partner-led (indirect)",
-    "sch8_ref": "3.34(b)",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "\u2014",
-    "in_scorecard": "No",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Not in the scorecard."
+    "delivered_by": "Oracle / Unseen"
   },
   {
     "id": "INI-29",
@@ -545,17 +264,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Community support grant to Unseen",
     "description": "Grant supporting Unseen technology initiatives and Infosys\u2013Unseen partnership programmes.",
     "committed_volume": "\u00a350,000",
-    "period": "2027\u20132030",
-    "beneficiaries": "Unseen (charity)",
-    "delivered_by": "Infosys",
-    "attribution": "Direct",
-    "sch8_ref": "3.32",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-24",
-    "in_scorecard": "Yes",
-    "valuation_status": "Valued \u2014 defensible",
-    "defensible_value_gbp": 50000.0,
-    "notes": "Scorecard budget shows \u00a345,000 (rotated \u2014 see Cross-check)."
+    "delivered_by": "Infosys"
   },
   {
     "id": "INI-30",
@@ -564,17 +273,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Innovation research grant / bursary",
     "description": "Research grant / bursary via NHSBSA Student Services.",
     "committed_volume": "\u00a330,000",
-    "period": "2027\u20132030",
-    "beneficiaries": "Students / researchers",
-    "delivered_by": "Infosys / NHSBSA",
-    "attribution": "Direct",
-    "sch8_ref": "3.34",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-23",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Scorecard budget \u00a350,000; cost tracker \u00a345,000 (see Cross-check)."
+    "delivered_by": "Infosys / NHSBSA"
   },
   {
     "id": "INI-31",
@@ -583,17 +282,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Five modern slavery PhDs",
     "description": "Fund five PhDs with a university selected by Infosys; competitive call via the Governance Committee.",
     "committed_volume": "5 PhDs within 5 years",
-    "period": "2026\u20132031",
-    "beneficiaries": "Research community / NHS",
-    "delivered_by": "Infosys / partner university",
-    "attribution": "Direct",
-    "sch8_ref": "3.36\u20133.40",
-    "sch3b_ref": "SPI14 \u00a720",
-    "scorecard_id": "SPI-03",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Contractual (SPI14) but \u00a30 in the bid; tagged SV1 in the cost tracker."
+    "delivered_by": "Infosys / partner university"
   },
   {
     "id": "INI-32",
@@ -602,17 +291,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "PhD implementation fund",
     "description": "Fund to implement, test and verify the PhD recommendations.",
     "committed_volume": "\u00a345,000",
-    "period": "2027\u20132035",
-    "beneficiaries": "NHSBSA and trusts",
-    "delivered_by": "Infosys",
-    "attribution": "Direct",
-    "sch8_ref": "3.41",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-25",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": "Scorecard budget shows \u00a330,000 (rotated)."
+    "delivered_by": "Infosys"
   },
   {
     "id": "INI-33",
@@ -621,17 +300,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Modern Slavery Awareness Champion",
     "description": "Awareness champion and social-scientist support.",
     "committed_volume": "Continuous",
-    "period": "2027\u20132030",
-    "beneficiaries": "NHS and Infosys staff",
-    "delivered_by": "Infosys",
-    "attribution": "Direct",
-    "sch8_ref": "3.34",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "ACT-05",
-    "in_scorecard": "Yes",
-    "valuation_status": "Not valued",
-    "defensible_value_gbp": 0.0,
-    "notes": ""
+    "delivered_by": "Infosys"
   },
   {
     "id": "INI-34",
@@ -640,17 +309,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Programme governance (SV Director, committee, reporting, travel, comms)",
     "description": "Social Value Director, quarterly Governance Committee, dashboards, travel and communication artefacts.",
     "committed_volume": "Ongoing",
-    "period": "Contract term",
-    "beneficiaries": "\u2014",
-    "delivered_by": "Infosys",
-    "attribution": "Overhead",
-    "sch8_ref": "1.3, 1.42",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "OBL-14, ACT-01",
-    "in_scorecard": "Yes",
-    "valuation_status": "Cost only",
-    "defensible_value_gbp": 0.0,
-    "notes": "Overhead \u2014 cost only."
+    "delivered_by": "Infosys"
   },
   {
     "id": "INI-35",
@@ -659,17 +318,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "SV2 subject-matter expert (programme support)",
     "description": "UK-based Senior Consultant supporting SV2 delivery.",
     "committed_volume": "180 person-months",
-    "period": "Contract term",
-    "beneficiaries": "\u2014",
-    "delivered_by": "Infosys",
-    "attribution": "Overhead",
-    "sch8_ref": "\u2014",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "\u2014",
-    "in_scorecard": "\u2014",
-    "valuation_status": "Cost only",
-    "defensible_value_gbp": 0.0,
-    "notes": "Overhead \u2014 cost only."
+    "delivered_by": "Infosys"
   },
   {
     "id": "INI-36",
@@ -678,17 +327,7 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "SV3 subject-matter expert (programme support)",
     "description": "Consultant supporting SV3 delivery.",
     "committed_volume": "180 person-months",
-    "period": "Contract term",
-    "beneficiaries": "\u2014",
-    "delivered_by": "Infosys",
-    "attribution": "Overhead",
-    "sch8_ref": "\u2014",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "\u2014",
-    "in_scorecard": "\u2014",
-    "valuation_status": "Cost only",
-    "defensible_value_gbp": 0.0,
-    "notes": "Overhead \u2014 cost only."
+    "delivered_by": "Infosys"
   },
   {
     "id": "INI-37",
@@ -697,16 +336,6 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "name": "Gender sensitivity training (cost line, no commitment)",
     "description": "\u00a3150,000 in the bid cost tracker; no matching commitment in Schedule 8 or the scorecard.",
     "committed_volume": "\u2014",
-    "period": "\u2014",
-    "beneficiaries": "\u2014",
-    "delivered_by": "TBC",
-    "attribution": "Orphan cost",
-    "sch8_ref": "\u2014",
-    "sch3b_ref": "\u2014",
-    "scorecard_id": "\u2014",
-    "in_scorecard": "No",
-    "valuation_status": "Cost only",
-    "defensible_value_gbp": 0.0,
-    "notes": "Confirm whether dropped or missing from Schedule 8."
+    "delivered_by": "TBC"
   }
 ];

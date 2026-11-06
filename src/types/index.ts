@@ -160,7 +160,7 @@ export interface MasterInitiative {
   scorecard_id?: string;
   in_scorecard?: string;
   valuation_status?: string;
-  defensible_value_gbp: number;
+  defensible_value_gbp?: number;
   notes?: string;
 }
 
