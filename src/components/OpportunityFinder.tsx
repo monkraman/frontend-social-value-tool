@@ -15,7 +15,6 @@ import {
   Sliders,
   MessageSquare,
   Check,
-  TrendingUp,
   Filter
 } from 'lucide-react';
 
@@ -78,24 +77,26 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
     industry: 'IT & Digital Services'
   });
 
-  // Available TOMs Catalog for User-driven Focus Selection (2025 National TOMs + NHS Initiatives)
+  // Available TOMs Catalog for User-driven Focus Selection (Official National TOMs 2024/2025 Edition)
   const AVAILABLE_TOMS_OPTIONS = [
-    { code: 'NT10', name: 'FWS Apprenticeships (QA)', svroi: '38x' },
-    { code: 'NT4', name: 'NEET Youth Careers (16-24)', svroi: '35x' },
-    { code: 'NT5', name: 'Prison Leavers E-Waste (Good Things)', svroi: '42x' },
-    { code: 'NHS-SV1-01', name: 'Sustainable IT & GreenOps (Sopht)', svroi: '25x' },
-    { code: 'NT27', name: 'Digital Inclusion Device Prescribing', svroi: '20x' },
-    { code: 'NT18', name: 'Local SME & VCSE Supply Spend', svroi: '8x' },
-    { code: 'NT31', name: 'Net Zero Carbon Reductions (tCO2e)', svroi: '14x' }
+    { code: 'NT1', name: 'Local Employment & Retention', theme: 'Work' },
+    { code: 'NT3', name: 'NEET & Long-Term Unemployed', theme: 'Work' },
+    { code: 'NT8', name: 'STEM & Digital Skills Volunteering', theme: 'Work' },
+    { code: 'NT10', name: 'Accredited New Apprenticeships', theme: 'Work' },
+    { code: 'NT18', name: 'Local SME & VCSE Supply Chain', theme: 'Economy' },
+    { code: 'NT27', name: 'Strengthening Community Networks', theme: 'Community' },
+    { code: 'NT31', name: 'Decarbonisation (tCO2e)', theme: 'Planet' }
   ];
 
   // User-selected TOMs (Default: All active)
   const [selectedTomsCodes, setSelectedTomsCodes] = useState<string[]>([
+    'NT1',
+    'NT3',
+    'NT8',
     'NT10',
-    'NT4',
-    'NHS-SV1-01',
+    'NT18',
     'NT27',
-    'NT18'
+    'NT31'
   ]);
 
   // 3-Package Results State
@@ -675,9 +676,8 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
                 <Filter size={13} style={{ color: 'var(--color-primary)' }} />
                 <span>Preferred TOMs Selection (User Defined Scope):</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.74rem', color: '#059669', fontWeight: 600 }}>
-                <TrendingUp size={13} />
-                <span>Ranked by Highest Value per £1 (SVROI)</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                <span>Official National TOMs 2025 Framework</span>
               </div>
             </div>
 
@@ -729,7 +729,7 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
                         color: isSelected ? '#059669' : 'var(--text-muted)'
                       }}
                     >
-                      {t.svroi} ROI
+                      {t.theme}
                     </span>
                   </button>
                 );
