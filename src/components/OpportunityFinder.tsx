@@ -78,24 +78,24 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
     industry: 'IT & Digital Services'
   });
 
-  // Available TOMs Catalog for User-driven Focus Selection
+  // Available TOMs Catalog for User-driven Focus Selection (2025 National TOMs + NHS Initiatives)
   const AVAILABLE_TOMS_OPTIONS = [
-    { code: 'NT1', name: 'Apprenticeships (Weeks)', svroi: '40x' },
-    { code: 'NT3', name: 'Youth Employment (NEET)', svroi: '35x' },
-    { code: 'NT8', name: 'Digital Inclusion Clinics', svroi: '18x' },
-    { code: 'NT10', name: 'STEM & Tech Volunteering', svroi: '15x' },
-    { code: 'NT14', name: 'Local SME & VCSE Supply', svroi: '4.5x' },
-    { code: 'NT20', name: 'Refurbished Device Donation', svroi: '12x' },
-    { code: 'NT31', name: 'Green Computing & Carbon', svroi: '10x' }
+    { code: 'NT10', name: 'FWS Apprenticeships (QA)', svroi: '38x' },
+    { code: 'NT4', name: 'NEET Youth Careers (16-24)', svroi: '35x' },
+    { code: 'NT5', name: 'Prison Leavers E-Waste (Good Things)', svroi: '42x' },
+    { code: 'NHS-SV1-01', name: 'Sustainable IT & GreenOps (Sopht)', svroi: '25x' },
+    { code: 'NT27', name: 'Digital Inclusion Device Prescribing', svroi: '20x' },
+    { code: 'NT18', name: 'Local SME & VCSE Supply Spend', svroi: '8x' },
+    { code: 'NT31', name: 'Net Zero Carbon Reductions (tCO2e)', svroi: '14x' }
   ];
 
   // User-selected TOMs (Default: All active)
   const [selectedTomsCodes, setSelectedTomsCodes] = useState<string[]>([
-    'NT1',
-    'NT3',
-    'NT8',
     'NT10',
-    'NT14'
+    'NT4',
+    'NHS-SV1-01',
+    'NT27',
+    'NT18'
   ]);
 
   // 3-Package Results State
