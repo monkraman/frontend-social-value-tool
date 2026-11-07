@@ -62,26 +62,48 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
       : result.localised_package;
 
   const currentCalc = currentPkg?.financial_calculation;
-  const duration = result.opportunity.duration_years || 3;
+  const duration = result.opportunity.duration_years || (result.opportunity as any).contract_duration_years || 3;
   const contractVal = result.opportunity.contract_value_gbp || 1;
+
+  // National TOMs proxy rate lookup safeguard
+  const TOMS_DEFAULT_RATES: Record<string, { unit: string; rate: number }> = {
+    NT1: { unit: 'no. people FTE', rate: 45722.0 },
+    NT3: { unit: 'no. people FTE', rate: 51561.0 },
+    NT4: { unit: 'no. people FTE', rate: 53013.0 },
+    NT8: { unit: 'no. staff volunteering hours', rate: 17.48 },
+    NT10: { unit: 'no. weeks', rate: 309.73 },
+    NT18: { unit: '£', rate: 1.089 },
+    NT27: { unit: '£', rate: 1.00 },
+    NT31: { unit: 'tCO2e', rate: 252.11 },
+    'NT31a': { unit: 'tCO2e', rate: 252.11 }
+  };
 
   // Dynamically compute initiatives with custom tuned volume if modified
   const effectiveInits = (currentPkg?.initiatives || []).map((init, idx) => {
     const key = `${activePackage}_${idx}`;
     const vol = customVolumes[key] !== undefined ? customVolumes[key] : init.annual_volume;
-    const baseCalc = currentCalc?.initiatives?.[idx];
-    const unitVal = baseCalc?.unit_value_gbp || 1.0;
-    const totalVol = vol * duration;
+    const code = init.toms_metric_code || '';
+    const defaultMeta = TOMS_DEFAULT_RATES[code];
+    const matchedCalc = currentCalc?.initiatives?.find(c => c.toms_code === code) || currentCalc?.initiatives?.[idx];
+    const unitVal = matchedCalc?.unit_value_gbp || defaultMeta?.rate || 1.0;
+    const unitName = matchedCalc?.unit || defaultMeta?.unit || 'units';
+    const totalVol = Math.round(vol * duration * 10) / 10;
     const totalSv = Math.round(totalVol * unitVal);
     return {
       ...init,
       effectiveVol: vol,
       calc: {
-        ...(baseCalc || {}),
+        ...(matchedCalc || {}),
+        initiative_name: init.name,
+        toms_code: code,
+        metric_name: init.name,
         annual_volume: vol,
+        duration_years: duration,
         total_volume: totalVol,
+        unit_value_gbp: unitVal,
         total_social_value_gbp: totalSv,
-        unit: baseCalc?.unit || 'units'
+        unit: unitName,
+        calculation_formula: `${vol} ${unitName}/yr × ${duration} yrs = ${totalVol} ${unitName} @ £${unitVal.toLocaleString()} = £${totalSv.toLocaleString()}`
       }
     };
   });
@@ -119,7 +141,7 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
       `# Social Value Proposal: ${currentPkg.name}\n` +
       `Client: ${result.opportunity.client}\n` +
       `Location: ${result.opportunity.location}\n` +
-      `Contract Value: ${formatGbp(result.opportunity.contract_value_gbp)} over ${result.opportunity.duration_years} years\n` +
+      `Contract Value: ${formatGbp(result.opportunity.contract_value_gbp)} over ${duration} years\n` +
       `Target Social Value: ${formatGbp(targetAmount)} (${result.opportunity.social_value_weighting_percent}%)\n` +
       `Offered Social Value: ${formatGbp(currentTotal)} (${formatPercent(currentPercent)})\n` +
       `\n## Strategic Rationale\n${currentPkg.rationale}\n\n` +
@@ -191,7 +213,7 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.15rem' }}>Contract value</span>
             <strong className="display-num" style={{ fontSize: '1.15rem', color: 'var(--text-primary)' }}>{formatGbp(result.opportunity.contract_value_gbp)}</strong>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.4rem' }}>over {result.opportunity.duration_years} years</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.4rem' }}>over {duration} years</span>
           </div>
 
           <div>
