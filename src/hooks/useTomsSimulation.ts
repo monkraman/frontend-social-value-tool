@@ -8,16 +8,27 @@ export interface TunerInitiative {
   annual_volume: number;
 }
 
+/** Sensible starting volume for a newly added measure, based on its official unit. */
+function defaultVolumeForUnit(unit: string): number {
+  const u = unit.toLowerCase();
+  if (u.includes('£')) return 50000;
+  if (u.includes('fte')) return 1;
+  if (u.includes('weeks')) return 52;
+  if (u.includes('tco2e')) return 10;
+  return 50;
+}
+
 export function useTomsSimulation(initialContractValue = 10000000, initialYears = 3, initialWeighting = 10) {
   const [metrics, setMetrics] = useState<TOMsMetric[]>([]);
   const [contractValue, setContractValue] = useState<number>(initialContractValue);
   const [durationYears, setDurationYears] = useState<number>(initialYears);
   const [weightingPercent, setWeightingPercent] = useState<number>(initialWeighting);
   const [activeInitiatives, setActiveInitiatives] = useState<TunerInitiative[]>([
-    { name: 'Digital Skills & Literacy Clinics', toms_metric_code: 'NT8', annual_volume: 8 },
-    { name: 'Apprenticeships (16-24 yrs)', toms_metric_code: 'NT1', annual_volume: 52 },
-    { name: 'Refurbished IT Hardware Donations', toms_metric_code: 'NT45', annual_volume: 60 },
-    { name: 'Local SME & VCSE Supply Chain Spend', toms_metric_code: 'NT31', annual_volume: 180000 }
+    // Volumes are in each measure's official unit (see TOMs catalog).
+    { name: 'Staff Volunteering in Local Schools (hours)', toms_metric_code: 'NT8', annual_volume: 200 },
+    { name: 'New Apprentices (2 × 52 weeks)', toms_metric_code: 'NT10', annual_volume: 104 },
+    { name: 'Refurbished IT Devices Donated (£ in-kind)', toms_metric_code: 'NT28', annual_volume: 20000 },
+    { name: 'Spend with Local SMEs (£)', toms_metric_code: 'NT19', annual_volume: 180000 }
   ]);
   const [result, setResult] = useState<PackageCalculation | null>(null);
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
@@ -82,7 +93,7 @@ export function useTomsSimulation(initialContractValue = 10000000, initialYears 
         {
           name: m.name,
           toms_metric_code: m.code,
-          annual_volume: m.code === 'NT31' ? 50000 : 10
+          annual_volume: defaultVolumeForUnit(m.unit)
         }
       ]);
     },

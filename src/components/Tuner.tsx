@@ -3,6 +3,24 @@ import { useTomsSimulation } from '../hooks/useTomsSimulation';
 import { formatGbp, formatPercent } from '../utils/formatters';
 import { RefreshCw, X } from 'lucide-react';
 
+/** Slider range depends on the measure's official unit (£ spend vs FTE vs hours, etc.). */
+function sliderMaxForUnit(unit?: string): number {
+  const u = (unit || '').toLowerCase();
+  if (u.includes('£')) return 1000000;
+  if (u.includes('fte')) return 20;
+  if (u.includes('weeks')) return 1040;
+  if (u.includes('tco2e')) return 1000;
+  if (u.includes('miles')) return 500000;
+  return 2000;
+}
+
+function sliderStepForUnit(unit?: string): number {
+  const u = (unit || '').toLowerCase();
+  if (u.includes('£')) return 1000;
+  if (u.includes('miles')) return 500;
+  return 1;
+}
+
 export const Tuner: React.FC = () => {
   const {
     metrics,
@@ -184,7 +202,8 @@ export const Tuner: React.FC = () => {
                   <input
                     type="range"
                     min={0}
-                    max={init.toms_metric_code === 'NT31' ? 500000 : 100}
+                    max={sliderMaxForUnit(metrics.find((m) => m.code === init.toms_metric_code)?.unit)}
+                    step={sliderStepForUnit(metrics.find((m) => m.code === init.toms_metric_code)?.unit)}
                     value={init.annual_volume}
                     onChange={(e) => updateVolume(idx, Number(e.target.value))}
                     style={{ flex: 1, accentColor: 'var(--color-primary)', cursor: 'pointer' }}

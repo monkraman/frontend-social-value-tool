@@ -624,7 +624,7 @@ export async function calculatePackageSimulation(
         target_weighting_percent: targetWeightingPercent,
         initiatives: initiatives.map((i) => ({
           initiative_name: i.name,
-          toms_code: i.toms_metric_code || 'NT8',
+          toms_code: i.toms_metric_code || null,
           annual_volume: i.annual_volume
         }))
       })
@@ -632,36 +632,34 @@ export async function calculatePackageSimulation(
     if (!res.ok) throw new Error(await res.text());
     return await res.json();
   } catch {
-    // Client-side fallback calculation matching backend logic exactly
-    const rateCard: Record<string, { name: string; unit: string; rate: number }> = {
-      NT1: { name: 'Apprenticeships (16-24 yrs)', unit: 'weeks', rate: 385.0 },
-      NT3: { name: 'Youth Mentoring & Careers Advice', unit: 'sessions', rate: 275.0 },
-      NT8: { name: 'Digital Skills & Literacy Clinics', unit: 'workshops', rate: 1250.0 },
-      NT12: { name: 'Voluntary Sector Volunteering Hours', unit: 'hours', rate: 21.0 },
-      NT31: { name: 'Local SME & VCSE Supply Chain Spend', unit: '£ spend', rate: 1.0 },
-      NT45: { name: 'Refurbished IT Hardware Donations', unit: 'devices', rate: 450.0 }
-    };
+    // Offline fallback: uses the same Open Access TOM System 2024/2025 catalog values as the
+    // backend (DEFAULT_TOMS_2025 mirrors calculation_service.DEFAULT_TOMS_DATA), and the same
+    // formula: annual volume × years × unit value. Unknown codes are valued at £0, as in the backend.
+    const catalog = new Map(DEFAULT_TOMS_2025.map((m) => [m.code.toUpperCase(), m]));
 
     let totalSV = 0;
     const calculatedInits = initiatives.map((init) => {
-      const code = init.toms_metric_code || 'NT8';
-      const metric = rateCard[code] || { name: 'Digital Skills Clinics', unit: 'units', rate: 1000.0 };
-      const totVol = init.annual_volume * durationYears;
-      const svGbp = totVol * metric.rate;
+      const code = init.toms_metric_code || 'CUSTOM';
+      const metric = catalog.get(code.toUpperCase());
+      const rate = metric?.unit_value_gbp ?? 0;
+      const unit = metric?.unit ?? 'units';
+      const totVol = Math.round(init.annual_volume * durationYears * 100) / 100;
+      const svGbp = Math.round(totVol * rate * 100) / 100;
       totalSV += svGbp;
       return {
         initiative_name: init.name,
-        toms_code: code,
-        metric_name: metric.name,
-        unit: metric.unit,
-        unit_value_gbp: metric.rate,
+        toms_code: metric?.code ?? code,
+        metric_name: metric?.name ?? 'Unmapped Custom Initiative',
+        unit,
+        unit_value_gbp: rate,
         annual_volume: init.annual_volume,
         duration_years: durationYears,
         total_volume: totVol,
         total_social_value_gbp: svGbp,
-        calculation_formula: `${init.annual_volume} annual × ${durationYears} yrs @ £${metric.rate.toLocaleString()} / ${metric.unit} = £${svGbp.toLocaleString()}`
+        calculation_formula: `${init.annual_volume} ${unit}/yr × ${durationYears} yrs = ${totVol} ${unit} @ £${rate.toLocaleString()} = £${svGbp.toLocaleString()} (offline calculation)`
       };
     });
+    totalSV = Math.round(totalSV * 100) / 100;
 
     const targetSv = (contractValueGbp * targetWeightingPercent) / 100;
     const svPercent = contractValueGbp > 0 ? (totalSV / contractValueGbp) * 100 : 0;
@@ -708,258 +706,4 @@ export async function searchVectorKnowledge(
   }
 
   return await res.json();
-}
-
-// Fallback high-fidelity sample result matching exact backend schema
-export function getRealisticFallbackResponse(request: OpportunityRequest): ResponseGenerationResult {
-  const years = request.contract_duration_years || 3;
-  const value = request.contract_value_gbp || 10000000;
-  const weighting = request.social_value_weighting_percent || 10;
-  const targetSv = (value * weighting) / 100;
-
-  // Core Package
-  const coreTotal = 4 * years * 1250 + 2 * years * 385 * 12;
-  const corePackage = {
-    name: 'Core Package (Baseline Compliance)',
-    rationale: 'Minimum-risk, highly proven initiatives directly satisfying mandatory tender criteria.',
-    expected_impact: [
-      `${4 * years} Digital Inclusion Clinics conducted across client wards`,
-      `${2 * years} Underrepresented youths guided through structured IT internships`
-    ],
-    dependencies: ['Council community room availability', 'Accredited training curriculum sync'],
-    initiatives: [
-      {
-        name: `${request.location} Digital Literacy Clinics`,
-        theme: 'Digital Inclusion',
-        location: request.location,
-        description: 'Quarterly interactive hands-on technology workshops for local citizens.',
-        delivery_mechanism: '4 sessions per annum hosted in community libraries',
-        target_beneficiaries: 'Unemployed citizens and senior residents',
-        annual_volume: 4.0,
-        toms_metric_code: 'NT8',
-        partner: `${request.location} Community Support`,
-        evidence_source: request.location.toLowerCase() === 'birmingham' ? 'Infosys_Birmingham_Digital_Inclusion.docx' : 'Standard Local Tender Framework',
-        is_from_knowledge_base: true
-      },
-      {
-        name: 'Early Careers IT Apprenticeship Mentoring',
-        theme: 'Youth Employment',
-        location: request.location,
-        description: 'Structured 12-week mentoring and workplace readiness modules.',
-        delivery_mechanism: '2 apprentices mentored annually for 12 weeks each',
-        target_beneficiaries: 'NEET youths aged 16-24',
-        annual_volume: 24.0,
-        toms_metric_code: 'NT1',
-        partner: null,
-        evidence_source: 'National_TOMs_Rate_Card_v2024.xlsx',
-        is_from_knowledge_base: false
-      }
-    ],
-    financial_calculation: {
-      package_name: 'Core Package (Baseline Compliance)',
-      initiatives: [
-        {
-          initiative_name: `${request.location} Digital Literacy Clinics`,
-          toms_code: 'NT8',
-          metric_name: 'Digital Skills & Literacy Clinics',
-          unit: 'workshops',
-          unit_value_gbp: 1250.0,
-          annual_volume: 4.0,
-          duration_years: years,
-          total_volume: 4.0 * years,
-          total_social_value_gbp: 4.0 * years * 1250.0,
-          calculation_formula: `4.0/yr × ${years} yrs @ £1,250.00/workshop = £${(4.0 * years * 1250.0).toLocaleString()}`
-        },
-        {
-          initiative_name: 'Early Careers IT Apprenticeship Mentoring',
-          toms_code: 'NT1',
-          metric_name: 'Apprenticeships (16-24 yrs)',
-          unit: 'weeks',
-          unit_value_gbp: 385.0,
-          annual_volume: 24.0,
-          duration_years: years,
-          total_volume: 24.0 * years,
-          total_social_value_gbp: 24.0 * years * 385.0,
-          calculation_formula: `24.0 wks/yr × ${years} yrs @ £385.00/wk = £${(24.0 * years * 385.0).toLocaleString()}`
-        }
-      ],
-      total_social_value_gbp: coreTotal,
-      contract_value_gbp: value,
-      social_value_percentage: Number(((coreTotal / value) * 100).toFixed(2)),
-      target_weighting_percent: weighting,
-      target_social_value_gbp: targetSv,
-      target_met: coreTotal >= targetSv,
-      audit_trail: [
-        `Formula: Total SV (£) = Annual Vol × ${years} Yrs × Unit Rate (£)`,
-        `Target SV = £${targetSv.toLocaleString()} (${weighting}% of £${value.toLocaleString()})`
-      ]
-    }
-  };
-
-  // Enhanced Package
-  const enhancedTotal = 8 * years * 1250 + 50 * years * 450 + 40 * years * 385;
-  const enhancedPackage = {
-    name: 'Enhanced Package (High-Scoring Impact)',
-    rationale: 'Maximum competitive score with high-volume hardware donations and deep workforce scaling.',
-    expected_impact: [
-      `${50 * years} Refurbished laptops donated to schools in deprived council wards`,
-      `${8 * years} Digital bootcamps + accredited certifications`,
-      'Top-tier evaluation score for competitive tender tenders'
-    ],
-    dependencies: ['Corporate IT hardware refurbishment supply cycle', 'Council school registry clearance'],
-    initiatives: [
-      {
-        name: 'Refurbished Corporate Tech Hardware Giving',
-        theme: 'Environment & Inclusion',
-        location: request.location,
-        description: 'Zero-landfill corporate hardware donated with Windows 11 & office software.',
-        delivery_mechanism: '50 laptops refurbished and delivered annually',
-        target_beneficiaries: 'Underprivileged students & local charity staff',
-        annual_volume: 50.0,
-        toms_metric_code: 'NT45',
-        partner: 'National Hardware Re-use Network',
-        evidence_source: 'Infosys_West_Midlands_CSR_Impact_Report.pdf',
-        is_from_knowledge_base: true
-      },
-      {
-        name: 'Advanced Cloud & AI Apprenticeship Cohort',
-        theme: 'Jobs & Skills',
-        location: request.location,
-        description: 'Full-time funded apprenticeship placements integrated into project tech stack.',
-        delivery_mechanism: '4 apprentices × 10 training weeks per year',
-        target_beneficiaries: 'Local college STEM leavers',
-        annual_volume: 40.0,
-        toms_metric_code: 'NT1',
-        partner: null,
-        evidence_source: 'National_TOMs_Rate_Card_v2024.xlsx',
-        is_from_knowledge_base: false
-      }
-    ],
-    financial_calculation: {
-      package_name: 'Enhanced Package (High-Scoring Impact)',
-      initiatives: [
-        {
-          initiative_name: 'Refurbished Corporate Tech Hardware Giving',
-          toms_code: 'NT45',
-          metric_name: 'Refurbished IT Hardware Donations',
-          unit: 'devices',
-          unit_value_gbp: 450.0,
-          annual_volume: 50.0,
-          duration_years: years,
-          total_volume: 50.0 * years,
-          total_social_value_gbp: 50.0 * years * 450.0,
-          calculation_formula: `50.0/yr × ${years} yrs @ £450.00 = £${(50.0 * years * 450.0).toLocaleString()}`
-        },
-        {
-          initiative_name: 'Advanced Cloud & AI Apprenticeship Cohort',
-          toms_code: 'NT1',
-          metric_name: 'Apprenticeships (16-24 yrs)',
-          unit: 'weeks',
-          unit_value_gbp: 385.0,
-          annual_volume: 40.0,
-          duration_years: years,
-          total_volume: 40.0 * years,
-          total_social_value_gbp: 40.0 * years * 385.0,
-          calculation_formula: `40.0 wks/yr × ${years} yrs @ £385.00 = £${(40.0 * years * 385.0).toLocaleString()}`
-        }
-      ],
-      total_social_value_gbp: enhancedTotal,
-      contract_value_gbp: value,
-      social_value_percentage: Number(((enhancedTotal / value) * 100).toFixed(2)),
-      target_weighting_percent: weighting,
-      target_social_value_gbp: targetSv,
-      target_met: enhancedTotal >= targetSv,
-      audit_trail: [
-        `Formula: Total SV (£) = Annual Vol × ${years} Yrs × Unit Rate (£)`,
-        `Target SV = £${targetSv.toLocaleString()}`
-      ]
-    }
-  };
-
-  // Localised Package
-  const localSpend = Math.round(value * 0.08 / years);
-  const localTotal = localSpend * years * 1.0 + 6 * years * 1250;
-  const localisedPackage = {
-    name: 'Localised Package (Ward-Level Regional Multiplier)',
-    rationale: 'Direct economic boost routed directly to regional SMEs and VCSE providers.',
-    expected_impact: [
-      `£${(localSpend * years).toLocaleString()} committed to local supply chains in ${request.location}`,
-      'High political resonance with Council evaluation panels'
-    ],
-    dependencies: ['Council verified local SME supplier portal onboarding'],
-    initiatives: [
-      {
-        name: `${request.location} Local SME Supply Chain Commitment`,
-        theme: 'Local Economy',
-        location: request.location,
-        description: 'Ring-fenced catering, venue hire, logistics and tier-2 IT subcontracting.',
-        delivery_mechanism: `£${localSpend.toLocaleString()} sub-contracted annually to local enterprises`,
-        target_beneficiaries: `Independent businesses in ${request.location}`,
-        annual_volume: localSpend,
-        toms_metric_code: 'NT31',
-        partner: `${request.location} Chamber of Commerce`,
-        evidence_source: request.location.toLowerCase() === 'birmingham' ? 'Infosys_Birmingham_Digital_Inclusion.docx' : 'Local Procurement Policy',
-        is_from_knowledge_base: true
-      }
-    ],
-    financial_calculation: {
-      package_name: 'Localised Package (Ward-Level Regional Multiplier)',
-      initiatives: [
-        {
-          initiative_name: `${request.location} Local SME Supply Chain Commitment`,
-          toms_code: 'NT31',
-          metric_name: 'Local SME & VCSE Supply Chain Spend',
-          unit: '£ spend',
-          unit_value_gbp: 1.0,
-          annual_volume: localSpend,
-          duration_years: years,
-          total_volume: localSpend * years,
-          total_social_value_gbp: localSpend * years * 1.0,
-          calculation_formula: `£${localSpend.toLocaleString()} × ${years} yrs @ £1.00 = £${(localSpend * years).toLocaleString()}`
-        }
-      ],
-      total_social_value_gbp: localTotal,
-      contract_value_gbp: value,
-      social_value_percentage: Number(((localTotal / value) * 100).toFixed(2)),
-      target_weighting_percent: weighting,
-      target_social_value_gbp: targetSv,
-      target_met: localTotal >= targetSv,
-      audit_trail: [
-        `Local multiplier calculation for ${request.location} economic zone`
-      ]
-    }
-  };
-
-  return {
-    opportunity: {
-      client: request.client,
-      location: request.location,
-      contract_value_gbp: value,
-      duration_years: years,
-      social_value_weighting_percent: weighting,
-      target_social_value_gbp: targetSv,
-      priorities: request.priorities
-    },
-    core_package: corePackage,
-    enhanced_package: enhancedPackage,
-    localised_package: localisedPackage,
-    assumptions: [
-      `All volunteer activities covered under employer-supported volunteering policy.`,
-      `National TOMs unit proxy rates derived from UK Social Value Portal standard framework.`,
-      `Contract duration modeled over full ${years}-year period.`
-    ],
-    validation_required: [
-      `Confirm with Infosys UK Procurement if ${request.location} Chamber of Commerce has an active supplier onboarding SLA.`,
-      `Partner organization for early careers IT mentorship is currently unverified in knowledge base.`
-    ],
-    retrieved_evidence_chunks: 5,
-    grounding_summary: {
-      matched_documents: [
-        request.location.toLowerCase() === 'birmingham' ? 'Infosys_Birmingham_Digital_Inclusion.docx' : `${request.location}_Social_Value_Priorities.docx`,
-        'National_TOMs_Rate_Card_v2024.xlsx'
-      ],
-      top_similarity: 0.942
-    },
-    is_mock: true
-  };
 }
