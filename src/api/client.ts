@@ -34,6 +34,11 @@ function resolveApiBaseUrl(): string {
     return envUrl;
   }
 
+  // In production browser (Vercel or custom domain), auto-route to deployed Render backend
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return 'https://social-value-infoproj.onrender.com';
+  }
+
   // Local development fallback
   return 'http://127.0.0.1:8000';
 }
