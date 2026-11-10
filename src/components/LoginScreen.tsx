@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+/**
+ * Shows the demo superadmin login on the sign-in screen (including the deployed site).
+ * Kept on for internal demos; set to false before handing the app to a client.
+ */
+const SHOW_DEMO_CREDENTIALS = true;
+
 export const LoginScreen: React.FC = () => {
   const { login, isLoading, error, clearError } = useAuth();
 
@@ -99,8 +105,7 @@ export const LoginScreen: React.FC = () => {
           </div>
         )}
 
-        {/* Demo credentials helper — local development only, never shown on the deployed site */}
-        {import.meta.env.DEV && (
+        {SHOW_DEMO_CREDENTIALS && (
         <div
           style={{
             padding: '0.7rem 0.9rem',
