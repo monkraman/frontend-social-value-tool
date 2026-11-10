@@ -82,7 +82,13 @@ export const AUTH_EXPIRED_EVENT = 'social-value:auth-expired';
  * the stored session token is no longer valid, so drop it and tell AuthContext to sign out.
  */
 async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
-  const res = await fetch(url, init);
+  let res: Response;
+  try {
+    res = await fetch(url, init);
+  } catch {
+    // Network failure (server down, offline, CORS): the browser only says "Failed to fetch".
+    throw new Error("Can't reach the server right now. Please check your connection and try again.");
+  }
   const path = url.split('?')[0];
   if (res.status === 401 && getStoredToken() && !/\/auth\/(login|register)$/.test(path)) {
     clearStoredToken();

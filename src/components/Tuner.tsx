@@ -2,6 +2,7 @@ import React from 'react';
 import { useTomsSimulation } from '../hooks/useTomsSimulation';
 import { formatGbp, formatPercent } from '../utils/formatters';
 import { RefreshCw, X } from 'lucide-react';
+import { PageHeader } from './PageHeader';
 
 /** Slider range depends on the measure's official unit (£ spend vs FTE vs hours, etc.). */
 function sliderMaxForUnit(unit?: string): number {
@@ -43,20 +44,15 @@ export const Tuner: React.FC = () => {
   const currentTotal = result?.total_social_value_gbp || 0;
 
   return (
-    <div style={{ width: '100%', maxWidth: '1440px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <div>
-          <div className="eyebrow" style={{ marginBottom: '0.3rem' }}>Modelling</div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>Value Tuner</h2>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
-            Adjust initiative volumes and see how the social value changes against National TOMs unit values.
-          </p>
-        </div>
-        <button onClick={runCalculation} className="btn-secondary" disabled={isCalculating} style={{ fontSize: '0.75rem' }}>
-          <RefreshCw size={13} className={isCalculating ? 'spin-icon' : ''} /> Recalculate
-        </button>
-      </div>
+    <div className="page">
+      <PageHeader
+        title="Value Tuner"
+        actions={
+          <button onClick={runCalculation} className="btn-secondary" disabled={isCalculating}>
+            <RefreshCw size={13} className={isCalculating ? 'spin-icon' : ''} /> Recalculate
+          </button>
+        }
+      />
 
       {/* Contract Constraints */}
       <div

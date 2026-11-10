@@ -99,7 +99,8 @@ export const LoginScreen: React.FC = () => {
           </div>
         )}
 
-        {/* Demo / Superadmin Credentials Helper */}
+        {/* Demo credentials helper — local development only, never shown on the deployed site */}
+        {import.meta.env.DEV && (
         <div
           style={{
             padding: '0.7rem 0.9rem',
@@ -129,6 +130,7 @@ export const LoginScreen: React.FC = () => {
             Use demo
           </button>
         </div>
+        )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>

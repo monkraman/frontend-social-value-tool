@@ -19,10 +19,6 @@ export const FallbackNotice: React.FC = () => (
     }}
   >
     <Info size={16} style={{ color: '#B7791F', flexShrink: 0, marginTop: '0.1rem' }} />
-    <span>
-      <strong>AI generation unavailable — standard template used.</strong> The AI provider did not respond
-      (quota, rate limit or configuration), so these packages come from the deterministic National TOMs engine
-      and are not tailored from your repository evidence. Values are still calculated from official proxy rates.
-    </span>
+    <span>AI unavailable — showing the standard National TOMs template, not tailored to your documents.</span>
   </div>
 );

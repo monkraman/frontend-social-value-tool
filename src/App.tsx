@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { Menu } from 'lucide-react';
 import { Sidebar, type ActiveTab } from './components/Sidebar';
 import { PromptStudio } from './components/PromptStudio';
 import { Tuner } from './components/Tuner';
@@ -23,6 +24,7 @@ const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('opportunity');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [currentPrompt, setCurrentPrompt] = useState<string>(DEFAULT_INITIAL_PROMPT);
   const [promptFeedback, setPromptFeedback] = useState<{
     type: 'non_rfp' | 'navigated';
@@ -192,11 +194,18 @@ const AppContent: React.FC = () => {
   // ────────────────────────────────────────────────────────────────────────────
   // Render
   // ────────────────────────────────────────────────────────────────────────────
+  const goToTab = (tab: ActiveTab) => {
+    setActiveTab(tab);
+    setMobileNavOpen(false);
+  };
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-app)', color: 'var(--text-primary)' }}>
+    <div className="app-shell">
       <Sidebar
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={goToTab}
+        mobileOpen={mobileNavOpen}
+        onCloseMobile={() => setMobileNavOpen(false)}
         onNewPrompt={handleReset}
         backendOnline={backendOnline}
         healthData={healthData}
@@ -207,7 +216,23 @@ const AppContent: React.FC = () => {
         onRestoreChat={handleRestoreChat}
       />
 
-      <main style={{ flex: 1, minWidth: 0, padding: '2rem 2.5rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      <div className="app-body">
+      <header className="mobile-topbar">
+        <button
+          type="button"
+          className="icon-button"
+          onClick={() => setMobileNavOpen(true)}
+          aria-label="Open menu"
+          aria-expanded={mobileNavOpen}
+        >
+          <Menu size={20} />
+        </button>
+        <img src="/infosys-logo.png" alt="Infosys" className="brand-logo logo-on-light" style={{ height: '22px' }} />
+        <img src="/infosys-logo-dark.png" alt="Infosys" className="brand-logo logo-on-dark" style={{ height: '22px' }} />
+        <span className="mobile-topbar-title">Social Value</span>
+      </header>
+
+      <main className="app-main">
         {activeTab === 'prompt' && (
           <PromptStudio
             currentPrompt={currentPrompt}
@@ -251,6 +276,7 @@ const AppContent: React.FC = () => {
         {activeTab === 'documents' && <Documents />}
         {activeTab === 'search' && <Search />}
       </main>
+      </div>
     </div>
   );
 };

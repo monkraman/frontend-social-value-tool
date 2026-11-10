@@ -4,7 +4,6 @@ import { FallbackNotice } from './FallbackNotice';
 import { useToast } from '../context/ToastContext';
 import {
   Send,
-  CornerDownLeft,
   Download,
   RotateCcw,
   AlertCircle,
@@ -21,7 +20,6 @@ import {
   Loader,
   X,
   ListChecks,
-  ScrollText,
   PencilLine,
   MapPin,
   Handshake,
@@ -32,6 +30,7 @@ import {
   ClipboardCheck,
   Info
 } from 'lucide-react';
+import { PageHeader } from './PageHeader';
 import { formatGbp, formatPercent } from '../utils/formatters';
 
 export interface PromptFeedback {
@@ -163,12 +162,12 @@ Contract Term: ${opp.duration_years} Years
 Mandated Target Weighting: ${opp.social_value_weighting_percent}% (${formatGbp(targetAmount)})
 Package Option: ${currentPkg.name}
 Indicative Social Value Estimate: ${formatGbp(currentTotal)} (${formatPercent(currentPercent)} of contract value)
-Proxy Calculation Status: ${isTargetAchieved ? 'MEETS SYNTHETIC POC TARGET' : 'BELOW SYNTHETIC POC TARGET'}
+Target Status: ${isTargetAchieved ? 'Meets the Social Value target' : 'Below the Social Value target'}
 
 1. EXECUTIVE SUMMARY & COMMITMENT
 -----------------------------------------------------
 ${currentPkg.rationale}
-This draft estimates ${formatGbp(currentTotal)} using the current POC metric catalog. Confirm measure definitions, rates and delivery evidence before treating this as a bid commitment.
+This draft estimates ${formatGbp(currentTotal)} using National TOMs proxy values. Confirm measure definitions, rates and delivery evidence before treating this as a bid commitment.
 
 2. PROPOSED INITIATIVES & OPERATIONAL METRICS
 -----------------------------------------------------
@@ -208,7 +207,9 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
   };
 
   return (
-    <div style={{ width: '100%', maxWidth: '1440px', display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1 }}>
+    <div className="page" style={{ flex: 1 }}>
+      <PageHeader title="Bid Studio" />
+
       {/* Feedback State: Non-RFP Prompt */}
       {promptFeedback && !result && !isLoading && (
         <div
@@ -344,70 +345,6 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
         </div>
       )}
 
-      {/* Empty State */}
-      {!result && !isLoading && !promptFeedback && !error && (
-        <div style={{ textAlign: 'center', padding: '3.5rem 1rem 1.5rem 1rem', animation: 'fadeIn 0.25s ease' }}>
-          <div className="icon-badge" style={{ width: '56px', height: '56px', marginBottom: '1.1rem' }}>
-            <ScrollText size={26} />
-          </div>
-          <div className="eyebrow" style={{ marginBottom: '0.5rem' }}>Bid Studio</div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.6rem', lineHeight: 1.2 }}>
-            Social Value RFP Response Builder
-          </h1>
-          <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto 1.75rem auto', lineHeight: 1.65 }}>
-            Drafts initiative options against your stated priorities, shows POC proxy calculations, and highlights the evidence and delivery checks needed before a bid commitment.
-          </p>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
-              gap: '0.75rem',
-              maxWidth: '760px',
-              margin: '0 auto 1.75rem auto',
-              textAlign: 'left'
-            }}
-          >
-            {[
-              { n: 1, title: 'Describe the tender', body: 'Client, contract value, term, weighting and the outcomes they care about.' },
-              { n: 2, title: 'Compare three options', body: 'Core, expanded and place-based packages, each with its own figures.' },
-              { n: 3, title: 'Refine and reuse', body: 'Ask for changes, check the evidence, then copy the draft into your bid.' }
-            ].map((step) => (
-              <div
-                key={step.n}
-                style={{
-                  padding: '0.9rem 1rem',
-                  backgroundColor: 'var(--bg-surface)',
-                  border: '1px solid var(--border-subtle)',
-                  borderTop: '3px solid var(--color-primary)',
-                  borderRadius: 'var(--radius-md)',
-                  boxShadow: 'var(--shadow-sm)'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
-                  <span
-                    className="icon-badge"
-                    style={{ width: '22px', height: '22px', fontSize: '0.72rem', fontWeight: 700 }}
-                  >
-                    {step.n}
-                  </span>
-                  <strong style={{ fontSize: '0.875rem' }}>{step.title}</strong>
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{step.body}</div>
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={() => setInputText(DEFAULT_SAMPLE_PROMPT)}
-            className="btn-secondary"
-            style={{ fontSize: '0.8125rem', gap: '0.4rem' }}
-          >
-            <FileText size={14} /> Use a sample tender brief
-          </button>
-        </div>
-      )}
-
       {/* Loading Indicator */}
       {isLoading && (
         <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-secondary)' }}>
@@ -416,9 +353,6 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
           </div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
             Preparing your response options…
-          </div>
-          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            Reading the repository, matching National TOMs measures and working out illustrative values.
           </div>
         </div>
       )}
@@ -499,7 +433,6 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div>
-                <div className="eyebrow" style={{ marginBottom: '0.2rem' }}>Tender opportunity</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', flexWrap: 'wrap' }}>
                   <h2 style={{ fontSize: '1.35rem', color: 'var(--text-primary)', lineHeight: 1.25 }}>
                     {result.opportunity.client}
@@ -568,21 +501,21 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                 className={activePackage === 'core' ? 'is-active' : ''}
                 style={{ padding: '0.5rem 0.9rem', fontSize: '0.84rem' }}
               >
-                Template 1: Core (Baseline)
+                Core
               </button>
               <button
                 onClick={() => setActivePackage('enhanced')}
                 className={activePackage === 'enhanced' ? 'is-active' : ''}
                 style={{ padding: '0.5rem 0.9rem', fontSize: '0.84rem' }}
               >
-                Template 2: Expanded option
+                Expanded
               </button>
               <button
                 onClick={() => setActivePackage('localised')}
                 className={activePackage === 'localised' ? 'is-active' : ''}
                 style={{ padding: '0.5rem 0.9rem', fontSize: '0.84rem' }}
               >
-                Template 3: Localised (Place Based)
+                Localised
               </button>
             </div>
 
@@ -645,9 +578,6 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                     <h3 style={{ fontSize: '1.4rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0, lineHeight: 1.25 }}>
                       {currentPkg.name}
                     </h3>
-                    <span className="badge-mono" style={{ fontSize: '0.72rem' }}>
-                      {activePackage === 'core' ? 'Core option' : activePackage === 'enhanced' ? 'Expanded option' : 'Place-focused option'}
-                    </span>
                   </div>
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0.5rem 0 0 0' }}>
                     {currentPkg.rationale}
@@ -824,7 +754,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                               {calc.calculation_formula}
                             </span>
                             <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '0.4rem' }}>
-                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>POC value</span>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Social value</span>
                               <strong className="display-num" style={{ fontSize: '1.05rem', color: 'var(--color-primary-text)' }}>
                                 {formatGbp(calc.total_social_value_gbp)}
                               </strong>
@@ -939,7 +869,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
       )}
 
       {/* Single Intelligent Sticky Bottom Input (Zero Duplicate Box Confusion) */}
-      <div style={{ position: 'sticky', bottom: '1.5rem', marginTop: 'auto', paddingTop: '1rem' }}>
+      <div className="composer-dock" style={{ position: 'sticky', bottom: '1.5rem', marginTop: 'auto', paddingTop: '1rem' }}>
         <div
           className="composer"
           style={{
@@ -959,7 +889,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <MessageSquarePlus size={15} style={{ color: 'var(--color-primary)' }} />
-                  Ask for changes to this proposal
+                  Refine
                 </span>
                 {conversationTurnCount > 0 && (
                   <span
@@ -978,9 +908,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                 )}
               </div>
             ) : (
-              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                Describe the tender you're responding to
-              </span>
+              <span />
             )}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -998,7 +926,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                   }}
                   title="Clear current proposal and start a new tender"
                 >
-                  <RotateCcw size={11} /> Start a new bid
+                  <RotateCcw size={11} /> New bid
                 </button>
               ) : (
                 <button
@@ -1008,9 +936,6 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                   <FileText size={12} /> Use sample brief
                 </button>
               )}
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                Press <CornerDownLeft size={11} />
-              </span>
             </div>
           </div>
 
@@ -1020,7 +945,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
               value={refineText}
               onChange={(e) => setRefineText(e.target.value)}
               onKeyDown={handleRefineKeyDown}
-              placeholder="What should change? For example: increase youth training by 20%, shift the focus to net zero and digital skills, or add a local VCSE partner."
+              placeholder="What should change?"
               rows={2}
               disabled={isRefining}
               style={{
@@ -1040,7 +965,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="For example: a 3-year £10M contract for Birmingham City Council with a 10% social value weighting, focused on digital inclusion and youth employment."
+              placeholder="Describe the tender: client, location, contract value, term and Social Value weighting."
               rows={2}
               disabled={isLoading}
               style={{
@@ -1065,11 +990,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
                 {refineError}
               </div>
             ) : (
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                {result
-                  ? 'Your earlier requests are remembered as you refine'
-                  : 'Based on National TOMs and your repository'}
-              </span>
+              <span />
             )}
 
             <div>

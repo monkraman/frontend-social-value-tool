@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { SearchResponse, DocumentItem } from '../types';
 import { searchVectorKnowledge, fetchDocuments } from '../api/client';
 import { Search as SearchIcon, Filter, AlertTriangle, Copy, Check, FileText } from 'lucide-react';
+import { PageHeader } from './PageHeader';
 
 export const Search: React.FC = () => {
   const [query, setQuery] = useState('digital inclusion initiatives in Birmingham');
@@ -52,14 +53,8 @@ export const Search: React.FC = () => {
   ];
 
   return (
-    <div style={{ width: '100%', maxWidth: '1440px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      <div>
-        <div className="eyebrow" style={{ marginBottom: '0.3rem' }}>Repository</div>
-        <h2 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>Evidence Search</h2>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.35rem', maxWidth: '680px' }}>
-          Find passages in the repository that support a bid, such as case studies, past responses and partner evidence.
-        </p>
-      </div>
+    <div className="page">
+      <PageHeader title="Evidence Search" />
 
       {/* Search Bar & Controls */}
       <form
@@ -124,26 +119,9 @@ export const Search: React.FC = () => {
           </button>
         </div>
 
-        {/* Suggested Quick Queries */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.75rem' }}>
-          <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>
-            Try:
-          </span>
-          {suggestedQueries.map((q, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => {
-                setQuery(q);
-              }}
-              className="btn-secondary"
-              style={{
-                borderRadius: 'var(--radius-full)',
-                padding: '0.2rem 0.7rem',
-                fontSize: '0.76rem',
-                fontWeight: 500
-              }}
-            >
+        <div className="chip-row">
+          {suggestedQueries.map((q) => (
+            <button key={q} type="button" onClick={() => setQuery(q)} className={`chip${query === q ? ' is-active' : ''}`}>
               {q}
             </button>
           ))}

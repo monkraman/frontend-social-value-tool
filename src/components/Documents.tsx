@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import { PageHeader } from './PageHeader';
 
 export const Documents: React.FC = () => {
   const {
@@ -252,15 +253,8 @@ export const Documents: React.FC = () => {
   });
 
   return (
-    <div style={{ width: '100%', maxWidth: '1440px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header */}
-      <div>
-        <div className="eyebrow" style={{ marginBottom: '0.3rem' }}>Knowledge</div>
-        <h2 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>Repository</h2>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
-          Your tender evidence, case studies and reference material, {activeDocs.length} {activeDocs.length === 1 ? 'file' : 'files'} in use.
-        </p>
-      </div>
+    <div className="page">
+      <PageHeader title="Repository" />
 
       {/* Upload Drop Zone - Compact & Clean */}
       <div
@@ -302,11 +296,8 @@ export const Documents: React.FC = () => {
             ) : isDragging ? (
               'Drop files here'
             ) : (
-              'Upload reference documents'
+              'Upload documents'
             )}
-          </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Drag files here or click to browse. PDF, Word, Excel and Markdown are supported.
           </div>
         </div>
       </div>

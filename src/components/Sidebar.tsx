@@ -7,10 +7,8 @@ import {
   Search,
   Sun,
   Moon,
-  LogIn,
   LogOut,
   Clock,
-  ChevronRight,
   Server,
   Cpu,
   X,
@@ -19,11 +17,10 @@ import {
   AlertTriangle,
   FileText,
   RefreshCw,
-  PanelLeftOpen,
   ArrowUpRight,
   Target,
   Building,
-  Sparkles
+  Compass
 } from 'lucide-react';
 import type { ThemeMode } from '../constants/theme';
 import type { PromptHistoryItem, BackendHealthData, AuditLogItem, AuditSummary } from '../types';
@@ -44,6 +41,9 @@ export interface SidebarProps {
   chatHistory?: PromptHistoryItem[];
   isLoadingHistory?: boolean;
   onRestoreChat?: (item: PromptHistoryItem) => void;
+  /** On small screens the sidebar is an off-canvas drawer controlled by the app shell. */
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 function formatRelativeTime(isoStr?: string | null): string {
@@ -75,9 +75,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleTheme,
   chatHistory = [],
   isLoadingHistory = false,
-  onRestoreChat
+  onRestoreChat,
+  mobileOpen = false,
+  onCloseMobile
 }) => {
-  const { user, isAuthenticated, logout, openAuthModal } = useAuth();
+  const { user, logout } = useAuth();
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [diagTab, setDiagTab] = useState<'overview' | 'audit'>('overview');
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
@@ -109,8 +111,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const primaryNavItems: Array<{ id: ActiveTab; label: string; icon: React.ReactNode }> = [
-    { id: 'opportunity', label: 'Opportunity Finder', icon: <Sparkles size={17} /> },
-    { id: 'toms', label: 'TOMS Catalog', icon: <Target size={17} /> },
+    { id: 'opportunity', label: 'Opportunity Finder', icon: <Compass size={17} /> },
+    { id: 'toms', label: 'TOMs Catalog', icon: <Target size={17} /> },
     { id: 'partners', label: 'Regional Partners', icon: <Building size={17} /> },
     { id: 'tuner', label: 'Value Tuner', icon: <Sliders size={17} /> }
   ];
@@ -147,426 +149,110 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
+      {mobileOpen && <div className="mobile-backdrop" onClick={onCloseMobile} aria-hidden="true" />}
       <aside
-        style={{
-          width: '260px',
-          height: '100vh',
-          backgroundColor: 'var(--bg-sidebar)',
-          borderRight: '1px solid var(--border-subtle)',
-          display: 'flex',
-          flexDirection: 'column',
-          position: 'sticky',
-          top: 0,
-          flexShrink: 0,
-          overflow: 'hidden'
-        }}
+        className={`app-sidebar${mobileOpen ? ' is-open' : ''}`}
+        aria-label="Main navigation"
       >
-      {/* Brand Header */}
-      <div style={{ padding: '1.35rem 1.5rem 1rem 1.5rem', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
-        <img src="/infosys-logo.png" alt="Infosys" className="brand-logo logo-on-light" style={{ height: '32px' }} />
-        <img src="/infosys-logo-dark.png" alt="Infosys" className="brand-logo logo-on-dark" style={{ height: '32px' }} />
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'space-between',
-            marginTop: '0.95rem',
-            paddingTop: '0.75rem',
-            borderTop: '1px solid var(--border-subtle)'
-          }}
-        >
-          <div>
-            <div
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: '1rem',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                lineHeight: 1.2
-              }}
-            >
-              Social Value
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
-              RFP Response Engine
-            </div>
-          </div>
-          <span
-            style={{
-              fontSize: '0.65rem',
-              fontWeight: 700,
-              padding: '0.15rem 0.45rem',
-              borderRadius: 'var(--radius-sm)',
-              backgroundColor: 'var(--color-primary-subtle)',
-              color: 'var(--color-primary-text)',
-              letterSpacing: '0.04em'
-            }}
-          >
-            v1.0
-          </span>
-        </div>
+      <div className="sidebar-brand">
+        <img src="/infosys-logo.png" alt="Infosys" className="brand-logo logo-on-light" style={{ height: '22px' }} />
+        <img src="/infosys-logo-dark.png" alt="Infosys" className="brand-logo logo-on-dark" style={{ height: '22px' }} />
+        <span className="sidebar-product">Social Value</span>
+        <button type="button" className="icon-button mobile-only" onClick={onCloseMobile} aria-label="Close menu" style={{ marginLeft: 'auto' }}>
+          <X size={18} />
+        </button>
       </div>
 
-      {/* New Prompt Button -> Points to Opportunity Finder */}
-      <div style={{ padding: '0.95rem 1.25rem 0.5rem 1.25rem', flexShrink: 0 }}>
+      <div className="sidebar-section">
         <button
           onClick={() => {
             onTabChange('opportunity');
             onNewPrompt();
           }}
           className="btn-primary"
-          style={{ width: '100%', justifyContent: 'center', padding: '0.6rem 0.75rem', fontSize: '0.84rem' }}
+          style={{ width: '100%' }}
         >
-          <Plus size={16} />
-          <span>New bid response</span>
+          <Plus size={16} /> New bid
         </button>
       </div>
 
-      {/* Navigation List */}
-      <nav style={{ padding: '0.4rem 0.75rem 0.6rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.15rem', flexShrink: 0 }}>
-        {primaryNavItems.map((item) => {
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onTabChange(item.id)}
-              className={`nav-item${isActive ? ' is-active' : ''}`}
-              aria-current={isActive ? 'page' : undefined}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-
-        <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '0.45rem 0.4rem 0.35rem 0.4rem' }} />
-
-        {legacyNavItems.map((item) => {
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onTabChange(item.id)}
-              className={`nav-item${isActive ? ' is-active' : ''}`}
-              aria-current={isActive ? 'page' : undefined}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
+      <nav className="sidebar-nav" aria-label="Screens">
+        {[primaryNavItems, legacyNavItems].map((group, gi) => (
+          <React.Fragment key={gi}>
+            {gi > 0 && <div className="sidebar-divider" />}
+            {group.map((item) => {
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onTabChange(item.id)}
+                  className={`nav-item${isActive ? ' is-active' : ''}`}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </React.Fragment>
+        ))}
       </nav>
 
-      {/* Recent Searches Section (Non-overlapping, independently scrollable) */}
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden'
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0.65rem 0.85rem 0.35rem 0.85rem',
-            borderTop: '1px solid var(--border-subtle)',
-            marginTop: '0.2rem',
-            flexShrink: 0
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Clock size={12} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
-            <span className="eyebrow" style={{ color: 'var(--text-muted)' }}>
-              Recent bids
-            </span>
-          </div>
-          {rfpHistory.length > 0 && (
-            <button
-              onClick={() => setShowHistoryDrawer(true)}
-              className="btn-link"
-              style={{ fontSize: '0.7rem' }}
-              title="View all recent bids"
-            >
-              <span>View all</span>
-              <PanelLeftOpen size={11} />
-            </button>
-          )}
-        </div>
-
-        <div
-          style={{
-            padding: '0 0.65rem 0.5rem 0.65rem',
-            flex: 1,
-            minHeight: 0,
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.2rem'
-          }}
-        >
-          {isLoadingHistory && (
-            <div style={{ padding: '0.5rem 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              Loading recent bids…
+      <div className="sidebar-recent">
+        {rfpHistory.length > 0 && (
+          <>
+            <div className="sidebar-label">
+              <span>Recent</span>
+              {rfpHistory.length > sidebarPreviewHistory.length && (
+                <button onClick={() => setShowHistoryDrawer(true)} className="btn-link">
+                  View all
+                </button>
+              )}
             </div>
-          )}
-
-          {!isLoadingHistory && rfpHistory.length === 0 && (
-            <div style={{ padding: '0.75rem 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-              Your recent bids will appear here
-            </div>
-          )}
-
-          {sidebarPreviewHistory.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                onRestoreChat?.(item);
-                onTabChange('prompt');
-              }}
-              title={item.raw_prompt}
-              className="row-hover"
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '0.55rem',
-                padding: '0.5rem 0.55rem',
-                borderRadius: 'var(--radius-md)',
-                border: 'none',
-                background: 'transparent',
-                color: 'var(--text-secondary)',
-                fontSize: '0.78rem',
-                cursor: 'pointer',
-                textAlign: 'left',
-                width: '100%',
-                flexShrink: 0
-              }}
-            >
-              <FileText size={13} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--color-primary)' }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: '0.8rem',
-                    lineHeight: 1.35,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)'
-                  }}
-                >
-                  {item.client_name
-                    ? `${item.client_name}${item.location ? ` · ${item.location}` : ''}`
-                    : truncatePrompt(item.raw_prompt)}
-                </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '1px' }}>
-                  {item.contract_value_gbp
-                    ? `£${(item.contract_value_gbp / 1000000).toFixed(1)}M · `
-                    : ''}
-                  {formatRelativeTime(item.created_at)}
-                </div>
-              </div>
-              <ChevronRight size={10} style={{ flexShrink: 0, marginTop: '3px', opacity: 0.4 }} />
-            </button>
-          ))}
-
-          {rfpHistory.length > 3 && (
-            <button
-              onClick={() => setShowHistoryDrawer(true)}
-              className="btn-secondary"
-              style={{
-                width: '100%',
-                marginTop: '0.35rem',
-                padding: '0.35rem 0.5rem',
-                fontSize: '0.72rem',
-                justifyContent: 'center',
-                gap: '0.35rem',
-                borderRadius: 'var(--radius-sm)'
-              }}
-            >
-              <span>View all bids ({rfpHistory.length})</span>
-              <ArrowUpRight size={11} />
-            </button>
-          )}
-        </div>
+            {sidebarPreviewHistory.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  onRestoreChat?.(item);
+                  onTabChange('prompt');
+                }}
+                title={item.raw_prompt}
+                className="recent-item"
+              >
+                <span className="recent-name">{item.client_name || truncatePrompt(item.raw_prompt)}</span>
+                <span className="recent-time">{formatRelativeTime(item.created_at)}</span>
+              </button>
+            ))}
+          </>
+        )}
+        {isLoadingHistory && rfpHistory.length === 0 && <div className="sidebar-label">Loading…</div>}
       </div>
 
-      {/* Pinned Solid Footer (Never Overlapped) */}
-      <div
-        style={{
-          marginTop: 'auto',
-          flexShrink: 0,
-          backgroundColor: 'var(--bg-sidebar)',
-          borderTop: '1px solid var(--border-subtle)',
-          position: 'relative',
-          zIndex: 10,
-          display: 'flex',
-          flexDirection: 'column'
-        }}
-      >
-        {/* User Authentication Card */}
-        <div style={{ padding: '0.65rem 0.85rem' }}>
-          {isAuthenticated && user ? (
-            <div
-              style={{
-                padding: '0.55rem 0.7rem',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--bg-card)',
-                border: '1px solid var(--border-subtle)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.5rem'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: 0 }}>
-                <div
-                  style={{
-                    width: '26px',
-                    height: '26px',
-                    borderRadius: '50%',
-                    backgroundColor: 'var(--btn-primary-bg)',
-                    color: '#FFFFFF',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}
-                >
-                  {getInitials(user.name)}
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      color: 'var(--text-primary)',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}
-                    title={user.name}
-                  >
-                    {user.name}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <span
-                      style={{
-                        fontSize: '0.63rem',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        padding: '0.05rem 0.3rem',
-                        borderRadius: 'var(--radius-sm)',
-                        backgroundColor: 'var(--color-primary-subtle)',
-                        color: 'var(--color-primary-text)'
-                      }}
-                    >
-                      {user.role}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={logout}
-                className="btn-secondary"
-                style={{
-                  padding: '0.3rem',
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer'
-                }}
-                title="Sign Out"
-              >
-                <LogOut size={14} />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={openAuthModal}
-              className="btn-secondary"
-              style={{
-                width: '100%',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 0.75rem',
-                fontSize: '0.78rem',
-                fontWeight: 600
-              }}
-            >
-              <LogIn size={14} />
-              <span>Sign In / Demo Login</span>
-            </button>
-          )}
-        </div>
-
-        {/* Theme Switcher */}
-        <div
-          style={{
-            padding: '0.55rem 0.85rem',
-            borderTop: '1px solid var(--border-subtle)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexShrink: 0
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-            {theme === 'dark' ? <Moon size={14} /> : <Sun size={14} />}
-            <span>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
-          </div>
+      {user && (
+        <div className="sidebar-footer">
+          <span className="avatar" aria-hidden="true">{getInitials(user.name)}</span>
+          <span className="sidebar-user" title={`${user.name} · ${user.role}`}>{user.name}</span>
           <button
             onClick={onToggleTheme}
-            className="btn-secondary"
-            style={{ padding: '0.2rem 0.5rem', fontSize: '0.72rem', borderRadius: 'var(--radius-sm)' }}
-            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+            className="icon-button"
+            aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
           >
-            {theme === 'dark' ? 'Light' : 'Dark'}
+            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
           </button>
-        </div>
-
-        {/* Bottom Status & Diagnostics */}
-        <div style={{ padding: '0.65rem 0.85rem 0.85rem 0.85rem', borderTop: '1px solid var(--border-subtle)', fontSize: '0.73rem', color: 'var(--text-muted)', flexShrink: 0 }}>
           <button
             onClick={handleOpenDiagnostics}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer',
-              textAlign: 'left',
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.25rem'
-            }}
-            title="Click to view live system diagnostics"
+            className="icon-button"
+            aria-label={backendOnline ? 'System online, open diagnostics' : 'System offline, open diagnostics'}
+            title={backendOnline ? 'Online' : 'Offline'}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                <span
-                  style={{
-                    width: '7px',
-                    height: '7px',
-                    borderRadius: '50%',
-                    backgroundColor: backendOnline ? 'var(--status-online, #22c55e)' : 'var(--status-offline, #ef4444)',
-                    boxShadow: backendOnline ? '0 0 6px rgba(34, 197, 94, 0.4)' : 'none'
-                  }}
-                />
-                <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
-                  {backendOnline ? 'System Operational' : 'Service Offline'}
-                </span>
-              </div>
-              <Activity size={12} style={{ color: 'var(--text-muted)' }} />
-            </div>
+            <span className={`status-dot${backendOnline ? ' is-online' : ''}`} />
+          </button>
+          <button onClick={logout} className="icon-button" aria-label="Sign out" title="Sign out">
+            <LogOut size={15} />
           </button>
         </div>
-      </div>
+      )}
     </aside>
 
     {/* Secondary Slide-Out Sidebar: Recent Searches Drawer */}
@@ -586,9 +272,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Slide-out Panel anchored to the sidebar */}
         <div
+          className="history-drawer"
           style={{
             position: 'fixed',
-            left: '260px',
+            left: '240px',
             top: 0,
             bottom: 0,
             width: '340px',
@@ -904,7 +591,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <span>{healthData?.embedding_dimension || 768} dimensions</span>
                     <span>Connection:</span>
                     <span style={{ color: healthData?.database?.connected ? '#16a34a' : '#ef4444', fontWeight: 600 }}>
-                      {healthData?.database?.connected ? '✓ Online & Verified' : '✗ Unreachable'}
+                      {healthData?.database?.connected ? 'Online' : 'Unreachable'}
                     </span>
                   </div>
                 </div>
@@ -937,7 +624,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </span>
                     <span>Direct REST:</span>
                     <span style={{ color: '#16a34a', fontWeight: 600 }}>
-                      ✓ Active (IPv4 Fast-Path)
+                      Connected
                     </span>
                   </div>
                 </div>
@@ -990,7 +677,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       Prototype calculation safeguards
                     </strong>
                     <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', lineHeight: 1.45 }}>
-                      Calculations are repeatable using the current POC catalog. Confirm the catalog rates, source evidence and delivery assumptions before using bid figures.
+                      Calculations are repeatable using the current TOMs catalog. Confirm the catalog rates, source evidence and delivery assumptions before using bid figures.
                     </span>
                   </div>
                 </div>

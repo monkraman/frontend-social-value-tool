@@ -189,7 +189,7 @@ export function useChatHistory() {
           onSuccess(
             data.result,
             data.refinement_note ||
-              `✓ Turn ${turnIndex.current} — AI used ${conversationThread.current.length} conversation turns as context`
+              `Updated from your feedback (revision ${turnIndex.current})`
           );
 
           // Refresh sidebar history

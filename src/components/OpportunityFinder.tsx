@@ -11,15 +11,12 @@ import type {
 } from '../types';
 import { TenderPackageViewer } from './TenderPackageViewer';
 import {
-  Sparkles,
+  FileText,
+  LoaderCircle,
+  Target,
   Sliders,
   MessageSquare,
   Check,
-  Filter,
-  Award,
-  RotateCcw,
-  ShieldCheck,
-  Layers,
   Briefcase,
   Leaf,
   HeartHandshake,
@@ -27,6 +24,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
+import { PageHeader } from './PageHeader';
 
 export interface OpportunityFinderProps {
   onSendToBidStudio?: (promptText: string) => void;
@@ -51,14 +49,16 @@ export interface AvailableTomOption {
   recommendedKeywords: string[];
 }
 
+const LOCATIONS = ['Birmingham', 'Manchester', 'London', 'Leeds', 'Bristol', 'National UK'];
+
 export const AVAILABLE_FRAMEWORKS = [
   {
     id: 'national-toms-2025',
     name: 'National TOMs Framework (2024/2025 Edition)',
     shortName: 'National TOMs 2025',
     authority: 'Social Value Portal & LGA',
-    status: 'Active (30 Verified Measures)',
-    badgeColor: '#059669',
+    status: '30 measures',
+    badgeColor: '#2F7D5B',
     description: 'Official framework for UK Local Authorities, Councils, and Regional NHS Bodies.'
   },
   {
@@ -66,8 +66,8 @@ export const AVAILABLE_FRAMEWORKS = [
     name: 'PPN 06/20 Model Award Criteria (Cabinet Office / NHS)',
     shortName: 'PPN 06/20 Standard',
     authority: 'UK Cabinet Office',
-    status: 'Fully Mapped to TOMs',
-    badgeColor: '#2563eb',
+    status: 'Mapped to TOMs',
+    badgeColor: '#2B67A0',
     description: 'Statutory 5-theme framework for Central Government, MoJ, DWP, and CCS tenders.'
   },
   {
@@ -75,8 +75,8 @@ export const AVAILABLE_FRAMEWORKS = [
     name: 'UK Procurement Act 2023 / PPN 27 (Future Frameworks)',
     shortName: 'Future / Custom Frameworks',
     authority: 'Crown Commercial Service',
-    status: 'Extensible Schema Ready',
-    badgeColor: '#7c3aed',
+    status: 'Configurable',
+    badgeColor: '#5E5A8C',
     description: 'Configurable schema for custom place-based frameworks (Greater Manchester, Wales Well-being Act, PPN 27).'
   }
 ];
@@ -135,9 +135,9 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
       id: 'Work',
       title: 'Work & Local Jobs',
       subtitle: 'Employment, Apprenticeships & Skills',
-      badge: '⚡ Levy-Funded (Zero Direct Cost)',
-      badgeColor: '#2563eb',
-      themeColor: '#2563eb',
+      badge: 'Apprenticeship Levy funded',
+      badgeColor: '#2B67A0',
+      themeColor: '#2B67A0',
       iconName: 'work' as const,
       tomsCodes: ['NT1', 'NT3', 'NT10'],
       description: 'Local direct hiring (NT1), accredited technology apprenticeships (NT10), and sustained NEET youth employment pathways (NT3).',
@@ -148,12 +148,12 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
       id: 'Planet',
       title: 'Planet & Climate',
       subtitle: 'Net Zero & Decarbonisation',
-      badge: '🌱 PPN 06/20 Mandatory',
-      badgeColor: '#059669',
-      themeColor: '#059669',
+      badge: 'PPN 06/20 climate theme',
+      badgeColor: '#2F7D5B',
+      themeColor: '#2F7D5B',
       iconName: 'planet' as const,
       tomsCodes: ['NT31'],
-      description: 'Direct greenhouse emissions decarbonisation (NT31), circular IT equipment refurbishment, and cloud GreenOps telemetry.',
+      description: 'Direct greenhouse emissions decarbonisation (NT31), circular reuse of IT equipment, and cloud energy optimisation.',
       includedMeasuresLabel: 'NT31 Decarbonisation (tCO2e)',
       feasibilityNote: 'Cloud optimisation & corporate asset circular reuse — £252.11 proxy value per tCO2e.'
     },
@@ -161,9 +161,9 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
       id: 'Community',
       title: 'Community & Wellbeing',
       subtitle: 'Health, Resilience & Digital Inclusion',
-      badge: '🤝 CSR Volunteering (Zero Cost)',
-      badgeColor: '#7c3aed',
-      themeColor: '#7c3aed',
+      badge: 'Staff volunteering',
+      badgeColor: '#5E5A8C',
+      themeColor: '#5E5A8C',
       iconName: 'community' as const,
       tomsCodes: ['NT27', 'NT8'],
       description: 'Targeted digital literacy workshops, employee STEM volunteering hours (NT8), and grassroots community network grants (NT27).',
@@ -174,9 +174,9 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
       id: 'Economy',
       title: 'Economy & Supply Chain',
       subtitle: 'Regional SMEs & VCSE Spend',
-      badge: '🏢 Supply Chain Direct',
-      badgeColor: '#0d9488',
-      themeColor: '#0d9488',
+      badge: 'Local supply chain',
+      badgeColor: '#2C7A7B',
+      themeColor: '#2C7A7B',
       iconName: 'economy' as const,
       tomsCodes: ['NT18'],
       description: 'Ringfenced contract procurement direct to regional SMEs, VCSE suppliers (NT18), and fair supply chain payment.',
@@ -199,56 +199,56 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
       code: 'NT1',
       name: 'Local Employment & Retention',
       theme: 'Work',
-      feasibility: '💼 Direct Local Hire',
-      feasibilityBadgeColor: '#0284c7',
+      feasibility: 'Direct local hiring',
+      feasibilityBadgeColor: '#2B67A0',
       recommendedKeywords: ['employment', 'jobs', 'retention', 'local recruitment', 'hiring']
     },
     {
       code: 'NT3',
       name: 'NEET & Long-Term Unemployed',
       theme: 'Work',
-      feasibility: '🎯 High Win-Rate NEET',
-      feasibilityBadgeColor: '#8b5cf6',
+      feasibility: 'Youth employment',
+      feasibilityBadgeColor: '#2B67A0',
       recommendedKeywords: ['youth', 'neet', 'unemployed', 'disadvantaged', 'young people']
     },
     {
       code: 'NT8',
       name: 'STEM & Digital Skills Volunteering',
       theme: 'Community',
-      feasibility: '🟢 CSR Volunteering (Zero Cost)',
-      feasibilityBadgeColor: '#059669',
+      feasibility: 'Staff volunteering',
+      feasibilityBadgeColor: '#5E5A8C',
       recommendedKeywords: ['digital', 'stem', 'skills', 'school', 'mentoring', 'volunteering', 'clinic']
     },
     {
       code: 'NT10',
       name: 'Accredited New Apprenticeships',
       theme: 'Work',
-      feasibility: '⚡ Levy-Funded (Zero Direct Cost)',
-      feasibilityBadgeColor: '#f59e0b',
+      feasibility: 'Apprenticeship Levy funded',
+      feasibilityBadgeColor: '#2B67A0',
       recommendedKeywords: ['apprentice', 'apprenticeship', 'youth', 'training', 'tech', 'skills']
     },
     {
       code: 'NT18',
       name: 'Local SME & VCSE Supply Chain',
       theme: 'Economy',
-      feasibility: '🏢 Supply Chain Direct',
-      feasibilityBadgeColor: '#0d9488',
+      feasibility: 'Local supply chain',
+      feasibilityBadgeColor: '#2C7A7B',
       recommendedKeywords: ['sme', 'vcse', 'supply chain', 'local business', 'procurement', 'subcontracting']
     },
     {
       code: 'NT27',
       name: 'Strengthening Community Networks',
       theme: 'Community',
-      feasibility: '🤝 Community Resilience',
-      feasibilityBadgeColor: '#ec4899',
+      feasibility: 'Community networks',
+      feasibilityBadgeColor: '#5E5A8C',
       recommendedKeywords: ['community', 'networks', 'charity', 'wellbeing', 'resilience', 'inclusion']
     },
     {
       code: 'NT31',
       name: 'Decarbonisation (tCO2e)',
       theme: 'Planet',
-      feasibility: '🌱 Net Zero Compliant',
-      feasibilityBadgeColor: '#10b981',
+      feasibility: 'Net zero',
+      feasibilityBadgeColor: '#2F7D5B',
       recommendedKeywords: ['carbon', 'green', 'climate', 'net zero', 'emissions', 'planet', 'sustainable', 'greenery']
     }
   ];
@@ -704,7 +704,7 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
     );
 
     const localisedPackage = buildPackageFromTemplates(
-      'Localised Package (Place-Based Regional Ecosystem)',
+      'Localised Package (Place-Based)',
       `Targeted place-based commitments designed specifically for ${loc} priority wards using selected themes (${selectedThemes.join(', ')}) with pre-approved accredited regional delivery partners.`,
       Math.round(targetSv * 1.05),
       1.05,
@@ -712,8 +712,8 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
     );
 
     const enhancedPackage = buildPackageFromTemplates(
-      'Enhanced Package (High-Scoring Impact)',
-      'Maximum competitive win-rate option delivering comprehensive environmental, community, and skills commitments that over-deliver statutory weighting targets.',
+      'Enhanced Package (Extended Commitments)',
+      'Broader option adding environmental, community and skills commitments that exceed the Social Value weighting target.',
       Math.round(targetSv * 1.15),
       1.15,
       ['Employer-supported volunteering approval', 'Resource allocation sign-off']
@@ -799,712 +799,213 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
   };
 
   return (
-    <div style={{ width: '100%', maxWidth: '1440px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <div className="eyebrow" style={{ marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Sparkles size={14} style={{ color: 'var(--color-primary)' }} />
-            <span>Tender Intelligence & TOMs Search</span>
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-            Tender Opportunity Finder
-          </h2>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.35rem', maxWidth: '820px' }}>
-            Enter your tender requirements via natural language prompt or structured parameters. The engine matches National TOMs proxy
-            values and regional partners to formulate high-scoring, audit-defensible bid commitments presented in 3 response templates.
-          </p>
-        </div>
-      </div>
+    <div className="page">
+      <PageHeader title="Opportunity Finder" />
 
-      {/* ──────────────────────────────────────────────────────────────────────────── */}
-      {/* INPUT PANEL: PROMPT VS STRUCTURED FIELDS */}
-      {/* ──────────────────────────────────────────────────────────────────────────── */}
-      <div
-        style={{
-          backgroundColor: 'var(--bg-surface)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-md)',
-          boxShadow: 'var(--shadow-sm)',
-          overflow: 'hidden'
-        }}
-      >
-        {/* Mode Switcher Tabs */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            borderBottom: '1px solid var(--border-subtle)',
-            backgroundColor: 'var(--bg-surface-subtle)',
-            padding: '0.5rem 1rem',
-            flexWrap: 'wrap',
-            gap: '0.5rem'
-          }}
-        >
-          <div style={{ display: 'flex', gap: '0.4rem' }}>
+      <section className="card">
+        <div className="card-toolbar">
+          <div className="segmented" role="tablist" aria-label="Input mode">
             <button
+              role="tab"
+              aria-selected={inputMode === 'prompt'}
+              className={inputMode === 'prompt' ? 'is-active' : ''}
               onClick={() => setInputMode('prompt')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                padding: '0.4rem 0.85rem',
-                fontSize: '0.8rem',
-                fontWeight: inputMode === 'prompt' ? 700 : 500,
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid',
-                borderColor: inputMode === 'prompt' ? 'var(--color-primary)' : 'transparent',
-                backgroundColor: inputMode === 'prompt' ? 'var(--bg-surface)' : 'transparent',
-                color: inputMode === 'prompt' ? 'var(--color-primary)' : 'var(--text-secondary)',
-                cursor: 'pointer'
-              }}
             >
-              <MessageSquare size={14} />
-              <span>Prompt Search Mode</span>
+              <MessageSquare size={14} /> Prompt
             </button>
-
             <button
+              role="tab"
+              aria-selected={inputMode === 'fields'}
+              className={inputMode === 'fields' ? 'is-active' : ''}
               onClick={() => setInputMode('fields')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                padding: '0.4rem 0.85rem',
-                fontSize: '0.8rem',
-                fontWeight: inputMode === 'fields' ? 700 : 500,
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid',
-                borderColor: inputMode === 'fields' ? 'var(--color-primary)' : 'transparent',
-                backgroundColor: inputMode === 'fields' ? 'var(--bg-surface)' : 'transparent',
-                color: inputMode === 'fields' ? 'var(--color-primary)' : 'var(--text-secondary)',
-                cursor: 'pointer'
-              }}
             >
-              <Sliders size={14} />
-              <span>Structured Tender Fields</span>
+              <Sliders size={14} /> Form
             </button>
           </div>
+          <select
+            aria-label="Procurement framework"
+            value={selectedFrameworkId}
+            onChange={(e) => setSelectedFrameworkId(e.target.value)}
+            className="select-compact"
+          >
+            {AVAILABLE_FRAMEWORKS.map((fw) => (
+              <option key={fw.id} value={fw.id}>
+                {fw.shortName}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {/* Tab Body */}
-        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+        <div className="card-body">
           {inputMode === 'prompt' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              {/* Presets */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '0.74rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  Quick Presets:
-                </span>
-                {SAMPLE_PRESETS.map((p, idx) => (
+            <>
+              <div className="chip-row">
+                {SAMPLE_PRESETS.map((p) => (
                   <button
-                    key={idx}
-                    onClick={() => {
-                      setPromptText(p.prompt);
-                    }}
-                    style={{
-                      padding: '0.25rem 0.6rem',
-                      fontSize: '0.74rem',
-                      borderRadius: '14px',
-                      border: '1px solid var(--border-subtle)',
-                      backgroundColor: promptText === p.prompt ? 'var(--color-primary-subtle)' : 'var(--bg-surface)',
-                      color: promptText === p.prompt ? 'var(--color-primary)' : 'var(--text-secondary)',
-                      cursor: 'pointer'
-                    }}
+                    key={p.label}
+                    title={p.label}
+                    onClick={() => setPromptText(p.prompt)}
+                    className={`chip${promptText === p.prompt ? ' is-active' : ''}`}
                   >
-                    {p.label}
+                    {p.label.split(' — ')[0]}
                   </button>
                 ))}
               </div>
-
-              {/* Textarea */}
               <textarea
+                aria-label="Tender description"
                 value={promptText}
                 onChange={(e) => setPromptText(e.target.value)}
-                placeholder="Enter prompt e.g.: I need to build a Social Value bid response for a 3-year contract of £10M with 10% Social Value weighting for Birmingham City Council..."
-                className="input-field"
-                rows={4}
-                style={{
-                  width: '100%',
-                  fontSize: '0.86rem',
-                  lineHeight: 1.5,
-                  padding: '0.75rem',
-                  borderRadius: 'var(--radius-sm)'
-                }}
+                placeholder="Describe the tender: client, location, contract value, term and Social Value weighting."
+                rows={5}
+                style={{ width: '100%', resize: 'vertical' }}
               />
-            </div>
+            </>
           ) : (
-            /* Structured Fields Mode */
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '1rem'
-              }}
-            >
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                  Target Public Authority
-                </label>
-                <input
-                  type="text"
-                  value={formData.client}
-                  onChange={(e) => setFormData({ ...formData, client: e.target.value })}
-                  className="input-field"
-                  style={{ width: '100%', fontSize: '0.84rem' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                  Delivery Region / Location
-                </label>
-                <select
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="input-field"
-                  style={{ width: '100%', fontSize: '0.84rem' }}
-                >
-                  <option value="Birmingham">Birmingham</option>
-                  <option value="Manchester">Manchester</option>
-                  <option value="London">London</option>
-                  <option value="Leeds">Leeds</option>
-                  <option value="Bristol">Bristol</option>
-                  <option value="National UK">National UK</option>
+            <div className="field-grid">
+              <label className="field">
+                <span>Client</span>
+                <input type="text" value={formData.client} onChange={(e) => setFormData({ ...formData, client: e.target.value })} />
+              </label>
+              <label className="field">
+                <span>Location</span>
+                <select value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })}>
+                  {LOCATIONS.map((loc) => (
+                    <option key={loc} value={loc}>
+                      {loc}
+                    </option>
+                  ))}
                 </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                  Total Contract Value (£)
-                </label>
+              </label>
+              <label className="field">
+                <span>Contract value (£)</span>
                 <input
                   type="number"
                   value={formData.contractValue}
                   onChange={(e) => setFormData({ ...formData, contractValue: Number(e.target.value) })}
                   step="500000"
                   min="100000"
-                  className="input-field"
-                  style={{ width: '100%', fontSize: '0.84rem' }}
                 />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                  Duration (Years)
-                </label>
+              </label>
+              <label className="field">
+                <span>Term (years)</span>
                 <input
                   type="number"
                   value={formData.durationYears}
                   onChange={(e) => setFormData({ ...formData, durationYears: Number(e.target.value) })}
                   min="1"
                   max="10"
-                  className="input-field"
-                  style={{ width: '100%', fontSize: '0.84rem' }}
                 />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                  Target Weighting (%)
-                </label>
+              </label>
+              <label className="field">
+                <span>Social Value weighting (%)</span>
                 <input
                   type="number"
                   value={formData.weightingPercent}
                   onChange={(e) => setFormData({ ...formData, weightingPercent: Number(e.target.value) })}
                   min="5"
                   max="30"
-                  className="input-field"
-                  style={{ width: '100%', fontSize: '0.84rem' }}
                 />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                  Service Industry
-                </label>
-                <input
-                  type="text"
-                  value={formData.industry}
-                  onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                  className="input-field"
-                  style={{ width: '100%', fontSize: '0.84rem' }}
-                />
-              </div>
+              </label>
+              <label className="field">
+                <span>Industry</span>
+                <input type="text" value={formData.industry} onChange={(e) => setFormData({ ...formData, industry: e.target.value })} />
+              </label>
             </div>
           )}
+        </div>
 
-          {/* Framework Selector & Live Database Status */}
-          <div
-            style={{
-              padding: '0.75rem 1rem',
-              backgroundColor: 'var(--bg-surface-subtle)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '0.75rem'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                <Layers size={14} style={{ color: 'var(--color-primary)' }} />
-                <span>Procurement Framework:</span>
-              </div>
-              <select
-                value={selectedFrameworkId}
-                onChange={(e) => {
-                  setSelectedFrameworkId(e.target.value);
-                  const fw = AVAILABLE_FRAMEWORKS.find(f => f.id === e.target.value);
-                  if (fw) {
-                    toast.info(`Framework selected: ${fw.shortName}`);
-                  }
-                }}
-                className="input-field"
-                style={{
-                  fontSize: '0.78rem',
-                  padding: '0.3rem 0.65rem',
-                  borderRadius: '6px',
-                  fontWeight: 600,
-                  color: 'var(--text-primary)',
-                  backgroundColor: 'var(--bg-surface)',
-                  border: '1px solid var(--border-subtle)',
-                  cursor: 'pointer'
-                }}
+        <div className="card-section">
+          <div className="section-row">
+            <h2 className="section-title">Themes</h2>
+            <div className="page-actions">
+              <button type="button" className="btn-link" onClick={handleAutoSelectForTender}>
+                <Target size={12} /> Match priorities
+              </button>
+              {selectedThemes.length < THEME_PILLARS.length && (
+                <button type="button" className="btn-link" onClick={handleSelectAllThemes}>
+                  Select all
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn-link"
+                aria-expanded={isAuditorViewOpen}
+                onClick={() => setIsAuditorViewOpen(!isAuditorViewOpen)}
               >
-                {AVAILABLE_FRAMEWORKS.map((fw) => (
-                  <option key={fw.id} value={fw.id}>
-                    {fw.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.74rem' }}>
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  padding: '0.22rem 0.65rem',
-                  borderRadius: '999px',
-                  backgroundColor: 'rgba(5, 150, 105, 0.12)',
-                  color: '#059669',
-                  fontWeight: 700
-                }}
-              >
-                <ShieldCheck size={13} />
-                30 Official National TOMs Measures Active
-              </span>
-              <span style={{ color: 'var(--text-muted)' }}>Authority: Social Value Portal & LGA</span>
+                Measures ({selectedTomsCodes.length}) {isAuditorViewOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              </button>
             </div>
           </div>
 
-          {/* National TOMs Strategic Pillars (Themes) & Delivery Feasibility */}
-          <div
-            style={{
-              padding: '1rem 1.15rem',
-              backgroundColor: 'var(--bg-surface-subtle)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.85rem'
-            }}
-          >
-            {/* Top Row: Title + Action Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  <Filter size={15} style={{ color: 'var(--color-primary)' }} />
-                  <span>National TOMs Strategic Pillars & Feasibility</span>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 600, padding: '0.1rem 0.45rem', borderRadius: '999px', backgroundColor: 'var(--color-primary-subtle)', color: 'var(--color-primary)' }}>
-                    {selectedThemes.length} of 4 Active
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-                  Select the core Social Value themes to include. The engine maps proxy values & delivery partners automatically.
-                </div>
-              </div>
-
-              {/* Quick Action Buttons */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <div className="toggle-grid">
+            {THEME_PILLARS.map((pillar) => {
+              const isActive = selectedThemes.includes(pillar.id);
+              const Icon =
+                pillar.iconName === 'work'
+                  ? Briefcase
+                  : pillar.iconName === 'planet'
+                  ? Leaf
+                  : pillar.iconName === 'community'
+                  ? HeartHandshake
+                  : Building2;
+              return (
                 <button
+                  key={pillar.id}
                   type="button"
-                  onClick={handleAutoSelectForTender}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                    padding: '0.3rem 0.7rem',
-                    borderRadius: '6px',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                    color: '#2563eb',
-                    border: '1px solid rgba(37, 99, 235, 0.25)',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                  title="Automatically matches top TOMs to the client's stated priorities"
+                  aria-pressed={isActive}
+                  title={pillar.description}
+                  onClick={() => toggleTheme(pillar.id)}
+                  className={`toggle-card${isActive ? ' is-active' : ''}`}
+                  style={{ '--tone': pillar.themeColor } as React.CSSProperties}
                 >
-                  <Sparkles size={12} />
-                  <span>Auto-Match Tender Priorities</span>
+                  <Icon size={16} />
+                  <span>{pillar.title}</span>
+                  {isActive && <Check size={14} className="toggle-check" />}
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSelectAllThemes}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.3rem',
-                    padding: '0.3rem 0.6rem',
-                    borderRadius: '6px',
-                    fontSize: '0.75rem',
-                    fontWeight: 500,
-                    backgroundColor: 'var(--bg-surface)',
-                    color: 'var(--text-secondary)',
-                    border: '1px solid var(--border-subtle)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <RotateCcw size={12} />
-                  <span>Select All 4 Pillars</span>
-                </button>
-              </div>
-            </div>
+              );
+            })}
+          </div>
 
-            {/* 4 Theme Pillar Cards */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: '0.75rem'
-              }}
-            >
-              {THEME_PILLARS.map((pillar) => {
-                const isActive = selectedThemes.includes(pillar.id);
-                const IconComponent =
-                  pillar.iconName === 'work'
-                    ? Briefcase
-                    : pillar.iconName === 'planet'
-                    ? Leaf
-                    : pillar.iconName === 'community'
-                    ? HeartHandshake
-                    : Building2;
-
+          {isAuditorViewOpen && (
+            <div className="chip-row">
+              {AVAILABLE_TOMS_OPTIONS.map((t) => {
+                const isSelected = selectedTomsCodes.includes(t.code);
                 return (
-                  <div
-                    key={pillar.id}
-                    onClick={() => toggleTheme(pillar.id)}
-                    style={{
-                      cursor: 'pointer',
-                      borderRadius: '8px',
-                      border: `1.5px solid ${isActive ? pillar.themeColor : 'var(--border-subtle)'}`,
-                      backgroundColor: isActive ? 'var(--bg-surface)' : 'var(--bg-surface-subtle)',
-                      padding: '0.85rem 0.95rem',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.45rem',
-                      transition: 'all 0.15s ease',
-                      boxShadow: isActive ? `0 2px 8px -2px ${pillar.themeColor}30` : 'none',
-                      userSelect: 'none'
+                  <button
+                    key={t.code}
+                    type="button"
+                    aria-pressed={isSelected}
+                    className={`chip${isSelected ? ' is-active' : ''}`}
+                    onClick={() => {
+                      if (!isSelected) {
+                        setSelectedTomsCodes([...selectedTomsCodes, t.code]);
+                      } else if (selectedTomsCodes.length > 1) {
+                        setSelectedTomsCodes(selectedTomsCodes.filter((c) => c !== t.code));
+                      } else {
+                        toast.warning('Keep at least one measure.');
+                      }
                     }}
                   >
-                    {/* Top Row: Icon + Title + Check Circle */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <div
-                          style={{
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '6px',
-                            backgroundColor: isActive ? `${pillar.themeColor}18` : 'rgba(0,0,0,0.05)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: isActive ? pillar.themeColor : 'var(--text-muted)'
-                          }}
-                        >
-                          <IconComponent size={15} />
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                            {pillar.title}
-                          </div>
-                          <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)' }}>
-                            {pillar.subtitle}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Check Toggle */}
-                      <div
-                        style={{
-                          width: '18px',
-                          height: '18px',
-                          borderRadius: '50%',
-                          backgroundColor: isActive ? pillar.themeColor : 'transparent',
-                          border: `1.5px solid ${isActive ? pillar.themeColor : 'var(--border-subtle)'}`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#ffffff'
-                        }}
-                      >
-                        {isActive && <Check size={11} strokeWidth={3} />}
-                      </div>
-                    </div>
-
-                    {/* Description */}
-                    <p style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', margin: '0.1rem 0', lineHeight: 1.4 }}>
-                      {pillar.description}
-                    </p>
-
-                    {/* Bottom Metadata */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginTop: 'auto',
-                        paddingTop: '0.4rem',
-                        borderTop: '1px dashed var(--border-subtle)',
-                        fontSize: '0.68rem'
-                      }}
-                    >
-                      <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>
-                        {pillar.includedMeasuresLabel}
-                      </span>
-                      <span
-                        style={{
-                          fontWeight: 600,
-                          padding: '0.12rem 0.42rem',
-                          borderRadius: '4px',
-                          backgroundColor: `${pillar.badgeColor}15`,
-                          color: pillar.badgeColor
-                        }}
-                      >
-                        {pillar.badge}
-                      </span>
-                    </div>
-                  </div>
+                    <strong>{t.code}</strong> {t.name}
+                  </button>
                 );
               })}
+              {selectedTomsCodes.length < AVAILABLE_TOMS_OPTIONS.length && (
+                <button type="button" className="btn-link" onClick={handleSelectAllToms}>
+                  Select all
+                </button>
+              )}
             </div>
-
-            {/* Evaluation Coverage & Quality Meter */}
-            {(() => {
-              const isFullCoverage = selectedThemes.length === 4;
-              const isGoodCoverage = selectedThemes.length >= 3;
-              return (
-                <div
-                  style={{
-                    padding: '0.55rem 0.85rem',
-                    borderRadius: '6px',
-                    backgroundColor: isGoodCoverage ? 'rgba(5, 150, 105, 0.08)' : 'rgba(245, 158, 11, 0.08)',
-                    border: `1px solid ${isGoodCoverage ? 'rgba(5, 150, 105, 0.25)' : 'rgba(245, 158, 11, 0.25)'}`,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '0.5rem',
-                    fontSize: '0.74rem'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <Award size={14} style={{ color: isGoodCoverage ? '#059669' : '#d97706' }} />
-                    <span style={{ fontWeight: 600, color: isGoodCoverage ? '#065f46' : '#92400e' }}>
-                      {isFullCoverage
-                        ? '🌟 Full 4-Pillar Evaluation Scope Active'
-                        : isGoodCoverage
-                        ? '✓ Balanced Multi-Theme Tender Coverage'
-                        : '⚠️ Targeted Pillar Focus'}
-                    </span>
-                    <span style={{ color: isGoodCoverage ? '#047857' : '#b45309' }}>
-                      {isFullCoverage
-                        ? '— Work, Planet, Community & Economy balanced to achieve maximum qualitative evaluation marks.'
-                        : isGoodCoverage
-                        ? '— Addresses core Crown Commercial Service & NHS Social Value criteria.'
-                        : `(${selectedThemes.length}/4 pillars selected). Public sector evaluators award higher scores when multiple themes are addressed.`}
-                    </span>
-                  </div>
-
-                  {/* Toggle Auditor View */}
-                  <button
-                    type="button"
-                    onClick={() => setIsAuditorViewOpen(!isAuditorViewOpen)}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.3rem',
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--color-primary)',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      fontSize: '0.73rem',
-                      padding: '0.15rem 0.35rem'
-                    }}
-                  >
-                    <span>{isAuditorViewOpen ? 'Hide' : 'Inspect'} 7 Underlying TOMs Measures</span>
-                    {isAuditorViewOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                  </button>
-                </div>
-              );
-            })()}
-
-            {/* Expandable Technical Auditor View for Individual TOMs Measures */}
-            {isAuditorViewOpen && (
-              <div
-                style={{
-                  padding: '0.75rem',
-                  backgroundColor: 'var(--bg-surface)',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-subtle)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.5rem'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    Technical Auditor View: Underlying National TOMs proxy measures verified in official framework database. Individual measures can be toggled:
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleSelectAllToms}
-                    style={{
-                      fontSize: '0.7rem',
-                      fontWeight: 600,
-                      padding: '0.2rem 0.5rem',
-                      borderRadius: '4px',
-                      border: '1px solid var(--border-subtle)',
-                      backgroundColor: 'var(--bg-surface-subtle)',
-                      color: 'var(--color-primary)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Select All 7 Measures
-                  </button>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
-                  {AVAILABLE_TOMS_OPTIONS.map((t) => {
-                    const isSelected = selectedTomsCodes.includes(t.code);
-                    return (
-                      <button
-                        key={t.code}
-                        type="button"
-                        onClick={() => {
-                          if (isSelected) {
-                            if (selectedTomsCodes.length > 1) {
-                              setSelectedTomsCodes(selectedTomsCodes.filter((c) => c !== t.code));
-                            } else {
-                              toast.warning('At least 1 TOMs measure must be active.');
-                            }
-                          } else {
-                            setSelectedTomsCodes([...selectedTomsCodes, t.code]);
-                          }
-                        }}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          padding: '0.28rem 0.65rem',
-                          borderRadius: '999px',
-                          fontSize: '0.73rem',
-                          fontWeight: isSelected ? 600 : 500,
-                          border: '1px solid',
-                          borderColor: isSelected ? 'var(--color-primary)' : 'var(--border-subtle)',
-                          backgroundColor: isSelected ? 'var(--color-primary-subtle)' : 'var(--bg-surface)',
-                          color: isSelected ? 'var(--color-primary)' : 'var(--text-secondary)',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {isSelected && <Check size={11} />}
-                        <strong>{t.code}</strong>
-                        <span>{t.name}</span>
-                        <span style={{ fontSize: '0.67rem', color: 'var(--text-muted)' }}>
-                          ({t.theme})
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Action Button: Moved to Bottom with Professional Styling */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              alignItems: 'center',
-              paddingTop: '0.85rem',
-              borderTop: '1px solid var(--border-subtle)'
-            }}
-          >
-            <button
-              onClick={handleExecuteSearch}
-              className="btn-primary"
-              disabled={isLoading}
-              style={{
-                fontSize: '0.88rem',
-                padding: '0.65rem 1.4rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontWeight: 600
-              }}
-            >
-              <Sparkles size={16} className={isLoading ? 'spin-icon' : ''} />
-              <span>{isLoading ? 'Formulating 3 Packages…' : 'Generate 3 Response Templates'}</span>
-            </button>
-          </div>
+          )}
         </div>
-      </div>
 
-      {/* Initial Empty State (When user has not generated yet) */}
-      {!packagesResult && !isLoading && (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '3rem 1.5rem',
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px dashed var(--border-subtle)',
-            borderRadius: 'var(--radius-md)',
-            color: 'var(--text-secondary)'
-          }}
-        >
-          <div className="icon-badge" style={{ width: '44px', height: '44px', margin: '0 auto 0.85rem auto' }}>
-            <Sparkles size={20} style={{ color: 'var(--color-primary)' }} />
-          </div>
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
-            Ready to Formulate Social Value Proposals
-          </h3>
-          <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', maxWidth: '560px', margin: '0 auto', lineHeight: 1.55 }}>
-            Select a quick preset above or customize your tender parameters, then click <strong>"Generate 3 Response Templates"</strong> to calculate audit-defensible Core, Expanded, and Place-based proposal options.
-          </p>
+        <div className="card-footer">
+          <button onClick={handleExecuteSearch} className="btn-primary" disabled={isLoading}>
+            {isLoading ? <LoaderCircle size={16} className="spin-icon" /> : <FileText size={16} />}
+            {isLoading ? 'Generating…' : 'Generate options'}
+          </button>
         </div>
-      )}
-
-      {/* Loading Indicator */}
-      {isLoading && (
-        <div style={{ textAlign: 'center', padding: '3.5rem 1rem', color: 'var(--text-secondary)' }}>
-          <div className="icon-badge" style={{ width: '48px', height: '48px', margin: '0 auto 1rem auto' }}>
-            <Sparkles size={22} className="spin-icon" style={{ color: 'var(--color-primary)' }} />
-          </div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
-            Formulating 3 Response Packages for {formData.client}…
-          </div>
-          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            Matching National TOMs proxy measures, approved {formData.location} partners, and calculating 10% statutory SV targets.
-          </div>
-        </div>
-      )}
+      </section>
 
       {/* ──────────────────────────────────────────────────────────────────────────── */}
       {/* 3 PACKAGE TEMPLATES VIEWER (REUSABLE COMPONENT AS IN BID STUDIO) */}

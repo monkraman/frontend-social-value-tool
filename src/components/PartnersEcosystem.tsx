@@ -26,7 +26,10 @@ import {
   List,
   LayoutGrid
 } from 'lucide-react';
+import { PageHeader } from './PageHeader';
 import { Pagination } from './Pagination';
+import { defaultCollectionView } from '../utils/viewport';
+import { THEME_PALETTE } from '../constants/themePalette';
 
 export const PartnersEcosystem: React.FC = () => {
   const toast = useToast();
@@ -38,7 +41,7 @@ export const PartnersEcosystem: React.FC = () => {
   const [selectedTheme, setSelectedTheme] = useState<string>('All');
 
   // View & Pagination State
-  const [viewMode, setViewMode] = useState<'list' | 'cards'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'cards'>(defaultCollectionView);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(8);
 
@@ -134,44 +137,34 @@ export const PartnersEcosystem: React.FC = () => {
     if (t.includes('work') || t.includes('jobs') || t.includes('skills')) {
       return {
         icon: <Briefcase size={12} />,
-        bg: 'rgba(59, 130, 246, 0.12)',
-        color: '#2563eb',
-        border: 'rgba(59, 130, 246, 0.25)',
+        ...THEME_PALETTE.work,
         label: 'Work & Skills'
       };
     }
     if (t.includes('planet') || t.includes('environment') || t.includes('climate')) {
       return {
         icon: <Leaf size={12} />,
-        bg: 'rgba(16, 185, 129, 0.12)',
-        color: '#059669',
-        border: 'rgba(16, 185, 129, 0.25)',
+        ...THEME_PALETTE.planet,
         label: 'Planet & Climate'
       };
     }
     if (t.includes('community') || t.includes('wellbeing') || t.includes('inclusion')) {
       return {
         icon: <Users size={12} />,
-        bg: 'rgba(245, 158, 11, 0.12)',
-        color: '#d97706',
-        border: 'rgba(245, 158, 11, 0.25)',
+        ...THEME_PALETTE.community,
         label: 'Community'
       };
     }
     if (t.includes('economy') || t.includes('sme')) {
       return {
         icon: <Coins size={12} />,
-        bg: 'rgba(139, 92, 246, 0.12)',
-        color: '#7c3aed',
-        border: 'rgba(139, 92, 246, 0.25)',
+        ...THEME_PALETTE.economy,
         label: 'Economy & SMEs'
       };
     }
     return {
       icon: <ShieldAlert size={12} />,
-      bg: 'rgba(239, 68, 68, 0.12)',
-      color: '#dc2626',
-      border: 'rgba(239, 68, 68, 0.25)',
+      ...THEME_PALETTE.other,
       label: theme
     };
   };
@@ -253,70 +246,15 @@ export const PartnersEcosystem: React.FC = () => {
   };
 
   return (
-    <div style={{ width: '100%', maxWidth: '1440px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <div className="eyebrow" style={{ marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Building size={14} style={{ color: 'var(--color-primary)' }} />
-            <span>Approved Delivery Ecosystem</span>
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-            Regional Partners & Locations
-          </h2>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.35rem', maxWidth: '780px' }}>
-            Accredited charities, colleges, and social enterprises categorized by city and Social Value theme.
-            The Bid Studio automatically resolves these partners in your tender proposals based on contract geography.
-          </p>
-        </div>
-
-        {/* Action Button */}
-        <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
+    <div className="page">
+      <PageHeader
+        title="Regional Partners"
+        actions={
           <button onClick={handleOpenAdd} className="btn-primary" style={{ fontSize: '0.82rem' }}>
-            <Plus size={15} /> Add Regional Partner
+            <Plus size={15} /> Add partner
           </button>
-        </div>
-      </div>
-
-      {/* ──────────────────────────────────────────────────────────────────────────── */}
-      {/* STATS RIBBON */}
-      {/* ──────────────────────────────────────────────────────────────────────────── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '1rem',
-          padding: '1.25rem 1.5rem',
-          backgroundColor: 'var(--bg-surface)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-md)',
-          boxShadow: 'var(--shadow-sm)'
-        }}
-      >
-        <div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>Approved Partners</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-primary)', marginTop: '0.1rem' }}>
-            {partners.length}
-          </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Ecosystem organizations</div>
-        </div>
-
-        <div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>Covered Locations</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.1rem' }}>
-            {locationsList.length - 1} Regions
-          </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Birmingham, Manchester, London…</div>
-        </div>
-
-        <div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>Delivery Alignment</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#059669', marginTop: '0.1rem' }}>
-            100% Pre-Vetted
-          </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>DBS & Accreditation Verified</div>
-        </div>
-      </div>
+        }
+      />
 
       {/* ──────────────────────────────────────────────────────────────────────────── */}
       {/* FILTERS & SEARCH */}
@@ -375,7 +313,7 @@ export const PartnersEcosystem: React.FC = () => {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
             <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              Showing <strong>{filteredPartners.length}</strong> of <strong>{partners.length}</strong> partners
+              {filteredPartners.length} of {partners.length}
             </div>
 
             {/* View Mode Switcher */}
@@ -502,7 +440,7 @@ export const PartnersEcosystem: React.FC = () => {
       {isLoading ? (
         <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
           <RefreshCw size={24} className="spin-icon" style={{ margin: '0 auto 0.75rem' }} />
-          <div>Loading Partner Ecosystem…</div>
+          <div>Loading…</div>
         </div>
       ) : filteredPartners.length === 0 ? (
         <div

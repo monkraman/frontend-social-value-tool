@@ -179,7 +179,6 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div>
-            <div className="eyebrow" style={{ marginBottom: '0.2rem' }}>Tender opportunity</div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', flexWrap: 'wrap' }}>
               <h2 style={{ fontSize: '1.35rem', color: 'var(--text-primary)', lineHeight: 1.25, fontWeight: 600 }}>
                 {result.opportunity.client}
@@ -248,21 +247,21 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
             className={activePackage === 'core' ? 'is-active' : ''}
             style={{ padding: '0.5rem 0.9rem', fontSize: '0.84rem' }}
           >
-            Template 1: Core (Baseline)
+            Core
           </button>
           <button
             onClick={() => setActivePackage('enhanced')}
             className={activePackage === 'enhanced' ? 'is-active' : ''}
             style={{ padding: '0.5rem 0.9rem', fontSize: '0.84rem' }}
           >
-            Template 2: Expanded option
+            Expanded
           </button>
           <button
             onClick={() => setActivePackage('localised')}
             className={activePackage === 'localised' ? 'is-active' : ''}
             style={{ padding: '0.5rem 0.9rem', fontSize: '0.84rem' }}
           >
-            Template 3: Localised (Place Based)
+            Localised
           </button>
         </div>
 
@@ -327,9 +326,6 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
                 <h3 style={{ fontSize: '1.4rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0, lineHeight: 1.25 }}>
                   {currentPkg.name}
                 </h3>
-                <span className="badge-mono" style={{ fontSize: '0.72rem' }}>
-                  {activePackage === 'core' ? 'Core option' : activePackage === 'enhanced' ? 'Expanded option' : 'Place-focused option'}
-                </span>
               </div>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0.5rem 0 0 0' }}>
                 {currentPkg.rationale}
@@ -358,7 +354,7 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
               </div>
               <div style={{ fontSize: '0.75rem', color: isTargetAchieved ? '#059669' : 'var(--text-muted)', marginTop: '0.4rem', paddingTop: '0.4rem', borderTop: '1px solid var(--color-primary-border)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.35rem', fontWeight: 600 }}>
                 <CheckCircle2 size={13} />
-                <span>{isTargetAchieved ? '100% Meets PPN 06/20 Target' : `Target: ${formatGbp(targetAmount)}`}</span>
+                <span>{isTargetAchieved ? 'Meets target' : `Target: ${formatGbp(targetAmount)}`}</span>
               </div>
             </div>
           </div>
@@ -638,7 +634,7 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
                           {calc.calculation_formula}
                         </span>
                         <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '0.4rem' }}>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>POC value</span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Social value</span>
                           <strong className="display-num" style={{ fontSize: '1.05rem', color: 'var(--color-primary-text)' }}>
                             {formatGbp(calc.total_social_value_gbp)}
                           </strong>

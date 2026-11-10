@@ -22,7 +22,6 @@ import {
   Trash2,
   HelpCircle,
   FileCheck,
-  Award,
   ShieldAlert,
   Leaf,
   Briefcase,
@@ -35,9 +34,12 @@ import {
   Scale,
   FolderGit2
 } from 'lucide-react';
+import { PageHeader } from './PageHeader';
 import { Pagination } from './Pagination';
 import { DEFAULT_TOMS_2025 } from '../constants/toms2025Defaults';
 import { MASTER_INITIATIVES } from '../constants/masterInitiatives';
+import { defaultCollectionView } from '../utils/viewport';
+import { THEME_PALETTE } from '../constants/themePalette';
 
 interface TomsCatalogProps {
   onSendToPrompt?: (promptText: string) => void;
@@ -56,7 +58,7 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedTheme, setSelectedTheme] = useState<string>('All');
-  const [viewMode, setViewMode] = useState<'list' | 'cards'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'cards'>(defaultCollectionView);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(8);
 
@@ -219,44 +221,34 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = () => {
     if (t.includes('work') || t.includes('jobs') || t.includes('skills')) {
       return {
         icon: <Briefcase size={12} />,
-        bg: 'rgba(59, 130, 246, 0.12)',
-        color: '#2563eb',
-        border: 'rgba(59, 130, 246, 0.25)',
+        ...THEME_PALETTE.work,
         label: 'Work & Skills'
       };
     }
     if (t.includes('planet') || t.includes('environment') || t.includes('climate')) {
       return {
         icon: <Leaf size={12} />,
-        bg: 'rgba(16, 185, 129, 0.12)',
-        color: '#059669',
-        border: 'rgba(16, 185, 129, 0.25)',
+        ...THEME_PALETTE.planet,
         label: 'Planet & Climate'
       };
     }
     if (t.includes('community') || t.includes('wellbeing') || t.includes('inclusion')) {
       return {
         icon: <Users size={12} />,
-        bg: 'rgba(245, 158, 11, 0.12)',
-        color: '#d97706',
-        border: 'rgba(245, 158, 11, 0.25)',
+        ...THEME_PALETTE.community,
         label: 'Community'
       };
     }
     if (t.includes('economy') || t.includes('sme')) {
       return {
         icon: <Coins size={12} />,
-        bg: 'rgba(139, 92, 246, 0.12)',
-        color: '#7c3aed',
-        border: 'rgba(139, 92, 246, 0.25)',
+        ...THEME_PALETTE.economy,
         label: 'Economy & SMEs'
       };
     }
     return {
       icon: <ShieldAlert size={12} />,
-      bg: 'rgba(239, 68, 68, 0.12)',
-      color: '#dc2626',
-      border: 'rgba(239, 68, 68, 0.25)',
+      ...THEME_PALETTE.other,
       label: theme
     };
   };
@@ -265,32 +257,24 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = () => {
     if (pillar === 'SV1') {
       return {
         label: 'SV1 Fighting Climate Change',
-        bg: 'rgba(16, 185, 129, 0.12)',
-        color: '#059669',
-        border: 'rgba(16, 185, 129, 0.25)'
+        ...THEME_PALETTE.planet,
       };
     }
     if (pillar === 'SV2') {
       return {
         label: 'SV2 Tackling Economic Inequality',
-        bg: 'rgba(59, 130, 246, 0.12)',
-        color: '#2563eb',
-        border: 'rgba(59, 130, 246, 0.25)'
+        ...THEME_PALETTE.work
       };
     }
     if (pillar === 'SV3') {
       return {
         label: 'SV3 Equal Opportunity & Modern Slavery',
-        bg: 'rgba(139, 92, 246, 0.12)',
-        color: '#7c3aed',
-        border: 'rgba(139, 92, 246, 0.25)'
+        ...THEME_PALETTE.community
       };
     }
     return {
       label: 'Programme Governance',
-      bg: 'rgba(107, 114, 128, 0.12)',
-      color: '#4b5563',
-      border: 'rgba(107, 114, 128, 0.25)'
+      ...THEME_PALETTE.other
     };
   };
 
@@ -503,26 +487,11 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = () => {
   };
 
   return (
-    <div style={{ width: '100%', maxWidth: '1440px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <div className="eyebrow" style={{ marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Award size={14} style={{ color: 'var(--color-primary)' }} />
-            <span>Master Knowledge Base & Scoring Rules</span>
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-            National TOMs & PPN Catalog
-          </h2>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.35rem', maxWidth: '780px' }}>
-            Official 2025 Edition National Open Access TOMs proxy valuations (£) and PPN 06/20 Model Award Criteria.
-            All proxy rates and descriptions can be configured, edited, or reviewed directly.
-          </p>
-        </div>
-
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          {activeTab === 'toms' ? (
+    <div className="page">
+      <PageHeader
+        title="TOMs Catalog"
+        actions={
+          activeTab === 'toms' ? (
             <>
               <button onClick={handleOpenAdd} className="btn-primary" style={{ fontSize: '0.82rem' }}>
                 <Plus size={15} /> Add Measure
@@ -538,18 +507,18 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = () => {
                 title="Restore 30 National TOMs"
                 style={{ fontSize: '0.82rem' }}
               >
-                <RefreshCw size={14} /> Reset Benchmarks
+                <RefreshCw size={14} /> Reset
               </button>
             </>
           ) : (
             <>
               <button onClick={handleExportInitiatives} className="btn-secondary" title="Export Initiatives CSV" style={{ fontSize: '0.82rem' }}>
-                <Download size={14} /> Export Initiatives CSV
+                <Download size={14} /> Export CSV
               </button>
             </>
-          )}
-        </div>
-      </div>
+          )
+        }
+      />
 
       {/* ──────────────────────────────────────────────────────────────────────────── */}
       {/* TAB SELECTOR: National TOMs (30) vs Client Initiatives List                 */}
@@ -582,7 +551,7 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = () => {
           }}
         >
           <Scale size={16} />
-          <span>National TOMs 2025 Measures ({metrics.length})</span>
+          <span>Measures ({metrics.length})</span>
         </button>
 
         <button
@@ -605,7 +574,7 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = () => {
           }}
         >
           <FolderGit2 size={16} />
-          <span>Initiatives List ({initiatives.length})</span>
+          <span>Initiatives ({initiatives.length})</span>
         </button>
       </div>
 
@@ -670,7 +639,7 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = () => {
               {/* Counter & View Mode Switcher */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
                 <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                  Showing <strong>{filteredMetrics.length}</strong> of <strong>{metrics.length}</strong> National TOMs
+                  {filteredMetrics.length} of {metrics.length}
                 </div>
 
                 <div
@@ -763,7 +732,7 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = () => {
           {isLoading ? (
             <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
               <RefreshCw size={24} className="spin-icon" style={{ margin: '0 auto 0.75rem' }} />
-              <div>Loading National TOMs Catalog…</div>
+              <div>Loading…</div>
             </div>
           ) : filteredMetrics.length === 0 ? (
             <div
@@ -1117,7 +1086,7 @@ export const TomsCatalog: React.FC<TomsCatalogProps> = () => {
               </div>
 
               <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                Showing <strong>{filteredInitiatives.length}</strong> of <strong>{initiatives.length}</strong> initiatives
+                {filteredInitiatives.length} of {initiatives.length}
               </div>
             </div>
 
