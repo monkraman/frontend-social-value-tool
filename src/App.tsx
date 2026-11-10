@@ -8,6 +8,7 @@ import { Search } from './components/Search';
 import { TomsCatalog } from './components/TomsCatalog';
 import { PartnersEcosystem } from './components/PartnersEcosystem';
 import { OpportunityFinder } from './components/OpportunityFinder';
+import { InitiativeGenerator } from './components/InitiativeGenerator';
 import { LoginScreen } from './components/LoginScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -263,6 +264,7 @@ const AppContent: React.FC = () => {
             }}
           />
         )}
+        {activeTab === 'generator' && <InitiativeGenerator />}
         {activeTab === 'tuner' && <Tuner />}
         {activeTab === 'toms' && (
           <TomsCatalog

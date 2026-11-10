@@ -20,7 +20,8 @@ import {
   ArrowUpRight,
   Target,
   Building,
-  Compass
+  Compass,
+  ListChecks
 } from 'lucide-react';
 import type { ThemeMode } from '../constants/theme';
 import type { PromptHistoryItem, BackendHealthData, AuditLogItem, AuditSummary } from '../types';
@@ -28,7 +29,7 @@ import { useAuth } from '../context/AuthContext';
 import { fetchAuditLogs, fetchAuditSummary } from '../api/client';
 import { parseApiDate } from '../utils/formatters';
 
-export type ActiveTab = 'prompt' | 'opportunity' | 'tuner' | 'toms' | 'partners' | 'documents' | 'search';
+export type ActiveTab = 'generator' | 'prompt' | 'opportunity' | 'tuner' | 'toms' | 'partners' | 'documents' | 'search';
 
 export interface SidebarProps {
   activeTab: ActiveTab;
@@ -111,6 +112,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const primaryNavItems: Array<{ id: ActiveTab; label: string; icon: React.ReactNode }> = [
+    { id: 'generator', label: 'Initiative Generator', icon: <ListChecks size={17} /> },
     { id: 'opportunity', label: 'Opportunity Finder', icon: <Compass size={17} /> },
     { id: 'toms', label: 'TOMs Catalog', icon: <Target size={17} /> },
     { id: 'partners', label: 'Regional Partners', icon: <Building size={17} /> },

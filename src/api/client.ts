@@ -81,7 +81,7 @@ export const AUTH_EXPIRED_EVENT = 'social-value:auth-expired';
  * fetch wrapper for API calls: a 401 on any endpoint other than login/register means
  * the stored session token is no longer valid, so drop it and tell AuthContext to sign out.
  */
-async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
+export async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
   let res: Response;
   try {
     res = await fetch(url, init);
