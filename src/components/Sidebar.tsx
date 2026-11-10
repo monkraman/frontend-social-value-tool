@@ -29,6 +29,7 @@ import type { ThemeMode } from '../constants/theme';
 import type { PromptHistoryItem, BackendHealthData, AuditLogItem, AuditSummary } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { fetchAuditLogs, fetchAuditSummary } from '../api/client';
+import { parseApiDate } from '../utils/formatters';
 
 export type ActiveTab = 'prompt' | 'opportunity' | 'tuner' | 'toms' | 'partners' | 'documents' | 'search';
 
@@ -48,7 +49,7 @@ export interface SidebarProps {
 function formatRelativeTime(isoStr?: string | null): string {
   if (!isoStr) return '';
   const now = Date.now();
-  const then = new Date(isoStr).getTime();
+  const then = parseApiDate(isoStr).getTime();
   const diffMs = now - then;
   const mins = Math.floor(diffMs / 60000);
   const hours = Math.floor(diffMs / 3600000);
@@ -1117,7 +1118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             </div>
                             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                               {log.duration_ms ? `${log.duration_ms.toFixed(0)}ms · ` : ''}
-                              {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                              {parseApiDate(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                             </div>
                           </div>
 

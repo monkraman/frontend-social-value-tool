@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { ResponseGenerationResult, SocialValuePackage } from '../types';
 import { useToast } from '../context/ToastContext';
+import { FallbackNotice } from './FallbackNotice';
 import {
   Download,
   RotateCcw,
@@ -160,6 +161,8 @@ export const TenderPackageViewer: React.FC<TenderPackageViewerProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%' }}>
+      {result.is_mock && <FallbackNotice />}
+
       {/* Unified Clean Tender Overview Card */}
       <div
         style={{

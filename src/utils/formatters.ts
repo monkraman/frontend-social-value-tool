@@ -38,12 +38,23 @@ export function formatNumber(value: number | null | undefined): string {
 }
 
 /**
+ * Parse a backend timestamp. The API stores UTC in timezone-naive columns, so its ISO strings
+ * arrive without an offset (e.g. "2026-11-09T16:35:27.1"); JS would read those as local time.
+ * Treat any offset-less datetime string as UTC.
+ */
+export function parseApiDate(dateString: string): Date {
+  const hasTime = /T\d{2}:\d{2}/.test(dateString);
+  const hasOffset = /(Z|[+-]\d{2}:?\d{2})$/i.test(dateString);
+  return new Date(hasTime && !hasOffset ? `${dateString}Z` : dateString);
+}
+
+/**
  * Format ISO datetime string to readable UK date format (e.g., 14 Oct 2026, 11:30).
  */
 export function formatDate(dateString: string | null | undefined): string {
   if (!dateString) return 'N/A';
   try {
-    const d = new Date(dateString);
+    const d = parseApiDate(dateString);
     if (isNaN(d.getTime())) return dateString;
     return new Intl.DateTimeFormat('en-GB', {
       day: 'numeric',

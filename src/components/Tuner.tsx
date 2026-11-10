@@ -164,8 +164,11 @@ export const Tuner: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {activeInitiatives.map((init, idx) => {
             const m = metrics.find((metric) => metric.code === init.toms_metric_code);
-            const unitRate = m?.unit_value_gbp || 1;
-            const subtotal = init.annual_volume * durationYears * unitRate;
+            // Until the TOMs catalog has loaded we don't know the proxy rate; show a
+            // placeholder instead of a fake £1 rate that produces misleading subtotals.
+            const unitRate = m?.unit_value_gbp;
+            const rateKnown = typeof unitRate === 'number';
+            const subtotal = rateKnown ? init.annual_volume * durationYears * unitRate : null;
 
             return (
               <div
@@ -184,8 +187,12 @@ export const Tuner: React.FC = () => {
                     <strong style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{init.name}</strong>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8125rem' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>{formatGbp(unitRate)}/{m?.unit || 'units'}</span>
-                    <strong className="display-num" style={{ fontSize: '1rem', color: 'var(--color-primary-text)' }}>{formatGbp(subtotal)}</strong>
+                    <span style={{ color: 'var(--text-muted)' }}>
+                      {rateKnown ? `${formatGbp(unitRate)}/${m?.unit || 'units'}` : 'Loading rate…'}
+                    </span>
+                    <strong className="display-num" style={{ fontSize: '1rem', color: 'var(--color-primary-text)' }}>
+                      {subtotal === null ? '—' : formatGbp(subtotal)}
+                    </strong>
                     <button
                       onClick={() => removeInitiative(idx)}
                       className="btn-link"

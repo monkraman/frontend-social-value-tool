@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { ResponseGenerationResult } from '../types';
+import { FallbackNotice } from './FallbackNotice';
 import { useToast } from '../context/ToastContext';
 import {
   Send,
@@ -425,6 +426,7 @@ Calculation: ${currentCalc?.initiatives[i]?.calculation_formula || 'TBC'}
       {/* Render Response Result */}
       {result && !isLoading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {result.is_mock && <FallbackNotice />}
           {/* Prominent Refinement Delta / What-Changed Banner */}
           {refinementNote && (
             <div

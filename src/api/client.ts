@@ -74,8 +74,27 @@ export function getAuthHeaders(extraHeaders: Record<string, string> = {}): Recor
   return headers;
 }
 
+/** Fired on window when the backend rejects the stored token (expired/invalid) mid-session. */
+export const AUTH_EXPIRED_EVENT = 'social-value:auth-expired';
+
+/**
+ * fetch wrapper for API calls: a 401 on any endpoint other than login/register means
+ * the stored session token is no longer valid, so drop it and tell AuthContext to sign out.
+ */
+async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
+  const res = await fetch(url, init);
+  const path = url.split('?')[0];
+  if (res.status === 401 && getStoredToken() && !/\/auth\/(login|register)$/.test(path)) {
+    clearStoredToken();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+    }
+  }
+  return res;
+}
+
 export async function loginUser(email: string, password: string): Promise<AuthTokenResponse> {
-  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+  const res = await apiFetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })
@@ -97,7 +116,7 @@ export async function registerUser(
   password: string,
   role = 'superadmin'
 ): Promise<AuthTokenResponse> {
-  const res = await fetch(`${API_BASE_URL}/auth/register`, {
+  const res = await apiFetch(`${API_BASE_URL}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, email, password, role })
@@ -118,7 +137,7 @@ export async function getCurrentUserProfile(): Promise<UserProfile | null> {
   if (!token) return null;
 
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+    const res = await apiFetch(`${API_BASE_URL}/auth/me`, {
       method: 'GET',
       headers: getAuthHeaders()
     });
@@ -138,7 +157,7 @@ export async function getCurrentUserProfile(): Promise<UserProfile | null> {
 
 export async function checkAuthStatus(): Promise<AuthStatusResponse | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/status`);
+    const res = await apiFetch(`${API_BASE_URL}/auth/status`);
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -148,7 +167,7 @@ export async function checkAuthStatus(): Promise<AuthStatusResponse | null> {
 
 export async function checkBackendHealth(): Promise<{ online: boolean; message: string; data?: BackendHealthData }> {
   try {
-    const res = await fetch(`${API_BASE_URL}/health`, { method: 'GET' });
+    const res = await apiFetch(`${API_BASE_URL}/health`, { method: 'GET' });
     if (!res.ok) throw new Error(`Status ${res.status}`);
     const data: BackendHealthData = await res.json();
     return { online: true, message: 'Backend connected (FastAPI)', data };
@@ -158,7 +177,7 @@ export async function checkBackendHealth(): Promise<{ online: boolean; message: 
 }
 
 export async function generateRfpResponse(request: OpportunityRequest): Promise<ResponseGenerationResult> {
-  const res = await fetch(`${API_BASE_URL}/responses/generate`, {
+  const res = await apiFetch(`${API_BASE_URL}/responses/generate`, {
     method: 'POST',
     headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(request)
@@ -175,12 +194,14 @@ export async function generateRfpResponse(request: OpportunityRequest): Promise<
     throw new Error(detail);
   }
 
+  // Keep the backend's is_mock flag: it is true when the AI provider failed and the
+  // deterministic fallback engine produced the packages.
   const data: ResponseGenerationResult = await res.json();
-  return { ...data, is_mock: false };
+  return data;
 }
 
 export async function fetchDocuments(): Promise<DocumentItem[]> {
-  const res = await fetch(`${API_BASE_URL}/documents`, {
+  const res = await apiFetch(`${API_BASE_URL}/documents`, {
     headers: getAuthHeaders()
   });
   if (!res.ok) {
@@ -200,7 +221,7 @@ export async function uploadDocumentFile(file: File): Promise<{ success: boolean
   const formData = new FormData();
   formData.append('file', file);
 
-  const res = await fetch(`${API_BASE_URL}/documents/ingest`, {
+  const res = await apiFetch(`${API_BASE_URL}/documents/ingest`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: formData
@@ -226,7 +247,7 @@ export async function uploadDocumentFile(file: File): Promise<{ success: boolean
 }
 
 export async function fetchDocumentChunks(documentId: string): Promise<DocumentChunkItem[]> {
-  const res = await fetch(`${API_BASE_URL}/documents/${documentId}/chunks`, {
+  const res = await apiFetch(`${API_BASE_URL}/documents/${documentId}/chunks`, {
     headers: getAuthHeaders()
   });
 
@@ -248,7 +269,7 @@ export async function fetchDocumentChunks(documentId: string): Promise<DocumentC
 // Natural Language Prompt API (Backend Driven)
 // ==========================================
 export async function submitPromptToBackend(prompt: string): Promise<PromptSubmissionResponse> {
-  const res = await fetch(`${API_BASE_URL}/responses/prompt`, {
+  const res = await apiFetch(`${API_BASE_URL}/responses/prompt`, {
     method: 'POST',
     headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ prompt })
@@ -270,7 +291,7 @@ export async function submitPromptToBackend(prompt: string): Promise<PromptSubmi
 
 export async function fetchPromptHistory(limit = 25): Promise<PromptHistoryItem[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/responses/history?limit=${limit}`, {
+    const res = await apiFetch(`${API_BASE_URL}/responses/history?limit=${limit}`, {
       headers: getAuthHeaders()
     });
     if (!res.ok) return [];
@@ -282,7 +303,7 @@ export async function fetchPromptHistory(limit = 25): Promise<PromptHistoryItem[
 
 export async function fetchPromptHistoryById(promptId: string): Promise<PromptHistoryItem | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/responses/history/${promptId}`, {
+    const res = await apiFetch(`${API_BASE_URL}/responses/history/${promptId}`, {
       headers: getAuthHeaders()
     });
     if (!res.ok) return null;
@@ -301,7 +322,7 @@ export async function refineRfpResponse(
   turnIndex = 2,
   conversationTurns?: Array<{ role: string; content: string }>
 ): Promise<PromptSubmissionResponse> {
-  const res = await fetch(`${API_BASE_URL}/responses/refine`, {
+  const res = await apiFetch(`${API_BASE_URL}/responses/refine`, {
     method: 'POST',
     headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({
@@ -334,7 +355,7 @@ export async function refineRfpResponse(
 // ==========================================
 
 export async function archiveDocumentById(id: string): Promise<{ success: boolean; message: string }> {
-  const res = await fetch(`${API_BASE_URL}/documents/${id}?permanent=false`, {
+  const res = await apiFetch(`${API_BASE_URL}/documents/${id}?permanent=false`, {
     method: 'DELETE',
     headers: getAuthHeaders()
   });
@@ -356,7 +377,7 @@ export async function archiveDocumentById(id: string): Promise<{ success: boolea
 }
 
 export async function restoreDocumentById(id: string): Promise<{ success: boolean; message: string }> {
-  const res = await fetch(`${API_BASE_URL}/documents/${id}/restore`, {
+  const res = await apiFetch(`${API_BASE_URL}/documents/${id}/restore`, {
     method: 'POST',
     headers: getAuthHeaders()
   });
@@ -378,7 +399,7 @@ export async function restoreDocumentById(id: string): Promise<{ success: boolea
 }
 
 export async function permanentlyDeleteDocumentById(id: string): Promise<{ success: boolean; message: string }> {
-  const res = await fetch(`${API_BASE_URL}/documents/${id}?permanent=true`, {
+  const res = await apiFetch(`${API_BASE_URL}/documents/${id}?permanent=true`, {
     method: 'DELETE',
     headers: getAuthHeaders()
   });
@@ -413,7 +434,7 @@ export async function fetchAuditLogs(severity?: string, limit = 50): Promise<Aud
     if (severity) {
       url += `&severity=${encodeURIComponent(severity)}`;
     }
-    const res = await fetch(url, { headers: getAuthHeaders() });
+    const res = await apiFetch(url, { headers: getAuthHeaders() });
     if (!res.ok) return [];
     return await res.json();
   } catch {
@@ -423,7 +444,7 @@ export async function fetchAuditLogs(severity?: string, limit = 50): Promise<Aud
 
 export async function fetchAuditSummary(): Promise<AuditSummary | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/audit/summary`, { headers: getAuthHeaders() });
+    const res = await apiFetch(`${API_BASE_URL}/audit/summary`, { headers: getAuthHeaders() });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -434,7 +455,7 @@ export async function fetchAuditSummary(): Promise<AuditSummary | null> {
 
 export async function fetchTomsMetrics(): Promise<TOMsMetric[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/calculations/metrics`, {
+    const res = await apiFetch(`${API_BASE_URL}/calculations/metrics`, {
       headers: getAuthHeaders()
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -457,7 +478,7 @@ export async function fetchMasterInitiatives(
     const queryString = params.toString();
     if (queryString) url += `?${queryString}`;
 
-    const res = await fetch(url, { headers: getAuthHeaders() });
+    const res = await apiFetch(url, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     return Array.isArray(data) && data.length > 0 ? data : MASTER_INITIATIVES;
@@ -483,7 +504,7 @@ export async function fetchMasterInitiatives(
 }
 
 export async function createTomsMetric(metric: TomsMetricCreate): Promise<TOMsMetric> {
-  const res = await fetch(`${API_BASE_URL}/calculations/metrics`, {
+  const res = await apiFetch(`${API_BASE_URL}/calculations/metrics`, {
     method: 'POST',
     headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(metric)
@@ -496,7 +517,7 @@ export async function createTomsMetric(metric: TomsMetricCreate): Promise<TOMsMe
 }
 
 export async function updateTomsMetric(code: string, metric: TomsMetricUpdate): Promise<TOMsMetric> {
-  const res = await fetch(`${API_BASE_URL}/calculations/metrics/${encodeURIComponent(code)}`, {
+  const res = await apiFetch(`${API_BASE_URL}/calculations/metrics/${encodeURIComponent(code)}`, {
     method: 'PUT',
     headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(metric)
@@ -509,7 +530,7 @@ export async function updateTomsMetric(code: string, metric: TomsMetricUpdate): 
 }
 
 export async function deleteTomsMetric(code: string): Promise<{ message: string }> {
-  const res = await fetch(`${API_BASE_URL}/calculations/metrics/${encodeURIComponent(code)}`, {
+  const res = await apiFetch(`${API_BASE_URL}/calculations/metrics/${encodeURIComponent(code)}`, {
     method: 'DELETE',
     headers: getAuthHeaders()
   });
@@ -521,7 +542,7 @@ export async function deleteTomsMetric(code: string): Promise<{ message: string 
 }
 
 export async function resetDefaultTomsMetrics(): Promise<{ message: string }> {
-  const res = await fetch(`${API_BASE_URL}/calculations/reset-defaults`, {
+  const res = await apiFetch(`${API_BASE_URL}/calculations/reset-defaults`, {
     method: 'POST',
     headers: getAuthHeaders()
   });
@@ -535,7 +556,7 @@ export async function resetDefaultTomsMetrics(): Promise<{ message: string }> {
 export async function recommendOpportunities(
   req: OpportunityRecommendRequest
 ): Promise<OpportunityRecommendResponse> {
-  const res = await fetch(`${API_BASE_URL}/calculations/recommend`, {
+  const res = await apiFetch(`${API_BASE_URL}/calculations/recommend`, {
     method: 'POST',
     headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(req)
@@ -558,7 +579,7 @@ export async function fetchRegionalPartners(
   if (search) params.append('search', search);
 
   const qs = params.toString() ? `?${params.toString()}` : '';
-  const res = await fetch(`${API_BASE_URL}/calculations/partners${qs}`, {
+  const res = await apiFetch(`${API_BASE_URL}/calculations/partners${qs}`, {
     headers: getAuthHeaders()
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -566,7 +587,7 @@ export async function fetchRegionalPartners(
 }
 
 export async function createRegionalPartner(partner: RegionalPartnerCreate): Promise<RegionalPartner> {
-  const res = await fetch(`${API_BASE_URL}/calculations/partners`, {
+  const res = await apiFetch(`${API_BASE_URL}/calculations/partners`, {
     method: 'POST',
     headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(partner)
@@ -582,7 +603,7 @@ export async function updateRegionalPartner(
   id: number,
   partner: Partial<RegionalPartnerCreate>
 ): Promise<RegionalPartner> {
-  const res = await fetch(`${API_BASE_URL}/calculations/partners/${id}`, {
+  const res = await apiFetch(`${API_BASE_URL}/calculations/partners/${id}`, {
     method: 'PUT',
     headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(partner)
@@ -595,7 +616,7 @@ export async function updateRegionalPartner(
 }
 
 export async function deleteRegionalPartner(id: number): Promise<{ message: string }> {
-  const res = await fetch(`${API_BASE_URL}/calculations/partners/${id}`, {
+  const res = await apiFetch(`${API_BASE_URL}/calculations/partners/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders()
   });
@@ -614,7 +635,7 @@ export async function calculatePackageSimulation(
   initiatives: Array<{ name: string; toms_metric_code?: string | null; annual_volume: number }>
 ): Promise<PackageCalculation> {
   try {
-    const res = await fetch(`${API_BASE_URL}/calculations/package`, {
+    const res = await apiFetch(`${API_BASE_URL}/calculations/package`, {
       method: 'POST',
       headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
@@ -688,7 +709,7 @@ export async function searchVectorKnowledge(
     payload.document_id = document_id;
   }
 
-  const res = await fetch(`${API_BASE_URL}/search`, {
+  const res = await apiFetch(`${API_BASE_URL}/search`, {
     method: 'POST',
     headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(payload)

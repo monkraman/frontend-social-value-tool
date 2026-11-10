@@ -736,7 +736,8 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
       validation_required: ['Confirm partner onboarding SLAs with regional delivery partners'],
       retrieved_evidence_chunks: 5,
       grounding_summary: { source: 'National TOMs & Regional Partner Database' },
-      is_mock: false
+      // Built client-side from the deterministic /calculations/recommend endpoint, not by the AI.
+      is_mock: true
     };
   };
 

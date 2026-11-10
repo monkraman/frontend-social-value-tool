@@ -5,7 +5,8 @@ import {
   loginUser,
   registerUser,
   getStoredToken,
-  clearStoredToken
+  clearStoredToken,
+  AUTH_EXPIRED_EVENT
 } from '../api/client';
 
 export interface AuthContextType {
@@ -116,6 +117,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null);
     setError(null);
   }, []);
+
+  // Any API call that gets a 401 (expired/invalid token) signs the user out.
+  useEffect(() => {
+    const onExpired = () => {
+      logout();
+      setError('Your session has expired. Please sign in again.');
+    };
+    window.addEventListener(AUTH_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
+  }, [logout]);
 
   const openAuthModal = useCallback(() => setIsAuthModalOpen(true), []);
   const closeAuthModal = useCallback(() => {
