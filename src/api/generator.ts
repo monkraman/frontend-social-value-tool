@@ -22,6 +22,15 @@ export interface GeneratorForm {
   region: string;
   duration_years: number;
   themes: string[];
+  client?: string;
+  /** The buyer's own words (prompt mode): context for the AI, never used for any number. */
+  brief?: string;
+}
+
+export interface ParsedPrompt {
+  form: Partial<GeneratorForm>;
+  found: (keyof GeneratorForm)[];
+  missing: (keyof GeneratorForm)[];
 }
 
 export type LineStatus = 'Counted' | 'Conditional' | 'Alternative' | 'Not valued';
@@ -83,5 +92,16 @@ export async function runGenerator(form: GeneratorForm): Promise<GeneratorResult
     body: JSON.stringify(form)
   });
   if (!res.ok) throw new Error(await detail(res, `Generation failed (${res.status})`));
+  return res.json();
+}
+
+/** Fill the form from a plain-English tender description (no AI). */
+export async function parseTenderPrompt(text: string): Promise<ParsedPrompt> {
+  const res = await apiFetch(`${API_BASE_URL}/generator/parse`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ text })
+  });
+  if (!res.ok) throw new Error(await detail(res, `Could not read the prompt (${res.status})`));
   return res.json();
 }

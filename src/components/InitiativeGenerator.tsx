@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Copy, FileText, LoaderCircle } from 'lucide-react';
+import { Copy, FileText, LoaderCircle, MessageSquare, Sliders } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 import { useToast } from '../context/ToastContext';
 import { formatGbp } from '../utils/formatters';
 import {
   fetchGeneratorOptions,
+  parseTenderPrompt,
   runGenerator,
   type GeneratedInitiative,
   type GeneratorForm,
@@ -21,6 +22,15 @@ const INITIAL_FORM: GeneratorForm = {
   themes: []
 };
 
+const FIELD_LABELS: Partial<Record<keyof GeneratorForm, string>> = {
+  bid_amount_gbp: 'contract value',
+  sv_percent: 'Social Value %',
+  duration_years: 'duration',
+  region: 'region',
+  themes: 'themes',
+  client: 'client'
+};
+
 /** Scope §6: form → AI proposes initiatives and units → code values them. Cost stays blank. */
 export const InitiativeGenerator: React.FC = () => {
   const toast = useToast();
@@ -29,6 +39,10 @@ export const InitiativeGenerator: React.FC = () => {
   const [result, setResult] = useState<GeneratorResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<'prompt' | 'form'>('prompt');
+  const [promptText, setPromptText] = useState('');
+  const [missing, setMissing] = useState<(keyof GeneratorForm)[]>([]);
+  const [isReading, setIsReading] = useState(false);
 
   useEffect(() => {
     fetchGeneratorOptions()
@@ -39,10 +53,29 @@ export const InitiativeGenerator: React.FC = () => {
       .catch((e: Error) => setError(e.message));
   }, []);
 
-  const set = <K extends keyof GeneratorForm>(key: K, value: GeneratorForm[K]) => setForm((f) => ({ ...f, [key]: value }));
+  const set = <K extends keyof GeneratorForm>(key: K, value: GeneratorForm[K]) => {
+    setForm((f) => ({ ...f, [key]: value }));
+    setMissing((m) => m.filter((k) => k !== key));
+  };
 
   const toggleTheme = (theme: string) =>
     set('themes', form.themes.includes(theme) ? form.themes.filter((t) => t !== theme) : [...form.themes, theme]);
+
+  /** Prompt mode: read the description into the form, then let the user confirm it. */
+  const handleReadPrompt = async () => {
+    setIsReading(true);
+    setError(null);
+    try {
+      const parsed = await parseTenderPrompt(promptText);
+      setForm((f) => ({ ...f, ...parsed.form, brief: promptText }));
+      setMissing(parsed.missing);
+      setMode('form');
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setIsReading(false);
+    }
+  };
 
   const handleGenerate = async () => {
     setIsLoading(true);
@@ -61,8 +94,49 @@ export const InitiativeGenerator: React.FC = () => {
       <PageHeader title="Initiative Generator" />
 
       <section className="card">
+        <div className="card-toolbar">
+          <div className="segmented" role="tablist" aria-label="Input mode">
+            <button role="tab" aria-selected={mode === 'prompt'} className={mode === 'prompt' ? 'is-active' : ''} onClick={() => setMode('prompt')}>
+              <MessageSquare size={14} /> Prompt
+            </button>
+            <button role="tab" aria-selected={mode === 'form'} className={mode === 'form' ? 'is-active' : ''} onClick={() => setMode('form')}>
+              <Sliders size={14} /> Form
+            </button>
+          </div>
+        </div>
+
+        {mode === 'prompt' ? (
+          <>
+            <div className="card-body">
+              <textarea
+                aria-label="Tender description"
+                rows={5}
+                value={promptText}
+                onChange={(e) => setPromptText(e.target.value)}
+                placeholder="Describe the tender: client, location, contract value, term, Social Value % and what the client cares about."
+                style={{ width: '100%', resize: 'vertical' }}
+              />
+            </div>
+            <div className="card-footer">
+              <button className="btn-primary" onClick={handleReadPrompt} disabled={isReading || !promptText.trim()}>
+                {isReading ? <LoaderCircle size={16} className="spin-icon" /> : <Sliders size={16} />}
+                {isReading ? 'Reading…' : 'Fill form'}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
         <div className="card-body">
+          {missing.length > 0 && (
+            <div className="notice" role="status">
+              Not found in the prompt: {missing.map((k) => FIELD_LABELS[k] ?? k).join(', ')}. Check these before generating.
+            </div>
+          )}
           <div className="field-grid">
+            <label className="field">
+              <span>Client</span>
+              <input value={form.client ?? ''} onChange={(e) => set('client', e.target.value)} />
+            </label>
             <label className="field">
               <span>Company</span>
               <input value={form.company} onChange={(e) => set('company', e.target.value)} />
@@ -97,6 +171,12 @@ export const InitiativeGenerator: React.FC = () => {
               </button>
             ))}
           </div>
+          {form.brief !== undefined && (
+            <label className="field">
+              <span>Brief</span>
+              <textarea rows={3} value={form.brief} onChange={(e) => set('brief', e.target.value)} style={{ width: '100%', resize: 'vertical' }} />
+            </label>
+          )}
         </div>
         <div className="card-footer">
           <button className="btn-primary" onClick={handleGenerate} disabled={isLoading || !options || !form.region || form.themes.length === 0}>
@@ -104,6 +184,8 @@ export const InitiativeGenerator: React.FC = () => {
             {isLoading ? 'Generating…' : 'Generate'}
           </button>
         </div>
+          </>
+        )}
       </section>
 
       {error && (
