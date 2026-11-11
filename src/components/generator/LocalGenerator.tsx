@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { FileText, FolderOpen, LoaderCircle, RefreshCw, Target, Upload, X } from 'lucide-react';
+import { FileText, FolderOpen, LoaderCircle, RefreshCw, Sparkles, Target, Upload, X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
+import { runGenerator } from '../../api/generator';
+import { backendRequest, fromBackend, patternsOf } from '../../local/backendAi';
 import { formatGbp } from '../../utils/formatters';
 import { FRAMEWORKS, frameworkById, macLabel } from '../../local/frameworks';
 import { BUILT_IN_PATTERNS, lensFor } from '../../local/infosysLens';
@@ -45,6 +47,9 @@ export const LocalGenerator: React.FC = () => {
   const [reading, setReading] = useState<PolicyReading>({ buyer: [], infosys: [] });
   const [resultForm, setResultForm] = useState<TenderForm>(INITIAL_FORM);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAsking, setIsAsking] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiChecks, setAiChecks] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const apply = (k: KnowledgeState) => {
@@ -72,18 +77,48 @@ export const LocalGenerator: React.FC = () => {
   const toggleCriterion = (code: string) =>
     setForm((f) => ({ ...f, criteria: f.criteria.includes(code) ? f.criteria.filter((c) => c !== code) : [...f.criteria, code] }));
 
+  /** Rank the library's shapes for this tender. Runs entirely on this computer. */
+  const fromLibrary = async (k: LocalKnowledge) => {
+    const policy: PolicyReading = { buyer: readPolicy(policyText(buyer)), infosys: readPolicy(policyText(infosys)) };
+    const patterns = [...k.patterns, ...BUILT_IN_PATTERNS];
+    const evidence = await fetchEvidence(patterns.map((p) => ({ id: p.id, terms: lensFor(p).terms })));
+    return { policy, list: buildInitiatives({ knowledge: k, form, policy, evidence }) };
+  };
+
   const handleGenerate = async () => {
     if (!knowledge?.connected) return;
     setIsGenerating(true);
+    setAiError(null);
+    setAiChecks([]);
     try {
-      const policy: PolicyReading = { buyer: readPolicy(policyText(buyer)), infosys: readPolicy(policyText(infosys)) };
-      const patterns = [...knowledge.patterns, ...BUILT_IN_PATTERNS];
-      const evidence = await fetchEvidence(patterns.map((p) => ({ id: p.id, terms: lensFor(p).terms })));
+      const { policy, list } = await fromLibrary(knowledge);
       setReading(policy);
       setResultForm(form);
-      setInitiatives(buildInitiatives({ knowledge, form, policy, evidence }));
+      setInitiatives(list);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  /** Ask the backend's AI for initiatives, then value and rate them from the local tables. */
+  const handleAskAi = async () => {
+    if (!knowledge?.connected) return;
+    setIsAsking(true);
+    setAiError(null);
+    try {
+      const { policy, list } = await fromLibrary(knowledge);
+      const shortlist = list.filter((i) => i.included).map((i) => i.pattern.name);
+      const result = await runGenerator(backendRequest(form, knowledge, policy, shortlist));
+      const evidence = await fetchEvidence(patternsOf(result).map((p) => ({ id: p.id, terms: lensFor(p).terms })));
+      setReading(policy);
+      setResultForm(form);
+      setAiChecks(result.checks);
+      // The AI's initiatives form the package; the library's shapes stay available as further ideas.
+      setInitiatives([...fromBackend(result, knowledge, form, evidence), ...list.map((i) => ({ ...i, included: false }))]);
+    } catch (e) {
+      setAiError((e as Error).message);
+    } finally {
+      setIsAsking(false);
     }
   };
 
@@ -251,15 +286,29 @@ export const LocalGenerator: React.FC = () => {
           </div>
         </div>
 
-        <div className="card-footer">
-          <button className="btn-primary" onClick={handleGenerate} disabled={isGenerating || !form.region || form.contract_value_gbp <= 0}>
+        <div className="card-footer gen-actions">
+          <span className="muted">
+            “Ask the backend AI” sends the contract value, target %, duration, region, the selected criteria and the names of matched priorities and shapes. The
+            client name, your documents and any policy text are not sent.
+          </span>
+          <button className="btn-secondary" onClick={handleAskAi} disabled={isAsking || isGenerating || !form.region || form.contract_value_gbp <= 0}>
+            {isAsking ? <LoaderCircle size={16} className="spin-icon" /> : <Sparkles size={16} />}
+            {isAsking ? 'Asking the AI…' : 'Ask the backend AI'}
+          </button>
+          <button className="btn-primary" onClick={handleGenerate} disabled={isGenerating || isAsking || !form.region || form.contract_value_gbp <= 0}>
             {isGenerating ? <LoaderCircle size={16} className="spin-icon" /> : <FileText size={16} />}
             {isGenerating ? 'Reading your library…' : 'Suggest initiatives'}
           </button>
         </div>
       </section>
 
-      {initiatives && totals && !isGenerating && (
+      {aiError && (
+        <div className="notice notice-error" role="alert">
+          The backend AI could not be reached: {aiError} Your library suggestions still work without it.
+        </div>
+      )}
+
+      {initiatives && totals && !isGenerating && !isAsking && (
         <>
           <div className="stat-row">
             <Stat label={`Target (${resultForm.sv_percent}% of contract)`} value={formatGbp(totals.target)} />
@@ -291,9 +340,9 @@ export const LocalGenerator: React.FC = () => {
             </section>
           )}
 
-          {checks.length > 0 && (
+          {checks.length + aiChecks.length > 0 && (
             <ul className="notice">
-              {checks.map((c) => (
+              {[...checks, ...aiChecks.map((c) => `Backend: ${c}`)].map((c) => (
                 <li key={c}>{c}</li>
               ))}
             </ul>

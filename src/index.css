@@ -1203,3 +1203,12 @@ button {
     margin-bottom: 0.4rem;
   }
 }
+.gen-actions {
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.gen-actions > .muted {
+  flex: 1;
+  min-width: 240px;
+}

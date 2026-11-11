@@ -37,8 +37,8 @@ export interface Pattern {
   additionality: string;
   status: string;
   measures: PatternMeasureLink[];
-  /** 'library' = read from the local pattern library; 'built-in' = suggestion shipped with the tool. */
-  origin: 'library' | 'built-in';
+  /** 'library' = read from the local pattern library; 'built-in' = shipped with the tool; 'ai' = proposed by the backend AI. */
+  origin: 'library' | 'built-in' | 'ai';
 }
 
 export interface LocalMacRow {
@@ -160,6 +160,8 @@ export interface Initiative {
   in_infosys_policy: string[];
   untraced_reason: string | null;
   questions: string[];
+  /** Draft wording supplied with the initiative (backend AI); otherwise it is written from the pattern. */
+  wording?: string;
 }
 
 export interface TenderForm {

@@ -39,7 +39,7 @@ export const InitiativeCard: React.FC<CardProps> = ({ index, initiative: ini, fo
   const macs = initiativeMacs(ini);
   const value = initiativeValue(ini);
   const conditional = initiativeConditional(ini);
-  const paragraph = bidParagraph(ini, form);
+  const paragraph = ini.wording || bidParagraph(ini, form);
   const scored = (mac: string) => form.criteria.length === 0 || form.criteria.includes(mac);
 
   return (
@@ -61,7 +61,8 @@ export const InitiativeCard: React.FC<CardProps> = ({ index, initiative: ini, fo
       <div className="card-body">
         <p className="body-text">{p.what}</p>
         <p className="muted">
-          For {p.who_benefits.toLowerCase()} · Delivered by {p.delivered_by} · {p.origin === 'library' ? `${p.id} in your pattern library` : 'Built-in suggestion, not from your library'}
+          {p.who_benefits ? `For ${p.who_benefits.toLowerCase()} · ` : ''}Delivered by {p.delivered_by} ·{' '}
+          {p.origin === 'library' ? `${p.id} in your pattern library` : p.origin === 'ai' ? 'Proposed by the backend AI, valued from your tables' : 'Built-in suggestion, not from your library'}
         </p>
 
         <div className="chip-row" aria-label="Model Award Criteria">

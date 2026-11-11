@@ -34,6 +34,9 @@ const DEFAULT_INCLUDED = 6;
 
 export const DEFAULT_INDUSTRY = 'Computer programming, consultancy and related services';
 
+/** Measures in the same group are not additive within one initiative. */
+export const exclusiveGroupOf = (code: string): string | null => (EMPLOYMENT.has(code) ? 'employment' : SPEND.has(code) ? 'spend' : null);
+
 export const targetOf = (form: TenderForm): number => Math.round((form.contract_value_gbp * form.sv_percent) / 100);
 
 /** Proxy £ per unit, localised where the TOM System requires it (A-03: NT1, NT18, NT19 only). */
@@ -163,7 +166,7 @@ function buildLines(pattern: Pattern, k: LocalKnowledge, form: TenderForm): Init
     if (SPEND.has(link.code)) notes.push('Spend cannot exceed the contract value.');
     const unscored = unscoredReason(link.code, form.framework);
     if (unscored) notes.push(unscored);
-    const group = EMPLOYMENT.has(link.code) ? 'employment' : SPEND.has(link.code) ? 'spend' : null;
+    const group = exclusiveGroupOf(link.code);
     let status: LineStatus = 'Optional';
     if (!m || proxy == null) status = 'Not valued';
     else if (link.primary || (COMPANION[link.code] && pattern.measures.some((x) => x.code === COMPANION[link.code]))) status = CARBON.has(link.code) ? 'Conditional' : 'Counted';
@@ -252,7 +255,7 @@ export function buildInitiatives({ knowledge, form, policy, evidence }: BuildInp
   return initiatives;
 }
 
-function questionsFor(ini: Initiative, form: TenderForm, cohorts?: string[]): string[] {
+export function questionsFor(ini: Initiative, form: TenderForm, cohorts?: string[]): string[] {
   const p = ini.pattern;
   const q: string[] = [];
   q.push(
@@ -384,7 +387,7 @@ export function bidParagraph(ini: Initiative, form: TenderForm): string {
     .filter(Boolean);
   const macs = initiativeMacs(ini).filter((l) => form.criteria.length === 0 || form.criteria.includes(l.mac));
   const parts = [
-    `${p.name}. ${p.what.replace(/\.$/, '')}. This is for ${lower(p.who_benefits)}${form.region ? ` in ${form.region}` : ''}.`,
+    [`${p.name}.`, p.what, p.who_benefits ? `This is for ${lower(p.who_benefits)}${form.region ? ` in ${form.region}` : ''}.` : ''].filter(Boolean).join(' '),
     volumes.length ? `Over the ${form.duration_years}-year contract Infosys commits to ${volumes.join('; ')}.` : '',
     `Delivery is led by ${lower(p.delivered_by)}, with the first activity in the opening 12 months and progress reported to ${form.client || 'the Authority'} every quarter.`,
     macs.length ? `This evidences ${macs.map((l) => macLabel(l.mac)).join(', ')} of the ${frameworkById(form.framework).short} model.` : ''
