@@ -302,8 +302,6 @@ export interface AuthTokenResponse {
 export interface AuthStatusResponse {
   auth_enabled: boolean;
   rbac_active: boolean;
-  default_superadmin_available: boolean;
-  default_superadmin_email: string;
   active_roles: string[];
 }
 
