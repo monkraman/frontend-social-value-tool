@@ -2,12 +2,6 @@ import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-/**
- * Shows the demo superadmin login on the sign-in screen (including the deployed site).
- * Kept on for internal demos; set to false before handing the app to a client.
- */
-const SHOW_DEMO_CREDENTIALS = true;
-
 export const LoginScreen: React.FC = () => {
   const { login, isLoading, error, clearError } = useAuth();
 
@@ -103,38 +97,6 @@ export const LoginScreen: React.FC = () => {
           >
             {activeError}
           </div>
-        )}
-
-        {SHOW_DEMO_CREDENTIALS && (
-        <div
-          style={{
-            padding: '0.7rem 0.9rem',
-            backgroundColor: 'var(--color-primary-subtle)',
-            border: '1px solid var(--color-primary-border)',
-            borderRadius: 'var(--radius-md)',
-            fontSize: '0.78rem',
-            color: 'var(--text-secondary)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}
-        >
-          <div>
-            <div><strong>Demo superadmin account</strong></div>
-            <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontSize: '0.74rem', marginTop: '0.1rem' }}>admin@infosys.com / admin123</div>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              setEmail('admin@infosys.com');
-              setPassword('admin123');
-            }}
-            className="btn-secondary"
-            style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', borderRadius: 'var(--radius-sm)' }}
-          >
-            Use demo
-          </button>
-        </div>
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
