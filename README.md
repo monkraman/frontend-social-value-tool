@@ -56,7 +56,6 @@ repo, the production build or the backend.
 
 1. Create `.env.local` (git-ignored) in the project folder with the path to your folder:
    `SV_LOCAL_REPOSITORY=C:\path\to\reference folder`
-eference folder`
 2. Run `npm run dev` and open Initiative Generator.
 
 The folder is read by a dev-server plugin (`local-repository/plugin.ts`), so this mode works only
