@@ -67,8 +67,22 @@ export interface LocalKnowledge {
   industries: { industry: string; gva_multiplier: number }[];
   patterns: Pattern[];
   measure_mac: LocalMacRow[];
+  track_record: PastInitiative[];
   documents: LocalDocument[];
   warnings: string[];
+}
+
+/** An initiative Infosys has already committed on a past contract. */
+export interface PastInitiative {
+  id: string;
+  name: string;
+  what: string;
+  volume: string;
+  mac: string;
+  pillar: string;
+  delivered_by: string;
+  measures: string[];
+  contract: string;
 }
 
 export interface EvidenceHit {
@@ -160,8 +174,12 @@ export interface Initiative {
   in_infosys_policy: string[];
   untraced_reason: string | null;
   questions: string[];
-  /** Draft wording supplied with the initiative (backend AI); otherwise it is written from the pattern. */
+  /** Draft wording supplied with the initiative (backend AI) or written by the user; otherwise it is written from the pattern. */
   wording?: string;
+  /** Initiatives Infosys has already committed that are like this one. */
+  done_before?: PastInitiative[];
+  /** True once the user has edited the name, description or wording. */
+  edited?: boolean;
 }
 
 export interface TenderForm {

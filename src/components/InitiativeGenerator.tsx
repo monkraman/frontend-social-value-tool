@@ -9,7 +9,7 @@ import { LocalGenerator } from './generator/LocalGenerator';
  *  - Local library: patterns, measures and past responses read from the reference folder on this computer.
  *  - Backend: the tables and AI held by the API.
  */
-export const InitiativeGenerator: React.FC = () => {
+export const InitiativeGenerator: React.FC<{ onSendToBidStudio?: (text: string) => void }> = ({ onSendToBidStudio }) => {
   const [source, setSource] = useState<'local' | 'backend'>('local');
 
   return (
@@ -27,7 +27,7 @@ export const InitiativeGenerator: React.FC = () => {
           </div>
         }
       />
-      {source === 'local' ? <LocalGenerator /> : <BackendGenerator />}
+      {source === 'local' ? <LocalGenerator onSendToBidStudio={onSendToBidStudio} /> : <BackendGenerator />}
     </div>
   );
 };

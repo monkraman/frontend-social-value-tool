@@ -26,6 +26,11 @@ import { MASTER_INITIATIVES } from '../constants/masterInitiatives';
 import { DEFAULT_TOMS_2025 } from '../constants/toms2025Defaults';
 
 function resolveApiBaseUrl(): string {
+  // In dev mode Vite proxies /api-proxy → the real backend, so CORS is never an issue.
+  if (import.meta.env.DEV) {
+    return '/api-proxy';
+  }
+
   let envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
   if (envUrl) {
     if (!envUrl.startsWith('http://') && !envUrl.startsWith('https://')) {

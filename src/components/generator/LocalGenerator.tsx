@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { FileText, FolderOpen, LoaderCircle, RefreshCw, Sparkles, Target, Upload, X } from 'lucide-react';
+import { FileText, FolderOpen, LoaderCircle, MessageSquare, RefreshCw, Sliders, Sparkles, Target, Upload, X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { runGenerator } from '../../api/generator';
 import { backendRequest, fromBackend, patternsOf } from '../../local/backendAi';
@@ -10,7 +10,9 @@ import { readPolicy } from '../../local/policy';
 import { extractFileText, fetchDocumentText, fetchEvidence, fetchKnowledge, type KnowledgeState } from '../../local/repository';
 import { DEFAULT_INDUSTRY, buildInitiatives, checksOf, fitToTarget, resetUnits, setFactor, targetOf, toggleLine, totalsOf } from '../../local/engine';
 import type { FrameworkId, Initiative, LocalDocument, LocalKnowledge, PolicyReading, PolicyTopic, TenderForm } from '../../local/types';
-import { IdeaRow, InitiativeCard } from './InitiativeCard';
+import { PROMPT_EXAMPLES, readPrompt, type PromptReading } from '../../local/promptParse';
+import { withTrackRecord } from '../../local/trackRecord';
+import { IdeaRow, InitiativeCard, type InitiativeEdit } from './InitiativeCard';
 
 const INITIAL_FORM: TenderForm = {
   client: '',
@@ -36,10 +38,22 @@ interface PolicyInput {
 const EMPTY_POLICY: PolicyInput = { pasted: '', docs: [] };
 const policyText = (p: PolicyInput) => [p.pasted, ...p.docs.map((d) => d.text)].join('\n\n');
 
+const applyEdit = (ini: Initiative, e: InitiativeEdit): Initiative => ({
+  ...ini,
+  edited: true,
+  wording: e.wording.trim() || undefined,
+  pattern: { ...ini.pattern, name: e.name.trim(), what: e.what.trim(), who_benefits: e.who_benefits.trim(), delivered_by: e.delivered_by.trim() || 'Infosys' }
+});
+
 /** Initiatives built from the reference folder on this computer. Nothing is sent to the backend. */
-export const LocalGenerator: React.FC = () => {
+export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => void }> = ({ onSendToBidStudio }) => {
   const toast = useToast();
   const [knowledge, setKnowledge] = useState<KnowledgeState | null>(null);
+  const [mode, setMode] = useState<'prompt' | 'form'>('prompt');
+  const [prompt, setPrompt] = useState('');
+  const [promptRead, setPromptRead] = useState<PromptReading | null>(null);
+  /** Criteria the user clicked on or off; everything else follows the prompt. */
+  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
   const [form, setForm] = useState<TenderForm>(INITIAL_FORM);
   const [buyer, setBuyer] = useState<PolicyInput>(EMPTY_POLICY);
   const [infosys, setInfosys] = useState<PolicyInput>(EMPTY_POLICY);
@@ -74,15 +88,31 @@ export const LocalGenerator: React.FC = () => {
 
   const framework = frameworkById(form.framework);
   const set = <K extends keyof TenderForm>(key: K, value: TenderForm[K]) => setForm((f) => ({ ...f, [key]: value }));
-  const toggleCriterion = (code: string) =>
-    setForm((f) => ({ ...f, criteria: f.criteria.includes(code) ? f.criteria.filter((c) => c !== code) : [...f.criteria, code] }));
+  const auto = useMemo(() => (prompt.trim() ? (promptRead?.criteria ?? []) : []), [prompt, promptRead]);
+  const criteria = framework.criteria.map((c) => c.code).filter((c) => overrides[c] ?? auto.includes(c));
+  const tender: TenderForm = { ...form, criteria };
+  const toggleCriterion = (code: string) => setOverrides((o) => ({ ...o, [code]: !(o[code] ?? auto.includes(code)) }));
+  const chooseFramework = (id: FrameworkId) => {
+    setForm((x) => ({ ...x, framework: id }));
+    setOverrides({});
+    if (prompt.trim() && knowledge?.connected) setPromptRead(readPrompt(prompt, knowledge.regions.map((r) => r.region), id));
+  };
+
+  const onPrompt = (text: string) => {
+    setPrompt(text);
+    if (!knowledge?.connected) return;
+    const read = readPrompt(text, knowledge.regions.map((r) => r.region), form.framework);
+    setPromptRead(read);
+    if (read.facts.framework && read.facts.framework !== form.framework) setOverrides({});
+    setForm((f) => ({ ...f, ...read.facts }));
+  };
 
   /** Rank the library's shapes for this tender. Runs entirely on this computer. */
   const fromLibrary = async (k: LocalKnowledge) => {
     const policy: PolicyReading = { buyer: readPolicy(policyText(buyer)), infosys: readPolicy(policyText(infosys)) };
     const patterns = [...k.patterns, ...BUILT_IN_PATTERNS];
     const evidence = await fetchEvidence(patterns.map((p) => ({ id: p.id, terms: lensFor(p).terms })));
-    return { policy, list: buildInitiatives({ knowledge: k, form, policy, evidence }) };
+    return { policy, list: withTrackRecord(buildInitiatives({ knowledge: k, form: tender, policy, evidence }), k.track_record) };
   };
 
   const handleGenerate = async () => {
@@ -93,7 +123,7 @@ export const LocalGenerator: React.FC = () => {
     try {
       const { policy, list } = await fromLibrary(knowledge);
       setReading(policy);
-      setResultForm(form);
+      setResultForm(tender);
       setInitiatives(list);
     } finally {
       setIsGenerating(false);
@@ -108,13 +138,14 @@ export const LocalGenerator: React.FC = () => {
     try {
       const { policy, list } = await fromLibrary(knowledge);
       const shortlist = list.filter((i) => i.included).map((i) => i.pattern.name);
-      const result = await runGenerator(backendRequest(form, knowledge, policy, shortlist));
+      const result = await runGenerator(backendRequest(tender, knowledge, policy, shortlist));
       const evidence = await fetchEvidence(patternsOf(result).map((p) => ({ id: p.id, terms: lensFor(p).terms })));
       setReading(policy);
-      setResultForm(form);
+      setResultForm(tender);
       setAiChecks(result.checks);
       // The AI's initiatives form the package; the library's shapes stay available as further ideas.
-      setInitiatives([...fromBackend(result, knowledge, form, evidence), ...list.map((i) => ({ ...i, included: false }))]);
+      const ai = withTrackRecord(fromBackend(result, knowledge, tender, evidence), knowledge.track_record);
+      setInitiatives([...ai, ...list.map((i) => ({ ...i, included: false }))]);
     } catch (e) {
       setAiError((e as Error).message);
     } finally {
@@ -160,12 +191,13 @@ export const LocalGenerator: React.FC = () => {
   const proxyYear = knowledge.measures.find((m) => m.proxy_year)?.proxy_year;
 
   return (
-    <>
+    <div className="gen-scope">
       <div className="gen-repo" role="status">
         <FolderOpen size={15} />
         <span>
           <strong>{knowledge.folder}</strong> on this computer · {knowledge.patterns.length} patterns · {knowledge.measures.length} TOM measures
-          {proxyYear ? ` (${proxyYear} proxies)` : ''} · {knowledge.documents.length} documents. Nothing is uploaded.
+          {proxyYear ? ` (${proxyYear} proxies)` : ''} · {knowledge.track_record.length} past Infosys initiatives · {knowledge.documents.length} documents. Nothing is
+          uploaded.
         </span>
         <button className="btn-link" onClick={reload} disabled={isRefreshing}>
           <RefreshCw size={12} className={isRefreshing ? 'spin-icon' : ''} /> Re-read folder
@@ -175,8 +207,36 @@ export const LocalGenerator: React.FC = () => {
       <section className="card">
         <div className="card-toolbar">
           <h2 className="section-title">Tender</h2>
+          <div className="segmented" role="tablist" aria-label="Input mode">
+            <button role="tab" aria-selected={mode === 'prompt'} className={mode === 'prompt' ? 'is-active' : ''} onClick={() => setMode('prompt')}>
+              <MessageSquare size={14} /> Prompt
+            </button>
+            <button role="tab" aria-selected={mode === 'form'} className={mode === 'form' ? 'is-active' : ''} onClick={() => setMode('form')}>
+              <Sliders size={14} /> Form
+            </button>
+          </div>
         </div>
         <div className="card-body">
+          {mode === 'prompt' ? (
+            <>
+              <div className="chip-row">
+                {PROMPT_EXAMPLES.map((p) => (
+                  <button key={p.label} type="button" className={`chip${prompt === p.text ? ' is-active' : ''}`} onClick={() => onPrompt(p.text)}>
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                aria-label="Describe the tender"
+                rows={4}
+                value={prompt}
+                onChange={(e) => onPrompt(e.target.value)}
+                placeholder="Describe the tender in your own words: the buyer, contract value, length, region, the social value weighting and framework, and what the buyer cares about (for example local community, apprenticeships, net zero)."
+                style={{ width: '100%', resize: 'vertical' }}
+              />
+              {promptRead && prompt.trim() && <PromptSummary read={promptRead} form={form} onEdit={() => setMode('form')} />}
+            </>
+          ) : (
           <div className="field-grid">
             <label className="field">
               <span>Client</span>
@@ -211,6 +271,7 @@ export const LocalGenerator: React.FC = () => {
               </select>
             </label>
           </div>
+          )}
         </div>
 
         <div className="card-section">
@@ -223,7 +284,7 @@ export const LocalGenerator: React.FC = () => {
                   role="tab"
                   aria-selected={form.framework === f.id}
                   className={form.framework === f.id ? 'is-active' : ''}
-                  onClick={() => setForm((x) => ({ ...x, framework: f.id as FrameworkId, criteria: [] }))}
+                  onClick={() => chooseFramework(f.id as FrameworkId)}
                 >
                   {f.short}
                 </button>
@@ -233,7 +294,11 @@ export const LocalGenerator: React.FC = () => {
           <p className="muted">
             {framework.summary} {framework.applies}
           </p>
-          <p className="muted">Pick the criteria this tender scores. Leave all unselected to consider every criterion.</p>
+          <p className="muted">
+            {auto.length > 0
+              ? `${auto.length} criteria were picked from your prompt (marked with a dot). Click any criterion to add or remove it.`
+              : 'Pick the criteria this tender scores. Leave all unselected to consider every criterion.'}
+          </p>
           {framework.groups.map((g) => (
             <div key={g.id} className="gen-criteria">
               <span className="gen-criteria-title" title={g.parent}>
@@ -246,11 +311,12 @@ export const LocalGenerator: React.FC = () => {
                     <button
                       key={c.code}
                       type="button"
-                      title={c.wording}
-                      aria-pressed={form.criteria.includes(c.code)}
-                      className={`chip${form.criteria.includes(c.code) ? ' is-active' : ''}`}
+                      title={auto.includes(c.code) ? `Picked from your prompt. ${c.wording}` : c.wording}
+                      aria-pressed={criteria.includes(c.code)}
+                      className={`chip${criteria.includes(c.code) ? ' is-active' : ''}`}
                       onClick={() => toggleCriterion(c.code)}
                     >
+                      {auto.includes(c.code) && <span className="gen-dot" aria-label="from your prompt" />}
                       {macLabel(c.code)} · {c.title}
                     </button>
                   ))}
@@ -264,9 +330,12 @@ export const LocalGenerator: React.FC = () => {
           </ul>
         </div>
 
-        <div className="card-section">
-          <h3 className="section-title">Policies to assess (optional)</h3>
-          <div className="field-grid">
+        <details className="gen-more" open={buyer.docs.length + infosys.docs.length > 0 || undefined}>
+          <summary>
+            Policies to assess (optional)
+            {buyer.docs.length + infosys.docs.length > 0 ? ` · ${buyer.docs.length + infosys.docs.length} added` : ''}
+          </summary>
+          <div className="gen-more-body field-grid">
             <PolicyBox
               title="Buyer's policy or tender question"
               hint="Paste the buyer's social value policy or question. Initiatives that match what it asks for rank higher."
@@ -284,18 +353,18 @@ export const LocalGenerator: React.FC = () => {
               suggest={['policy']}
             />
           </div>
-        </div>
+        </details>
 
         <div className="card-footer gen-actions">
           <span className="muted">
             “Ask the backend AI” sends the contract value, target %, duration, region, the selected criteria and the names of matched priorities and shapes. The
             client name, your documents and any policy text are not sent.
           </span>
-          <button className="btn-secondary" onClick={handleAskAi} disabled={isAsking || isGenerating || !form.region || form.contract_value_gbp <= 0}>
+          <button className="btn-secondary" onClick={handleAskAi} disabled={isAsking || isGenerating || !form.region || !(form.contract_value_gbp > 0)}>
             {isAsking ? <LoaderCircle size={16} className="spin-icon" /> : <Sparkles size={16} />}
             {isAsking ? 'Asking the AI…' : 'Ask the backend AI'}
           </button>
-          <button className="btn-primary" onClick={handleGenerate} disabled={isGenerating || isAsking || !form.region || form.contract_value_gbp <= 0}>
+          <button className="btn-primary" onClick={handleGenerate} disabled={isGenerating || isAsking || !form.region || !(form.contract_value_gbp > 0)}>
             {isGenerating ? <LoaderCircle size={16} className="spin-icon" /> : <FileText size={16} />}
             {isGenerating ? 'Reading your library…' : 'Suggest initiatives'}
           </button>
@@ -358,7 +427,12 @@ export const LocalGenerator: React.FC = () => {
               onFactor={(code, factor, value) => update(ini.id, (x) => setFactor(x, code, factor, value))}
               onToggleLine={(code) => update(ini.id, (x) => toggleLine(x, code))}
               onReset={() => update(ini.id, resetUnits)}
-              onCopied={() => toast.success('Wording copied')}
+              onEdit={(e) => {
+                update(ini.id, (x) => applyEdit(x, e));
+                toast.success('Initiative updated');
+              }}
+              onCopied={() => toast.success('Copied')}
+              onSendToBidStudio={onSendToBidStudio}
             />
           ))}
 
@@ -379,7 +453,31 @@ export const LocalGenerator: React.FC = () => {
           <Footnote knowledge={knowledge} />
         </>
       )}
-    </>
+    </div>
+  );
+};
+
+const PromptSummary: React.FC<{ read: PromptReading; form: TenderForm; onEdit: () => void }> = ({ read, form, onEdit }) => {
+  const facts: [string, string][] = [
+    ['client', form.client || 'not named'],
+    ['contract value', formatGbp(form.contract_value_gbp)],
+    ['target %', `${form.sv_percent}%`],
+    ['duration', `${form.duration_years} years`],
+    ['region', form.region],
+    ['framework', frameworkById(form.framework).short]
+  ];
+  const missing = facts.filter(([k]) => !read.found.includes(k)).map(([k]) => k);
+  return (
+    <div className="gen-read">
+      <p className="body-text">
+        <strong>We read:</strong> {facts.map(([, v]) => v).join(' · ')}{' '}
+        <button type="button" className="btn-link" onClick={onEdit}>
+          Check in the form
+        </button>
+      </p>
+      {missing.length > 0 && <p className="muted">Not in your prompt, so the form value is used: {missing.join(', ')}.</p>}
+      {read.themes.length > 0 && <p className="muted">Themes: {read.themes.join(', ')}.</p>}
+    </div>
   );
 };
 

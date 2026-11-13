@@ -247,6 +247,33 @@ function createRepository(root: string) {
       }))
       .filter((r) => /^NT\d+[a-z]?$/i.test(r.code) && r.framework_version);
 
+    // Initiatives Infosys has already committed (the NHS FWS scorecard knowledge base).
+    const scorecard = newest(['Initiatives', 'Valuation']);
+    const valued = new Map<string, Set<string>>();
+    for (const r of table(sheetOf(scorecard, 'Valuation'), 'Initiative ID')) {
+      const id = str(pick(r, 'Initiative ID'));
+      const code = str(pick(r, 'Measure code'));
+      if (/^NT\d+/i.test(code)) valued.set(id, (valued.get(id) ?? new Set()).add(code));
+    }
+    const track_record = table(sheetOf(scorecard, 'Initiatives'), 'Initiative')
+      .map((r) => {
+        const id = str(pick(r, 'ID'));
+        return {
+          id,
+          name: str(pick(r, 'Initiative')),
+          what: str(pick(r, 'What is committed')),
+          volume: str(pick(r, 'Committed volume')),
+          mac: str(pick(r, 'MAC')).replace(/^MAC\s*/i, ''),
+          pillar: str(pick(r, 'Pillar')),
+          delivered_by: str(pick(r, 'Delivered by')),
+          measures: [...(valued.get(id) ?? [])],
+          contract: 'NHS Future Workforce Solution'
+        };
+      })
+      .filter((t) => /^INI-\d+/.test(t.id) && t.name && t.mac && t.mac !== '—');
+
+    source(scorecard, 'Initiatives Infosys has already committed (Done before)');
+    if (!scorecard) warnings.push('No Infosys scorecard found (a workbook with "Initiatives" and "Valuation" sheets).');
     source(library, 'Patterns, pattern-measure links, proxy values, Measure-MAC map');
     source(oats, 'Measure definitions, unit guidance, evidence requirements, regions and industries');
     if (!library) warnings.push('No pattern library found (a workbook with "Patterns" and "Pattern-measures" sheets).');
@@ -266,6 +293,7 @@ function createRepository(root: string) {
       industries,
       patterns,
       measure_mac,
+      track_record,
       documents,
       warnings
     };
