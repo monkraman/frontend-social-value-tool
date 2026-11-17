@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { LoaderCircle, MessageSquare, Sliders, Sparkles, Target, Upload, X } from 'lucide-react';
+import { LoaderCircle, MessageSquare, RotateCcw, Sliders, Sparkles, Target, Upload, X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { runGenerator } from '../../api/generator';
 import { backendRequest, fromBackend, patternsOf } from '../../local/backendAi';
@@ -8,7 +8,7 @@ import { FRAMEWORKS, frameworkById, macLabel } from '../../local/frameworks';
 import { lensFor } from '../../local/infosysLens';
 import { readPolicy } from '../../local/policy';
 import { extractFileText, fetchDocumentText, fetchEvidence, fetchKnowledge, type KnowledgeState } from '../../local/repository';
-import { DEFAULT_INDUSTRY, checksOf, fitToTarget, resetUnits, setFactor, targetOf, toggleLine, totalsOf } from '../../local/engine';
+import { DEFAULT_INDUSTRY, checksOf, fitToTarget, resetUnits, setFactor, targetOf, toggleLine, totalsOf, unitsChanged } from '../../local/engine';
 import type { FrameworkId, Initiative, LocalDocument, PolicyReading, PolicyTopic, TenderForm } from '../../local/types';
 import { PROMPT_EXAMPLES, readPrompt, type PromptReading } from '../../local/promptParse';
 import { withTrackRecord } from '../../local/trackRecord';
@@ -123,6 +123,7 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
   const update = (id: string, change: (ini: Initiative) => Initiative) => setInitiatives((list) => list?.map((i) => (i.id === id ? change(i) : i)) ?? null);
 
   const totals = useMemo(() => (initiatives ? totalsOf(initiatives, resultForm) : null), [initiatives, resultForm]);
+  const changed = useMemo(() => (initiatives ? unitsChanged(initiatives) : false), [initiatives]);
   const checks = useMemo(
     () => (initiatives && knowledge?.connected ? checksOf(initiatives, resultForm, knowledge) : []),
     [initiatives, resultForm, knowledge]
@@ -341,10 +342,15 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
 
           <div className="section-row">
             <span className="muted">
-              Values are units × proxy from your tables. Starting units are a suggestion sized to the contract: change them to what Infosys can deliver.
+              Values are units × proxy from your tables. The volumes are what the AI proposed: change them to what Infosys can deliver.
             </span>
+            {changed && (
+              <button className="btn-secondary" onClick={() => setInitiatives((list) => list?.map(resetUnits) ?? null)}>
+                <RotateCcw size={14} /> Back to proposed volumes
+              </button>
+            )}
             <button className="btn-secondary" onClick={() => setInitiatives((list) => (list ? fitToTarget(list, targetOf(resultForm)) : list))}>
-              <Target size={14} /> Scale units to target
+              <Target size={14} /> Scale to {resultForm.sv_percent}% target
             </button>
           </div>
 

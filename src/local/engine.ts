@@ -141,6 +141,10 @@ export function setFactor(ini: Initiative, code: string, index: number, value: n
 
 export const resetUnits = (ini: Initiative): Initiative => ({ ...ini, lines: ini.lines.map((l) => ({ ...l, factors: l.suggested.map((f) => ({ ...f })) })) });
 
+/** True once any volume differs from what the AI proposed, whether scaled or edited by hand. */
+export const unitsChanged = (initiatives: Initiative[]): boolean =>
+  initiatives.some((i) => i.lines.some((l) => l.factors.some((f, k) => f.value !== l.suggested[k]?.value)));
+
 export interface Totals {
   target: number;
   counted: number;
