@@ -1,18 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { FileText, LoaderCircle, MessageSquare, Sliders, Sparkles, Target, Upload, X } from 'lucide-react';
+import { LoaderCircle, MessageSquare, Sliders, Sparkles, Target, Upload, X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { runGenerator } from '../../api/generator';
 import { backendRequest, fromBackend, patternsOf } from '../../local/backendAi';
 import { formatGbp } from '../../utils/formatters';
 import { FRAMEWORKS, frameworkById, macLabel } from '../../local/frameworks';
-import { BUILT_IN_PATTERNS, lensFor } from '../../local/infosysLens';
+import { lensFor } from '../../local/infosysLens';
 import { readPolicy } from '../../local/policy';
 import { extractFileText, fetchDocumentText, fetchEvidence, fetchKnowledge, type KnowledgeState } from '../../local/repository';
-import { DEFAULT_INDUSTRY, buildInitiatives, checksOf, fitToTarget, resetUnits, setFactor, targetOf, toggleLine, totalsOf } from '../../local/engine';
-import type { FrameworkId, Initiative, LocalDocument, LocalKnowledge, PolicyReading, PolicyTopic, TenderForm } from '../../local/types';
+import { DEFAULT_INDUSTRY, checksOf, fitToTarget, resetUnits, setFactor, targetOf, toggleLine, totalsOf } from '../../local/engine';
+import type { FrameworkId, Initiative, LocalDocument, PolicyReading, PolicyTopic, TenderForm } from '../../local/types';
 import { PROMPT_EXAMPLES, readPrompt, type PromptReading } from '../../local/promptParse';
 import { withTrackRecord } from '../../local/trackRecord';
-import { IdeaRow, InitiativeCard, type InitiativeEdit } from './InitiativeCard';
+import { InitiativeCard, type InitiativeEdit } from './InitiativeCard';
 
 const INITIAL_FORM: TenderForm = {
   client: '',
@@ -60,7 +60,6 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
   const [initiatives, setInitiatives] = useState<Initiative[] | null>(null);
   const [reading, setReading] = useState<PolicyReading>({ buyer: [], infosys: [] });
   const [resultForm, setResultForm] = useState<TenderForm>(INITIAL_FORM);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isAsking, setIsAsking] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiChecks, setAiChecks] = useState<string[]>([]);
@@ -101,45 +100,19 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
     setForm((f) => ({ ...f, ...read.facts }));
   };
 
-  /** Rank the library's shapes for this tender. Runs entirely on this computer. */
-  const fromLibrary = async (k: LocalKnowledge) => {
-    const policy: PolicyReading = { buyer: readPolicy(policyText(buyer)), infosys: readPolicy(policyText(infosys)) };
-    const patterns = [...k.patterns, ...BUILT_IN_PATTERNS];
-    const evidence = await fetchEvidence(patterns.map((p) => ({ id: p.id, terms: lensFor(p).terms })));
-    return { policy, list: withTrackRecord(buildInitiatives({ knowledge: k, form: tender, policy, evidence }), k.track_record) };
-  };
-
-  const handleGenerate = async () => {
-    if (!knowledge?.connected) return;
-    setIsGenerating(true);
-    setAiError(null);
-    setAiChecks([]);
-    try {
-      const { policy, list } = await fromLibrary(knowledge);
-      setReading(policy);
-      setResultForm(tender);
-      setInitiatives(list);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  /** Ask the backend's AI for initiatives, then value and rate them from the local tables. */
+  /** Ask the AI for initiatives, then value and rate them from the tables. */
   const handleAskAi = async () => {
     if (!knowledge?.connected) return;
     setIsAsking(true);
     setAiError(null);
     try {
-      const { policy, list } = await fromLibrary(knowledge);
-      const shortlist = list.filter((i) => i.included).map((i) => i.pattern.name);
-      const result = await runGenerator(backendRequest(tender, knowledge, policy, shortlist));
+      const policy: PolicyReading = { buyer: readPolicy(policyText(buyer)), infosys: readPolicy(policyText(infosys)) };
+      const result = await runGenerator(backendRequest(tender, knowledge, policy));
       const evidence = await fetchEvidence(patternsOf(result).map((p) => ({ id: p.id, terms: lensFor(p).terms })));
       setReading(policy);
       setResultForm(tender);
       setAiChecks(result.checks);
-      // The AI's initiatives form the package; the library's shapes stay available as further ideas.
-      const ai = withTrackRecord(fromBackend(result, knowledge, tender, evidence), knowledge.track_record);
-      setInitiatives([...ai, ...list.map((i) => ({ ...i, included: false }))]);
+      setInitiatives(withTrackRecord(fromBackend(result, knowledge, tender, evidence), knowledge.track_record));
     } catch (e) {
       setAiError((e as Error).message);
     } finally {
@@ -185,7 +158,6 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
   }
 
   const included = initiatives?.filter((i) => i.included) ?? [];
-  const ideas = initiatives?.filter((i) => !i.included) ?? [];
 
   return (
     <div className="gen-scope">
@@ -342,27 +314,22 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
 
         <div className="card-footer gen-actions">
           <span className="muted">
-            “Ask the backend AI” sends the contract value, target %, duration, region, the selected criteria and the names of matched priorities and shapes. The
-            client name, your documents and any policy text are not sent.
+            Sends the contract value, target %, duration, region and the selected criteria. The client name, your documents and any policy text are not sent.
           </span>
-          <button className="btn-secondary" onClick={handleAskAi} disabled={isAsking || isGenerating || !form.region || !(form.contract_value_gbp > 0)}>
+          <button className="btn-primary" onClick={handleAskAi} disabled={isAsking || !form.region || !(form.contract_value_gbp > 0)}>
             {isAsking ? <LoaderCircle size={16} className="spin-icon" /> : <Sparkles size={16} />}
-            {isAsking ? 'Asking the AI…' : 'Ask the backend AI'}
-          </button>
-          <button className="btn-primary" onClick={handleGenerate} disabled={isGenerating || isAsking || !form.region || !(form.contract_value_gbp > 0)}>
-            {isGenerating ? <LoaderCircle size={16} className="spin-icon" /> : <FileText size={16} />}
-            {isGenerating ? 'Reading your library…' : 'Suggest initiatives'}
+            {isAsking ? 'Writing initiatives…' : 'Ask the AI'}
           </button>
         </div>
       </section>
 
       {aiError && (
         <div className="notice notice-error" role="alert">
-          The backend AI could not be reached: {aiError} Your library suggestions still work without it.
+          The AI could not be reached: {aiError}
         </div>
       )}
 
-      {initiatives && totals && !isGenerating && !isAsking && (
+      {initiatives && totals && !isAsking && (
         <>
           <div className="stat-row">
             <Stat label={`Target (${resultForm.sv_percent}% of contract)`} value={formatGbp(totals.target)} />
@@ -420,20 +387,6 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
               onSendToBidStudio={onSendToBidStudio}
             />
           ))}
-
-          {ideas.length > 0 && (
-            <section className="card">
-              <div className="card-toolbar">
-                <h2 className="section-title">More ideas</h2>
-                <span className="muted">Ranked by criteria fit, the buyer's policy and fit for Infosys.</span>
-              </div>
-              <ul className="gen-ideas">
-                {ideas.map((ini) => (
-                  <IdeaRow key={ini.id} initiative={ini} form={resultForm} onAdd={() => update(ini.id, (x) => ({ ...x, included: true }))} />
-                ))}
-              </ul>
-            </section>
-          )}
 
           <Footnote />
         </>
