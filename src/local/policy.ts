@@ -1,6 +1,6 @@
 // Reads a policy or tender text for the priorities it names. Rule-based: a fixed list of topics,
 // each found by its own words, with the sentences it was found in. No language model is involved.
-import type { Pattern, PolicyTopic } from './types';
+import type { PolicyTopic } from './types';
 
 interface Topic {
   id: string;
@@ -56,22 +56,3 @@ export function readPolicy(text: string): PolicyTopic[] {
   return found.sort((a, b) => b.hits - a.hits);
 }
 
-/** Topics (by label) that favour a pattern, and how strongly (0 to 1) given how often each is named. */
-export function topicsForPattern(pattern: Pattern, topics: PolicyTopic[]): { labels: string[]; weight: number } {
-  if (!topics.length) return { labels: [], weight: 0 };
-  const top = topics[0].hits;
-  // Shapes the topic list names are matched by name only; shapes added to the library later fall back to their theme concepts.
-  const isKnown = TOPICS.some((t) => t.patterns.includes(pattern.id));
-  const labels: string[] = [];
-  let weight = 0;
-  for (const found of topics) {
-    const t = TOPICS.find((x) => x.id === found.id);
-    if (!t) continue;
-    const named = t.patterns.includes(pattern.id);
-    const byConcept = !isKnown && t.concepts.some((c) => pattern.theme_concepts.includes(c));
-    if (!named && !byConcept) continue;
-    labels.push(found.label);
-    weight += (named ? 1 : 0.5) * (0.4 + 0.6 * (found.hits / top));
-  }
-  return { labels, weight: Math.min(1, weight / 2) };
-}

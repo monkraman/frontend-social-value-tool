@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Check, Copy, FileText, Pencil, Plus, RotateCcw, Send, X } from 'lucide-react';
+import { Check, Copy, FileText, Pencil, RotateCcw, Send, X } from 'lucide-react';
 import { formatGbp } from '../../utils/formatters';
 import { macLabel } from '../../local/frameworks';
 import { bidDraft, draftText, type BidDraft } from '../../local/bidDraft';
@@ -402,20 +402,3 @@ const LineRow: React.FC<{ line: InitiativeLine; onFactor: (index: number, value:
   );
 };
 
-/** One line for an idea that is not in the package yet. */
-export const IdeaRow: React.FC<{ initiative: Initiative; form: TenderForm; onAdd: () => void }> = ({ initiative: ini, form, onAdd }) => (
-  <li className="gen-idea">
-    <div>
-      <strong>{ini.pattern.name}</strong>
-      <div className="gen-meta">{ini.pattern.what}</div>
-    </div>
-    <div className="page-actions">
-      <RatingPill rating={macRating(ini, form.criteria)} />
-      <FitPill fit={ini.fit} />
-      <span className="gen-meta">{ini.untraced_reason ? 'No £ value' : formatGbp(initiativeValue(ini))}</span>
-      <button className="btn-secondary" onClick={onAdd}>
-        <Plus size={14} /> Add
-      </button>
-    </div>
-  </li>
-);

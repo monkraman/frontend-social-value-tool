@@ -1,36 +1,16 @@
-// The generator's code layer. Picks initiative shapes for a tender, proposes starting volumes and
-// values them: units × the (localised) proxy from the local tables. Pure functions, no network.
+// The generator's code layer: values the AI's initiatives as units × the (localised) proxy from
+// the tables, and enforces the counting rules. Pure functions, no network.
 // Rule references (A-xx) are to the Assumptions sheet of the Monk Spaces knowledge base workbook.
 import { frameworkById, macLabel } from './frameworks';
-import { BUILT_IN_PATTERNS, directCriteria, lensFor } from './infosysLens';
-import { macsForMeasure, unscoredReason } from './measureMac';
-import { topicsForPattern } from './policy';
-import type {
-  EvidenceHit,
-  Initiative,
-  InitiativeLine,
-  LineStatus,
-  LocalKnowledge,
-  LocalMeasure,
-  MacLink,
-  Pattern,
-  PolicyReading,
-  TenderForm,
-  UnitFactor
-} from './types';
+import type { Initiative, InitiativeLine, LocalKnowledge, LocalMeasure, MacLink, TenderForm } from './types';
 
 // A-07: one measure per activity. Only one of these can be counted within an initiative.
 const EMPLOYMENT = new Set(['NT1', 'NT3', 'NT4', 'NT5', 'NT6', 'NT76', 'NT10', 'NT9']);
-// A-06: barrier-group recruitment, capped at one FTE-year per person.
-const BARRIER = new Set(['NT3', 'NT4', 'NT5', 'NT6', 'NT76']);
+// Units are £ of supply-chain spend. Local SME and VCSE spend sit inside local spend, so they are not additive.
 // A-13: carbon counts only beyond the business-as-usual baseline, so it stays conditional.
 const CARBON = new Set(['NT31', 'NT31a']);
-// Units are £ of supply-chain spend. Local SME and VCSE spend sit inside local spend, so they are not additive.
 const SPEND = new Set(['NT14', 'NT18', 'NT19']);
-// Secondary measures that describe a separate activity of the same initiative and are on by default.
-const COMPANION: Record<string, string> = { NT29: 'NT28', NT13: 'NT11', NT31a: 'NT31' };
 const NT19_FACTOR = 1.0073;
-const DEFAULT_INCLUDED = 6;
 
 export const DEFAULT_INDUSTRY = 'Computer programming, consultancy and related services';
 
@@ -55,72 +35,6 @@ export function localisedProxy(m: LocalMeasure, k: LocalKnowledge, form: TenderF
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-
-/** Starting volumes sized to the contract. They are a first suggestion for the bid team to change. */
-function suggestFactors(code: string, form: TenderForm): UnitFactor[] {
-  const s = clamp(form.contract_value_gbp / 10_000_000, 0.2, 20);
-  const years = clamp(form.duration_years, 1, 30);
-  const n = (label: string, value: number, min: number, max: number, step = 1): UnitFactor => ({ label, value: clamp(Math.round(value / step) * step, min, max), min, max, step });
-  const yrs: UnitFactor = { label: 'Years', value: years, min: 1, max: 30, step: 1 };
-  const invested = n('£ invested', form.contract_value_gbp * 0.001, 5_000, 250_000, 1_000);
-  const share = (label: string, pct: number): UnitFactor[] => [
-    { label: 'Contract value (£)', value: form.contract_value_gbp, fixed: true },
-    { label, value: pct, percent: true, min: 0, max: 100, step: 0.5 }
-  ];
-  switch (code) {
-    case 'NT1':
-      return [n('People employed', 2 * s, 1, 100), yrs];
-    case 'NT3':
-    case 'NT4':
-    case 'NT5':
-    case 'NT6':
-    case 'NT76':
-      return [n('People recruited', 1.5 * s, 1, 80)];
-    case 'NT10':
-      return [n('Apprentices', 3 * s, 2, 80), n('Weeks each', years >= 1.5 ? 78 : 52, 26, 208)];
-    case 'NT9':
-      return [n('New employees', 3 * s, 2, 80), n('Weeks of training each', 12, 1, 52)];
-    case 'NT80':
-      return [n('Employees upskilled', 10 * s, 5, 500), n('Weeks each', 2, 1, 26)];
-    case 'NT11':
-      return [n('People supported', 20 * s, 10, 400), n('Hours each', 6, 1, 40)];
-    case 'NT12':
-      return [n('Placements', 2 * s, 1, 40), n('Weeks each', 4, 1, 26)];
-    case 'NT13':
-      return [n('Placements', 2 * s, 1, 40), n('Weeks each', 8, 1, 52)];
-    case 'NT8':
-      return [n('Staff volunteers', 8 * s, 4, 150), n('Hours each per year', 8, 1, 60), yrs];
-    case 'NT99':
-      return [n('Staff hosting visits', 4 * s, 2, 60), n('Hours each per year', 6, 1, 40), yrs];
-    case 'NT15':
-      return [n('Expert staff', 3 * s, 2, 40), n('Hours each per year', 20, 1, 200), yrs];
-    case 'NT17':
-    case 'NT29':
-      return [n('Staff volunteers', 10 * s, 5, 300), n('Hours each per year', 7.5, 1, 40, 0.5), yrs];
-    case 'NT14':
-      return share('Spent with VCSEs (%)', 0.5);
-    case 'NT18':
-      return share('Spent with local companies (%)', 3);
-    case 'NT19':
-      return share('Spent with local SMEs (%)', 2);
-    case 'NT16':
-    case 'NT28':
-    case 'NT26':
-    case 'NT27':
-    case 'NT116':
-    case 'NT119':
-      return [invested];
-    case 'NT31':
-    case 'NT31a':
-      return [n('tCO2e saved per year', 10 * s, 1, 5_000), yrs];
-    case 'NT32':
-      return [n('Staff in the scheme', 10 * s, 5, 500), n('Miles saved each per year', 1_000, 100, 10_000, 100), yrs];
-    case 'NT87':
-      return [n('kg of plastic avoided per year', 50 * s, 10, 5_000, 10), yrs];
-    default:
-      return [{ label: 'Units', value: 0, min: 0, max: 1_000_000, step: 1 }];
-  }
-}
 
 export const unitsOf = (line: InitiativeLine): number => line.factors.reduce((p, f) => p * (f.percent ? f.value / 100 : f.value), 1);
 
@@ -152,107 +66,6 @@ export function macRating(ini: Initiative, criteria: string[]): MacRating {
   const links = initiativeMacs(ini).filter((l) => criteria.length === 0 || criteria.includes(l.mac));
   if (links.some((l) => l.strength === 'direct')) return 'Strong';
   return links.length ? 'Partial' : 'Not scored';
-}
-
-function buildLines(pattern: Pattern, k: LocalKnowledge, form: TenderForm): InitiativeLine[] {
-  const lines: InitiativeLine[] = pattern.measures.map((link) => {
-    const m = k.measures.find((x) => x.code === link.code);
-    const factors = suggestFactors(link.code, form);
-    const { proxy, basis } = m ? localisedProxy(m, k, form) : { proxy: null, basis: '' };
-    const notes: string[] = [];
-    if (!m) notes.push('Not one of the Open Access measures in your library, so it has no proxy value.');
-    if (BARRIER.has(link.code)) notes.push('Capped at one FTE-year per person; one barrier measure per person.');
-    if (CARBON.has(link.code)) notes.push('Counts only for savings beyond business-as-usual decarbonisation, against a measured baseline.');
-    if (SPEND.has(link.code)) notes.push('Spend cannot exceed the contract value.');
-    const unscored = unscoredReason(link.code, form.framework);
-    if (unscored) notes.push(unscored);
-    const group = exclusiveGroupOf(link.code);
-    let status: LineStatus = 'Optional';
-    if (!m || proxy == null) status = 'Not valued';
-    else if (link.primary || (COMPANION[link.code] && pattern.measures.some((x) => x.code === COMPANION[link.code]))) status = CARBON.has(link.code) ? 'Conditional' : 'Counted';
-    return {
-      code: link.code,
-      name: m?.name ?? link.code,
-      unit: m?.unit ?? link.basis,
-      theme: m?.theme ?? '',
-      primary: link.primary,
-      factors,
-      suggested: factors.map((f) => ({ ...f })),
-      proxy_gbp: proxy,
-      proxy_basis: basis,
-      status,
-      exclusive_group: group,
-      macs: macsForMeasure(link.code, form.framework, k.measure_mac),
-      note: notes.join(' '),
-      evidence_required: m?.target_guidance || m?.evidence_required || ''
-    };
-  });
-
-  // Within a not-additive group, count the measure that best evidences the selected criteria.
-  for (const group of ['employment', 'spend']) {
-    const members = lines.filter((l) => l.exclusive_group === group && l.status !== 'Not valued');
-    if (members.length < 2) {
-      members.forEach((l) => (l.exclusive_group = null));
-      continue;
-    }
-    const direct = (l: InitiativeLine) => l.macs.some((x) => x.strength === 'direct' && form.criteria.includes(x.mac));
-    const chosen = members.find((l) => l.primary && (form.criteria.length === 0 || direct(l))) ?? members.find(direct) ?? members.find((l) => l.primary) ?? members[0];
-    members.forEach((l) => (l.status = l === chosen ? 'Counted' : 'Alternative'));
-  }
-  return lines;
-}
-
-const FIT_SCORE = { 'Core strength': 2, Deliverable: 1, 'Needs a partner': 0.3 } as const;
-const RATING_SCORE = { Strong: 3, Partial: 1.5, 'Not scored': 0 } as const;
-
-export interface BuildInput {
-  knowledge: LocalKnowledge;
-  form: TenderForm;
-  policy: PolicyReading;
-  evidence: Record<string, EvidenceHit[]>;
-}
-
-/** Every pattern Infosys could offer for this tender, ranked, with the best few switched on. */
-export function buildInitiatives({ knowledge, form, policy, evidence }: BuildInput): Initiative[] {
-  const framework = frameworkById(form.framework);
-  const libraryIds = new Set(knowledge.patterns.map((p) => p.id));
-  const patterns = [...knowledge.patterns.filter((p) => !/retired/i.test(p.status)), ...BUILT_IN_PATTERNS.filter((p) => !libraryIds.has(p.id))];
-
-  const initiatives = patterns.map((pattern): Initiative => {
-    const lens = lensFor(pattern);
-    const lines = buildLines(pattern, knowledge, form);
-    const buyer = topicsForPattern(pattern, policy.buyer);
-    const own = topicsForPattern(pattern, policy.infosys);
-    const hits = evidence[pattern.id] ?? [];
-    const valued = lines.some((l) => l.proxy_gbp != null);
-    const ini: Initiative = {
-      id: pattern.id,
-      pattern,
-      included: false,
-      score: 0,
-      lines,
-      direct_macs: directCriteria(pattern.id, form.framework),
-      fit: lens.fit,
-      fit_reason: lens.reason,
-      evidence: hits,
-      policy_topics: buyer.labels,
-      in_infosys_policy: own.labels,
-      untraced_reason: valued
-        ? null
-        : pattern.measures.length
-          ? 'The measures linked to this shape are not in your Open Access set, so no value can be calculated yet.'
-          : 'No TOM traced. None of the 30 Open Access measures in your library values this activity; the full TOM System has 116.',
-      questions: []
-    };
-    const rating = macRating(ini, form.criteria);
-    ini.score = RATING_SCORE[rating] * 2 + buyer.weight * 3 + FIT_SCORE[lens.fit] + Math.min(1, hits.length / 2) + (valued ? 0.3 : 0);
-    ini.questions = questionsFor(ini, form, framework.cohorts);
-    return ini;
-  });
-
-  initiatives.sort((a, b) => b.score - a.score);
-  initiatives.filter((i) => macRating(i, form.criteria) !== 'Not scored').slice(0, DEFAULT_INCLUDED).forEach((i) => (i.included = true));
-  return initiatives;
 }
 
 export function questionsFor(ini: Initiative, form: TenderForm, cohorts?: string[]): string[] {
