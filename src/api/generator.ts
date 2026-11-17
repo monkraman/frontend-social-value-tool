@@ -23,6 +23,8 @@ export interface GeneratorForm {
   duration_years: number;
   themes: string[];
   client?: string;
+  /** Which framework is being scored. Narrows the criteria map the AI is sent. */
+  framework?: string;
   /** The buyer's own words (prompt mode): context for the AI, never used for any number. */
   brief?: string;
 }

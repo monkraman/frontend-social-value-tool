@@ -41,6 +41,7 @@ export function backendRequest(form: TenderForm, knowledge: LocalKnowledge, poli
     sv_percent: form.sv_percent,
     region: form.region,
     duration_years: form.duration_years,
+    framework: form.framework,
     themes: relevant.length ? relevant : all,
     brief: buildBrief(form, policy)
   };
