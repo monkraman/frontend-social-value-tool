@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { FileText, FolderOpen, LoaderCircle, MessageSquare, RefreshCw, Sliders, Sparkles, Target, Upload, X } from 'lucide-react';
+import { FileText, LoaderCircle, MessageSquare, Sliders, Sparkles, Target, Upload, X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { runGenerator } from '../../api/generator';
 import { backendRequest, fromBackend, patternsOf } from '../../local/backendAi';
@@ -64,7 +64,6 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
   const [isAsking, setIsAsking] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiChecks, setAiChecks] = useState<string[]>([]);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const apply = (k: KnowledgeState) => {
     setKnowledge(k);
@@ -77,14 +76,9 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
     }
   };
   useEffect(() => {
-    fetchKnowledge().then(apply);
+    // In dev, always re-read the folder so workbook edits show up without restarting the server.
+    fetchKnowledge(import.meta.env.DEV).then(apply);
   }, []);
-  const reload = () => {
-    setIsRefreshing(true);
-    fetchKnowledge(true)
-      .then(apply)
-      .finally(() => setIsRefreshing(false));
-  };
 
   const framework = frameworkById(form.framework);
   const set = <K extends keyof TenderForm>(key: K, value: TenderForm[K]) => setForm((f) => ({ ...f, [key]: value }));
@@ -192,22 +186,9 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
 
   const included = initiatives?.filter((i) => i.included) ?? [];
   const ideas = initiatives?.filter((i) => !i.included) ?? [];
-  const proxyYear = knowledge.measures.find((m) => m.proxy_year)?.proxy_year;
 
   return (
     <div className="gen-scope">
-      <div className="gen-repo" role="status">
-        <FolderOpen size={15} />
-        <span>
-          <strong>{knowledge.folder}</strong> {knowledge.origin === 'backend' ? 'on the backend' : 'on this computer'} · {knowledge.measures.length} TOM measures
-          {proxyYear ? ` (${proxyYear} proxies)` : ''} · {knowledge.measure_mac.length} criteria links · {knowledge.track_record.length} past Infosys initiatives ·{' '}
-          {knowledge.documents.length} documents.{knowledge.origin === 'backend' ? ' Shared with your team.' : ' Nothing is uploaded.'}
-        </span>
-        <button className="btn-link" onClick={reload} disabled={isRefreshing}>
-          <RefreshCw size={12} className={isRefreshing ? 'spin-icon' : ''} /> {knowledge.origin === 'backend' ? 'Reload' : 'Re-read folder'}
-        </button>
-      </div>
-
       <section className="card">
         <div className="card-toolbar">
           <h2 className="section-title">Tender</h2>
@@ -454,7 +435,7 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
             </section>
           )}
 
-          <Footnote knowledge={knowledge} />
+          <Footnote />
         </>
       )}
     </div>
@@ -514,10 +495,10 @@ const TopicList: React.FC<{ title: string; topics: PolicyTopic[] }> = ({ title, 
   </div>
 );
 
-const Footnote: React.FC<{ knowledge: LocalKnowledge }> = ({ knowledge }) => (
+const Footnote: React.FC = () => (
   <p className="footnote">
-    Read from your folder: {knowledge.sources.map((s) => `${s.file.split('/').pop()} (saved ${s.modified.slice(0, 10)})`).join(' · ')}. MAC links marked “draft
-    mapping” ship with the tool until the Measure-MAC map in your pattern library is complete. Framework wording is abbreviated: check the tender's own text.
+    Values are units × the Open Access TOM System proxy for the region and industry. Criteria links marked “draft mapping” are the tool's own until the
+    Measure-MAC map is approved. Framework wording is abbreviated: check the tender's own text.
   </p>
 );
 
