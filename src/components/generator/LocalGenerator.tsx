@@ -333,9 +333,26 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
       {initiatives && totals && !isAsking && (
         <>
           <div className="stat-row">
-            <Stat label={`Target (${resultForm.sv_percent}% of contract)`} value={formatGbp(totals.target)} />
-            <Stat label="Counted social value" value={formatGbp(totals.counted)} strong />
-            <Stat label="Of target" value={`${totals.percent_of_target.toFixed(0)}%`} />
+            <Stat
+              label="Social value target"
+              value={formatGbp(totals.target)}
+              note={`${resultForm.sv_percent}% of the £${(resultForm.contract_value_gbp / 1_000_000).toLocaleString('en-GB', { maximumFractionDigits: 1 })}m contract`}
+            />
+            <Stat
+              label="These initiatives are worth"
+              value={formatGbp(totals.counted)}
+              note={`${((totals.counted / resultForm.contract_value_gbp) * 100).toFixed(1)}% of the contract`}
+              strong
+            />
+            <Stat
+              label="Target reached"
+              value={`${totals.percent_of_target.toFixed(0)}%`}
+              note={
+                totals.counted >= totals.target
+                  ? `${formatGbp(totals.counted - totals.target)} above target`
+                  : `${formatGbp(totals.target - totals.counted)} short of target`
+              }
+            />
             <Stat label="Conditional" value={formatGbp(totals.conditional)} />
             <Stat label="Initiatives · without a TOM" value={`${totals.included} · ${totals.untraced}`} />
           </div>
@@ -425,10 +442,11 @@ const PromptSummary: React.FC<{ read: PromptReading; form: TenderForm; onEdit: (
   );
 };
 
-const Stat: React.FC<{ label: string; value: string; strong?: boolean }> = ({ label, value, strong }) => (
+const Stat: React.FC<{ label: string; value: string; note?: string; strong?: boolean }> = ({ label, value, note, strong }) => (
   <div className="stat">
     <span className="stat-label">{label}</span>
     <span className={`stat-value${strong ? ' is-strong' : ''}`}>{value}</span>
+    {note && <span className="stat-note">{note}</span>}
   </div>
 );
 
