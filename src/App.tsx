@@ -264,7 +264,14 @@ const AppContent: React.FC = () => {
             }}
           />
         )}
-        {activeTab === 'generator' && <InitiativeGenerator />}
+        {activeTab === 'generator' && (
+          <InitiativeGenerator
+            onSendToBidStudio={(promptText) => {
+              setCurrentPrompt(promptText);
+              setActiveTab('prompt');
+            }}
+          />
+        )}
         {activeTab === 'tuner' && <Tuner />}
         {activeTab === 'toms' && (
           <TomsCatalog
