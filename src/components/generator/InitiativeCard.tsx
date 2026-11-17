@@ -109,7 +109,8 @@ export const InitiativeCard: React.FC<CardProps> = ({ index, initiative: ini, fo
               <ul className="gen-list">
                 {ini.done_before.map((d) => (
                   <li key={d.id}>
-                    <strong>{d.name}</strong> on the {d.contract}
+                    <strong>{d.name}</strong>
+                    {d.contract ? ` on the ${d.contract}` : ''}
                     {d.volume && d.volume !== '—' ? ` · ${d.volume}` : ''} · MAC {d.mac}
                     {d.measures.length ? ` · ${d.measures.join(', ')}` : ''}
                   </li>

@@ -45,6 +45,8 @@ export interface LocalMacRow {
   code: string;
   framework_version: string;
   mac: string;
+  /** "Direct" or "Supporting". Older maps have no column; those rows count as direct. */
+  strength?: string;
   serves: string;
   note: string;
 }
@@ -59,6 +61,8 @@ export interface LocalDocument {
 
 export interface LocalKnowledge {
   connected: true;
+  /** Which source answered: the folder on this computer, or the backend the team shares. */
+  origin?: 'local' | 'backend';
   folder: string;
   loaded_at: string;
   sources: { file: string; modified: string; used_for: string }[];

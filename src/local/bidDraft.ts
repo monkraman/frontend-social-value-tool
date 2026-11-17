@@ -97,10 +97,10 @@ export function bidDraft(ini: Initiative, form: TenderForm, client = ''): BidDra
   });
 
   if (ini.done_before?.length) {
-    const contracts = [...new Set(ini.done_before.map((d) => d.contract))].join(' and ');
+    const contracts = [...new Set(ini.done_before.map((d) => d.contract).filter(Boolean))].join(' and ');
     sections.push({
       heading: 'Track record',
-      paragraphs: [`Infosys has already committed similar work on the ${contracts}:`],
+      paragraphs: [contracts ? `Infosys has already committed similar work on the ${contracts}:` : 'Infosys has already committed similar work:'],
       bullets: ini.done_before.map((d) => {
         const volume = d.volume.split(';')[0].replace(/\(.*?\)/g, '').trim();
         return /\d/.test(volume) ? `${d.name}: ${volume}.` : `${d.name}.`;

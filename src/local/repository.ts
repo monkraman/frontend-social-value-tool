@@ -1,5 +1,8 @@
-// Client for the local reference repository served by the dev server (local-repository/plugin.ts).
-// Only reachable when the tool runs on the computer that holds the reference folder.
+// Where the generator's knowledge comes from. Two sources, same shape:
+//   1. the reference folder on this computer, served by the dev server (local-repository/plugin.ts);
+//   2. the backend, which is what the team uses — the dev-server plugin cannot run in a build.
+// The folder wins when it is there, so local edits to the workbooks show up without a deploy.
+import { API_BASE_URL, apiFetch, getAuthHeaders } from '../api/client';
 import type { EvidenceHit, LocalKnowledge } from './types';
 
 const BASE = '/__local';
@@ -7,6 +10,7 @@ const BASE = '/__local';
 export type KnowledgeState = LocalKnowledge | { connected: false; reason: string };
 
 const NOT_LOCAL = 'The reference folder is only available when the tool runs on your own computer (npm run dev).';
+const NO_BACKEND = 'Sign in to load the measures, criteria and track record from the backend.';
 
 async function json<T>(res: Response): Promise<T> {
   const type = res.headers.get('content-type') ?? '';
@@ -18,7 +22,19 @@ async function json<T>(res: Response): Promise<T> {
 
 export async function fetchKnowledge(refresh = false): Promise<KnowledgeState> {
   try {
-    return await json<KnowledgeState>(await fetch(`${BASE}/knowledge${refresh ? '?refresh=1' : ''}`));
+    const local = await json<LocalKnowledge>(await fetch(`${BASE}/knowledge${refresh ? '?refresh=1' : ''}`));
+    return { ...local, origin: 'local' };
+  } catch {
+    return fetchBackendKnowledge();
+  }
+}
+
+/** The same tables, served by the backend so a deployed build works for everyone. */
+async function fetchBackendKnowledge(): Promise<KnowledgeState> {
+  try {
+    const res = await apiFetch(`${API_BASE_URL}/generator/knowledge`, { headers: getAuthHeaders() });
+    if (res.status === 401 || res.status === 403) return { connected: false, reason: NO_BACKEND };
+    return { ...(await json<LocalKnowledge>(res)), origin: 'backend' };
   } catch (e) {
     return { connected: false, reason: (e as Error).message || NOT_LOCAL };
   }

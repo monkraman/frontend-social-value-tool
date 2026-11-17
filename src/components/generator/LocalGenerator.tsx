@@ -173,14 +173,18 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
     return (
       <section className="card">
         <div className="card-body">
-          <h2 className="section-title">Reference folder not connected</h2>
+          <h2 className="section-title">Measures and criteria could not be loaded</h2>
           <p className="body-text">{knowledge.reason}</p>
-          <p className="body-text">
-            The local library reads your pattern library, TOM measures and past responses straight from a folder on your computer. To connect it, add this line to a file
-            named <code>.env.local</code> in the project folder, then restart <code>npm run dev</code>:
-          </p>
-          <pre className="gen-code">SV_LOCAL_REPOSITORY=C:\path\to\your reference folder</pre>
-          <p className="muted">The documents stay in that folder. They are not copied into the tool, the build or the backend.</p>
+          {import.meta.env.DEV && (
+            <>
+              <p className="body-text">
+                To read them from a folder on this computer instead of the backend, add this line to a file named <code>.env.local</code> in the project folder, then
+                restart <code>npm run dev</code>:
+              </p>
+              <pre className="gen-code">SV_LOCAL_REPOSITORY=C:\path\to\your reference folder</pre>
+              <p className="muted">Documents in that folder stay there. They are not copied into the tool, the build or the backend.</p>
+            </>
+          )}
         </div>
       </section>
     );
@@ -195,12 +199,12 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
       <div className="gen-repo" role="status">
         <FolderOpen size={15} />
         <span>
-          <strong>{knowledge.folder}</strong> on this computer · {knowledge.patterns.length} patterns · {knowledge.measures.length} TOM measures
-          {proxyYear ? ` (${proxyYear} proxies)` : ''} · {knowledge.track_record.length} past Infosys initiatives · {knowledge.documents.length} documents. Nothing is
-          uploaded.
+          <strong>{knowledge.folder}</strong> {knowledge.origin === 'backend' ? 'on the backend' : 'on this computer'} · {knowledge.measures.length} TOM measures
+          {proxyYear ? ` (${proxyYear} proxies)` : ''} · {knowledge.measure_mac.length} criteria links · {knowledge.track_record.length} past Infosys initiatives ·{' '}
+          {knowledge.documents.length} documents.{knowledge.origin === 'backend' ? ' Shared with your team.' : ' Nothing is uploaded.'}
         </span>
         <button className="btn-link" onClick={reload} disabled={isRefreshing}>
-          <RefreshCw size={12} className={isRefreshing ? 'spin-icon' : ''} /> Re-read folder
+          <RefreshCw size={12} className={isRefreshing ? 'spin-icon' : ''} /> {knowledge.origin === 'backend' ? 'Reload' : 'Re-read folder'}
         </button>
       </div>
 
