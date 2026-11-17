@@ -24,7 +24,7 @@ const DEFAULT_INITIAL_PROMPT =
 const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('opportunity');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('generator');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [currentPrompt, setCurrentPrompt] = useState<string>(DEFAULT_INITIAL_PROMPT);
   const [promptFeedback, setPromptFeedback] = useState<{
@@ -189,7 +189,7 @@ const AppContent: React.FC = () => {
     setResult(null);
     setRefinementNote(null);
     resetSession();
-    setActiveTab('opportunity');
+    setActiveTab('generator');
   };
 
   // ────────────────────────────────────────────────────────────────────────────

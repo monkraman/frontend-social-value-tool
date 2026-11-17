@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Plus,
-  MessageSquare,
   Sliders,
   Database,
   Search,
@@ -20,7 +19,6 @@ import {
   ArrowUpRight,
   Target,
   Building,
-  Compass,
   ListChecks
 } from 'lucide-react';
 import type { ThemeMode } from '../constants/theme';
@@ -113,14 +111,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const primaryNavItems: Array<{ id: ActiveTab; label: string; icon: React.ReactNode }> = [
     { id: 'generator', label: 'Initiative Generator', icon: <ListChecks size={17} /> },
-    { id: 'opportunity', label: 'Opportunity Finder', icon: <Compass size={17} /> },
     { id: 'toms', label: 'TOMs Catalog', icon: <Target size={17} /> },
     { id: 'partners', label: 'Regional Partners', icon: <Building size={17} /> },
     { id: 'tuner', label: 'Value Tuner', icon: <Sliders size={17} /> }
   ];
 
   const legacyNavItems: Array<{ id: ActiveTab; label: string; icon: React.ReactNode }> = [
-    { id: 'prompt', label: 'Bid Studio', icon: <MessageSquare size={17} /> },
     { id: 'documents', label: 'Repository', icon: <Database size={17} /> },
     { id: 'search', label: 'Evidence Search', icon: <Search size={17} /> }
   ];
@@ -168,7 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="sidebar-section">
         <button
           onClick={() => {
-            onTabChange('opportunity');
+            onTabChange('generator');
             onNewPrompt();
           }}
           className="btn-primary"
