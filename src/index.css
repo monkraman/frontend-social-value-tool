@@ -786,6 +786,69 @@ button {
   font-size: 0.72rem;
   color: var(--text-muted);
 }
+.recent-item.is-active {
+  background-color: var(--color-primary-subtle);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Saved tenders in the history drawer */
+.history-run {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.history-run:hover,
+.history-run.is-active {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-subtle);
+}
+.history-run-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.7rem 0.25rem 0.7rem 0.75rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+.history-run-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+.history-run-head strong {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.history-run-time {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+.history-run-detail {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+.history-run-delete {
+  margin: 0.45rem 0.4rem 0 0;
+  color: var(--text-muted);
+}
+.history-run-delete:hover {
+  color: var(--color-danger, #c62828);
+}
 .sidebar-footer {
   display: flex;
   align-items: center;

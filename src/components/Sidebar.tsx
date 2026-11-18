@@ -16,13 +16,17 @@ import {
   AlertTriangle,
   FileText,
   RefreshCw,
-  ArrowUpRight,
   Target,
   Building,
-  ListChecks
+  ListChecks,
+  Trash2
 } from 'lucide-react';
 import type { ThemeMode } from '../constants/theme';
-import type { PromptHistoryItem, BackendHealthData, AuditLogItem, AuditSummary } from '../types';
+import type { BackendHealthData, AuditLogItem, AuditSummary } from '../types';
+import type { RunSummary } from '../api/generator';
+import { frameworkById } from '../local/frameworks';
+import type { FrameworkId } from '../local/types';
+import { ConfirmationModal } from './ConfirmationModal';
 import { useAuth } from '../context/AuthContext';
 import { fetchAuditLogs, fetchAuditSummary } from '../api/client';
 import { parseApiDate } from '../utils/formatters';
@@ -37,9 +41,13 @@ export interface SidebarProps {
   healthData?: BackendHealthData;
   theme: ThemeMode;
   onToggleTheme: () => void;
-  chatHistory?: PromptHistoryItem[];
-  isLoadingHistory?: boolean;
-  onRestoreChat?: (item: PromptHistoryItem) => void;
+  /** The signed-in user's saved Initiative Generator tenders, newest first. */
+  runs?: RunSummary[];
+  isLoadingRuns?: boolean;
+  /** The saved tender open in the generator, highlighted in the list. */
+  activeRunId?: string | null;
+  onOpenRun?: (id: string) => void;
+  onDeleteRun?: (id: string) => Promise<void>;
   /** On small screens the sidebar is an off-canvas drawer controlled by the app shell. */
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
@@ -59,9 +67,21 @@ function formatRelativeTime(isoStr?: string | null): string {
   return `${days}d ago`;
 }
 
-function truncatePrompt(text: string, max = 42): string {
+function truncateTitle(text: string, max = 34): string {
   if (text.length <= max) return text;
   return text.slice(0, max).trimEnd() + '…';
+}
+
+const millions = (gbp: number) => `£${(gbp / 1_000_000).toLocaleString('en-GB', { maximumFractionDigits: 1 })}m`;
+
+/** One line under a saved tender: framework, region, contract value and value against target. */
+function runDetail(run: RunSummary): string {
+  const parts: string[] = [];
+  if (run.framework) parts.push(frameworkById(run.framework as FrameworkId).short);
+  if (run.region && !run.title.startsWith(run.region)) parts.push(run.region);
+  if (run.contract_value_gbp) parts.push(`${millions(run.contract_value_gbp)} contract`);
+  if (run.value_gbp != null && run.target_gbp) parts.push(`${Math.round((run.value_gbp / run.target_gbp) * 100)}% of target`);
+  return parts.join(' · ');
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -72,9 +92,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   healthData,
   theme,
   onToggleTheme,
-  chatHistory = [],
-  isLoadingHistory = false,
-  onRestoreChat,
+  runs = [],
+  isLoadingRuns = false,
+  activeRunId = null,
+  onOpenRun,
+  onDeleteRun,
   mobileOpen = false,
   onCloseMobile
 }) => {
@@ -131,19 +153,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
       .toUpperCase();
   };
 
-  // All RFP prompts in history
-  const rfpHistory = chatHistory.filter((h) => h.is_rfp_prompt);
-  const sidebarPreviewHistory = rfpHistory.slice(0, 4);
+  const sidebarPreviewRuns = runs.slice(0, 5);
+  const [pendingDelete, setPendingDelete] = useState<RunSummary | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const drawerFilteredHistory = rfpHistory.filter((item) => {
-    if (!historySearchQuery.trim()) return true;
-    const q = historySearchQuery.toLowerCase();
-    return (
-      (item.client_name && item.client_name.toLowerCase().includes(q)) ||
-      (item.location && item.location.toLowerCase().includes(q)) ||
-      (item.raw_prompt && item.raw_prompt.toLowerCase().includes(q))
-    );
+  const drawerFilteredRuns = runs.filter((run) => {
+    const q = historySearchQuery.trim().toLowerCase();
+    if (!q) return true;
+    return [run.title, run.client, run.region, run.framework && frameworkById(run.framework as FrameworkId).short]
+      .some((v) => v && v.toLowerCase().includes(q));
   });
+
+  const openRun = (id: string) => {
+    onOpenRun?.(id);
+    setShowHistoryDrawer(false);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    setIsDeleting(true);
+    try {
+      await onDeleteRun?.(pendingDelete.id);
+    } finally {
+      setIsDeleting(false);
+      setPendingDelete(null);
+    }
+  };
 
   return (
     <>
@@ -197,33 +232,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       <div className="sidebar-recent">
-        {rfpHistory.length > 0 && (
+        {runs.length > 0 && (
           <>
             <div className="sidebar-label">
-              <span>Recent</span>
-              {rfpHistory.length > sidebarPreviewHistory.length && (
-                <button onClick={() => setShowHistoryDrawer(true)} className="btn-link">
-                  View all
-                </button>
-              )}
+              <span>Recent tenders</span>
+              <button onClick={() => setShowHistoryDrawer(true)} className="btn-link">
+                {runs.length > sidebarPreviewRuns.length ? 'View all' : 'Manage'}
+              </button>
             </div>
-            {sidebarPreviewHistory.map((item) => (
+            {sidebarPreviewRuns.map((run) => (
               <button
-                key={item.id}
-                onClick={() => {
-                  onRestoreChat?.(item);
-                  onTabChange('prompt');
-                }}
-                title={item.raw_prompt}
-                className="recent-item"
+                key={run.id}
+                onClick={() => openRun(run.id)}
+                title={`${run.title} · ${runDetail(run)}`}
+                className={`recent-item${run.id === activeRunId ? ' is-active' : ''}`}
+                aria-current={run.id === activeRunId ? 'true' : undefined}
               >
-                <span className="recent-name">{item.client_name || truncatePrompt(item.raw_prompt)}</span>
-                <span className="recent-time">{formatRelativeTime(item.created_at)}</span>
+                <span className="recent-name">{truncateTitle(run.title)}</span>
+                <span className="recent-time">{formatRelativeTime(run.updated_at)}</span>
               </button>
             ))}
           </>
         )}
-        {isLoadingHistory && rfpHistory.length === 0 && <div className="sidebar-label">Loading…</div>}
+        {isLoadingRuns && runs.length === 0 && <div className="sidebar-label">Loading…</div>}
+        {!isLoadingRuns && runs.length === 0 && (
+          <div className="sidebar-label">
+            <span>Your saved tenders appear here</span>
+          </div>
+        )}
       </div>
 
       {user && (
@@ -302,10 +338,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Clock size={16} style={{ color: 'var(--color-primary)' }} />
               <div>
                 <h3 style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  Recent bids
+                  Your tenders
                 </h3>
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                  {rfpHistory.length} bid responses, newest first
+                  {runs.length} saved, most recently changed first
                 </span>
               </div>
             </div>
@@ -331,7 +367,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Search size={13} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input
                 type="text"
-                placeholder="Search by client, place or brief…"
+                placeholder="Search by client, region or framework…"
                 value={historySearchQuery}
                 onChange={(e) => setHistorySearchQuery(e.target.value)}
                 style={{
@@ -350,86 +386,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Drawer List */}
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {drawerFilteredHistory.length === 0 ? (
+            {drawerFilteredRuns.length === 0 ? (
               <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                No bids match "{historySearchQuery}"
+                {runs.length === 0 ? 'No saved tenders yet. Generate initiatives and they are saved here.' : `No tenders match "${historySearchQuery}"`}
               </div>
             ) : (
-              drawerFilteredHistory.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => {
-                    onRestoreChat?.(item);
-                    onTabChange('prompt');
-                    setShowHistoryDrawer(false);
-                  }}
-                  style={{
-                    padding: '0.75rem',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border-subtle)',
-                    backgroundColor: 'var(--bg-surface)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.35rem',
-                    transition: 'all 0.15s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-primary)';
-                    (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-primary-subtle)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-subtle)';
-                    (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-surface)';
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <strong style={{ fontSize: '0.82rem', color: 'var(--text-primary)' }}>
-                      {item.client_name || 'Tender Opportunity'}
-                    </strong>
-                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                      {formatRelativeTime(item.created_at)}
+              drawerFilteredRuns.map((run) => (
+                <div key={run.id} className={`history-run${run.id === activeRunId ? ' is-active' : ''}`}>
+                  <button type="button" className="history-run-open" onClick={() => openRun(run.id)}>
+                    <span className="history-run-head">
+                      <strong>{run.title}</strong>
+                      <span className="history-run-time">{formatRelativeTime(run.updated_at)}</span>
                     </span>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.72rem' }}>
-                    {item.location && (
-                      <span style={{ padding: '0.1rem 0.35rem', borderRadius: '3px', backgroundColor: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                        {item.location}
-                      </span>
-                    )}
-                    {item.contract_value_gbp && (
-                      <span style={{ color: 'var(--text-muted)' }}>
-                        £{(item.contract_value_gbp / 1000000).toFixed(1)}M
-                      </span>
-                    )}
-                    {item.weighting_percent && (
-                      <span style={{ color: 'var(--text-muted)' }}>
-                        • {item.weighting_percent}% SV
-                      </span>
-                    )}
-                  </div>
-
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: '0.74rem',
-                      color: 'var(--text-secondary)',
-                      lineHeight: 1.4,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden'
-                    }}
+                    <span className="history-run-detail">{runDetail(run)}</span>
+                    <span className="history-run-detail">
+                      {run.initiative_count} initiative{run.initiative_count === 1 ? '' : 's'}
+                      {run.value_gbp != null ? ` · ${millions(run.value_gbp)} social value` : ''}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-button history-run-delete"
+                    onClick={() => setPendingDelete(run)}
+                    aria-label={`Delete ${run.title} from history`}
+                    title="Delete from history"
                   >
-                    {item.raw_prompt}
-                  </p>
-
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.2rem' }}>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--color-primary-text)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                      Open in Bid Studio <ArrowUpRight size={11} />
-                    </span>
-                  </div>
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               ))
             )}
@@ -437,7 +420,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Drawer Footer */}
           <div style={{ padding: '0.65rem 1rem', borderTop: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-card)', fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>Select a bid to reopen it</span>
+            <span>Only you can see your saved tenders</span>
             <button
               onClick={() => setShowHistoryDrawer(false)}
               className="btn-secondary"
@@ -449,6 +432,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </>
     )}
+
+      <ConfirmationModal
+        isOpen={pendingDelete !== null}
+        title="Delete this saved tender?"
+        message={
+          <>
+            <strong>{pendingDelete?.title}</strong> and its initiatives will be removed from your history. This cannot be undone.
+          </>
+        }
+        confirmText="Delete"
+        variant="danger"
+        isLoading={isDeleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
 
       {/* System Diagnostics Modal */}
       {showDiagnostics && (

@@ -107,3 +107,66 @@ export async function parseTenderPrompt(text: string): Promise<ParsedPrompt> {
   if (!res.ok) throw new Error(await detail(res, `Could not read the prompt (${res.status})`));
   return res.json();
 }
+
+// ── Saved runs: the signed-in user's own Initiative Generator history ─────────────
+
+export interface RunSummary {
+  id: string;
+  title: string;
+  client: string | null;
+  region: string | null;
+  framework: string | null;
+  contract_value_gbp: number | null;
+  target_gbp: number | null;
+  value_gbp: number | null;
+  initiative_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RunInput extends Omit<RunSummary, 'id' | 'created_at' | 'updated_at'> {
+  state: Record<string, unknown>;
+}
+
+export interface RunDetail extends RunSummary {
+  state: Record<string, unknown>;
+}
+
+const RUNS = () => `${API_BASE_URL}/generator/runs`;
+
+export async function listRuns(limit = 50): Promise<RunSummary[]> {
+  const res = await apiFetch(`${RUNS()}?limit=${limit}`, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error(await detail(res, `Could not load history (${res.status})`));
+  return res.json();
+}
+
+export async function getRun(id: string): Promise<RunDetail> {
+  const res = await apiFetch(`${RUNS()}/${encodeURIComponent(id)}`, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error(await detail(res, `Could not open this run (${res.status})`));
+  return res.json();
+}
+
+export async function createRun(run: RunInput): Promise<RunSummary> {
+  const res = await apiFetch(RUNS(), {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(run)
+  });
+  if (!res.ok) throw new Error(await detail(res, `Could not save to history (${res.status})`));
+  return res.json();
+}
+
+export async function updateRun(id: string, run: RunInput): Promise<RunSummary> {
+  const res = await apiFetch(`${RUNS()}/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(run)
+  });
+  if (!res.ok) throw new Error(await detail(res, `Could not save changes (${res.status})`));
+  return res.json();
+}
+
+export async function deleteRun(id: string): Promise<void> {
+  const res = await apiFetch(`${RUNS()}/${encodeURIComponent(id)}`, { method: 'DELETE', headers: getAuthHeaders() });
+  if (!res.ok && res.status !== 404) throw new Error(await detail(res, `Could not delete (${res.status})`));
+}

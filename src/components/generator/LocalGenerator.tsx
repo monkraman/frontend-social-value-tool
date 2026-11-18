@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { LoaderCircle, MessageSquare, RotateCcw, Sliders, Sparkles, Target, Upload, X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
-import { runGenerator } from '../../api/generator';
+import { createRun, getRun, runGenerator, updateRun, type RunInput } from '../../api/generator';
 import { backendRequest, fromBackend, patternsOf } from '../../local/backendAi';
 import { formatGbp } from '../../utils/formatters';
 import { FRAMEWORKS, frameworkById, macLabel } from '../../local/frameworks';
@@ -45,8 +45,56 @@ const applyEdit = (ini: Initiative, e: InitiativeEdit): Initiative => ({
   pattern: { ...ini.pattern, name: e.name.trim(), what: e.what.trim(), who_benefits: e.who_benefits.trim(), delivered_by: e.delivered_by.trim() || 'Infosys' }
 });
 
-/** Initiatives built from the reference folder on this computer. Nothing is sent to the backend. */
-export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => void }> = ({ onSendToBidStudio }) => {
+/** Ask to open a saved run (id) or start a blank tender (null). `nonce` makes a repeat request count. */
+export interface OpenRunRequest {
+  id: string | null;
+  nonce: number;
+}
+
+/** What a saved run holds: the tender as it was generated and the initiatives as the user left them. */
+interface SavedState {
+  version: 1;
+  prompt: string;
+  form: TenderForm;
+  reading: PolicyReading;
+  aiChecks: string[];
+  initiatives: Initiative[];
+}
+
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+const AUTOSAVE_DELAY_MS = 1200;
+
+/** The history entry for a result: its label and headline numbers, plus everything needed to reopen it. */
+function runInput(state: SavedState): RunInput {
+  const totals = totalsOf(state.initiatives, state.form);
+  const f = state.form;
+  const fallback = `${f.region || 'Tender'} · £${(f.contract_value_gbp / 1_000_000).toLocaleString('en-GB', { maximumFractionDigits: 1 })}m`;
+  return {
+    title: f.client.trim() || fallback,
+    client: f.client.trim() || null,
+    region: f.region || null,
+    framework: f.framework,
+    contract_value_gbp: f.contract_value_gbp,
+    target_gbp: totals.target,
+    value_gbp: totals.counted,
+    initiative_count: totals.included,
+    state: state as unknown as Record<string, unknown>
+  };
+}
+
+interface LocalGeneratorProps {
+  onSendToBidStudio?: (text: string) => void;
+  /** Set by the sidebar's history and the New bid button. */
+  openRun?: OpenRunRequest;
+  /** Called after a run is saved or changed, so the history list can refresh. */
+  onRunsChanged?: () => void;
+  /** The saved run now on screen, or null for an unsaved one. */
+  onActiveRunChange?: (id: string | null) => void;
+}
+
+/** The Initiative Generator. Each result is saved to the signed-in user's own history and can be reopened. */
+export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ onSendToBidStudio, openRun, onRunsChanged, onActiveRunChange }) => {
   const toast = useToast();
   const [knowledge, setKnowledge] = useState<KnowledgeState | null>(null);
   const [mode, setMode] = useState<'prompt' | 'form'>('prompt');
@@ -63,6 +111,15 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
   const [isAsking, setIsAsking] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiChecks, setAiChecks] = useState<string[]>([]);
+  /** The prompt as it was when the result on screen was generated. */
+  const [resultPrompt, setResultPrompt] = useState('');
+  const [runId, setRunId] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [openingRun, setOpeningRun] = useState(false);
+  /** JSON of the last state written to history, so unchanged screens are not saved again. */
+  const lastSaved = useRef('');
+  /** The autosave waiting on its timer, if any. */
+  const pendingSave = useRef<(() => void) | null>(null);
 
   const apply = (k: KnowledgeState) => {
     setKnowledge(k);
@@ -109,16 +166,136 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
       const policy: PolicyReading = { buyer: readPolicy(policyText(buyer)), infosys: readPolicy(policyText(infosys)) };
       const result = await runGenerator(backendRequest(tender, knowledge, policy));
       const evidence = await fetchEvidence(patternsOf(result).map((p) => ({ id: p.id, terms: lensFor(p).terms })));
+      const built = withTrackRecord(fromBackend(result, knowledge, tender, evidence), knowledge.track_record);
       setReading(policy);
       setResultForm(tender);
+      setResultPrompt(prompt);
       setAiChecks(result.checks);
-      setInitiatives(withTrackRecord(fromBackend(result, knowledge, tender, evidence), knowledge.track_record));
+      setInitiatives(built);
+      setRunId(null);
+      onActiveRunChange?.(null);
+      await saveNewRun({ version: 1, prompt, form: tender, reading: policy, aiChecks: result.checks, initiatives: built });
     } catch (e) {
       setAiError((e as Error).message);
     } finally {
       setIsAsking(false);
     }
   };
+
+  /** A fresh result goes into history straight away. A failed save never loses the result on screen. */
+  const saveNewRun = async (state: SavedState) => {
+    setSaveStatus('saving');
+    try {
+      const saved = await createRun(runInput(state));
+      lastSaved.current = JSON.stringify(state);
+      setRunId(saved.id);
+      setSaveStatus('saved');
+      onActiveRunChange?.(saved.id);
+      onRunsChanged?.();
+    } catch (e) {
+      setSaveStatus('error');
+      toast.error(`Not saved to history: ${(e as Error).message}`);
+    }
+  };
+
+  // Edits to a saved result (units, lines, wording, partners) are written back shortly after they stop.
+  useEffect(() => {
+    pendingSave.current = null;
+    if (!runId || !initiatives) return;
+    const state: SavedState = { version: 1, prompt: resultPrompt, form: resultForm, reading, aiChecks, initiatives };
+    const json = JSON.stringify(state);
+    if (json === lastSaved.current) return;
+    const save = async () => {
+      pendingSave.current = null;
+      setSaveStatus('saving');
+      try {
+        await updateRun(runId, runInput(state));
+        lastSaved.current = json;
+        setSaveStatus('saved');
+        onRunsChanged?.();
+      } catch {
+        setSaveStatus('error');
+      }
+    };
+    pendingSave.current = save;
+    const timer = window.setTimeout(save, AUTOSAVE_DELAY_MS);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runId, initiatives, resultForm, resultPrompt, reading, aiChecks]);
+
+  // Leaving the screen with an edit still waiting: save it now rather than drop it.
+  useEffect(() => () => pendingSave.current?.(), []);
+
+  /** Back to an empty tender, keeping the region and industry defaults from the tables. */
+  const startBlank = () => {
+    setPrompt('');
+    setPromptRead(null);
+    setOverrides({});
+    setBuyer(EMPTY_POLICY);
+    setInfosys(EMPTY_POLICY);
+    setForm({
+      ...INITIAL_FORM,
+      region: knowledge?.connected ? knowledge.regions[0]?.region || '' : '',
+      industry:
+        knowledge?.connected && !knowledge.industries.some((i) => i.industry === DEFAULT_INDUSTRY)
+          ? knowledge.industries[0]?.industry || ''
+          : DEFAULT_INDUSTRY
+    });
+    setInitiatives(null);
+    setReading({ buyer: [], infosys: [] });
+    setResultForm(INITIAL_FORM);
+    setResultPrompt('');
+    setAiChecks([]);
+    setAiError(null);
+    setRunId(null);
+    setSaveStatus('idle');
+    lastSaved.current = '';
+    onActiveRunChange?.(null);
+  };
+
+  /** Put a saved run back on screen exactly as it was left. */
+  const restoreRun = async (id: string) => {
+    if (!knowledge?.connected) return;
+    setOpeningRun(true);
+    setAiError(null);
+    try {
+      const run = await getRun(id);
+      const state = run.state as unknown as SavedState;
+      if (!state || state.version !== 1 || !Array.isArray(state.initiatives)) {
+        throw new Error('This saved tender is in a format this version cannot open.');
+      }
+      const fw = frameworkById(state.form.framework);
+      lastSaved.current = JSON.stringify(state);
+      setPrompt(state.prompt);
+      setPromptRead(state.prompt.trim() ? readPrompt(state.prompt, knowledge.regions.map((r) => r.region), state.form.framework) : null);
+      setOverrides(Object.fromEntries(fw.criteria.map((c) => [c.code, state.form.criteria.includes(c.code)])));
+      setForm(state.form);
+      setBuyer(EMPTY_POLICY);
+      setInfosys(EMPTY_POLICY);
+      setResultForm(state.form);
+      setResultPrompt(state.prompt);
+      setReading(state.reading ?? { buyer: [], infosys: [] });
+      setAiChecks(state.aiChecks ?? []);
+      setInitiatives(state.initiatives);
+      setRunId(run.id);
+      setSaveStatus('saved');
+      onActiveRunChange?.(run.id);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setOpeningRun(false);
+    }
+  };
+
+  // The sidebar asks for a saved run (or a blank tender) through `openRun`; act once the tables are loaded.
+  const handledOpen = useRef<number | null>(null);
+  useEffect(() => {
+    if (!openRun || !knowledge?.connected || handledOpen.current === openRun.nonce) return;
+    handledOpen.current = openRun.nonce;
+    if (openRun.id) restoreRun(openRun.id);
+    else startBlank();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openRun, knowledge]);
 
   const update = (id: string, change: (ini: Initiative) => Initiative) => setInitiatives((list) => list?.map((i) => (i.id === id ? change(i) : i)) ?? null);
 
@@ -329,7 +506,8 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
 
         <div className="card-footer gen-actions">
           <span className="muted">
-            Sends the contract value, target %, duration, region and the selected criteria. The client name, your documents and any policy text are not sent.
+            Sends the contract value, target %, duration, region and the selected criteria to the AI. The client name, your documents and any policy text are not
+            sent to the AI. Each result is saved to your history, which only you can see.
           </span>
           <button className="btn-primary" onClick={handleAskAi} disabled={isAsking || !form.region || !(form.contract_value_gbp > 0)}>
             {isAsking ? <LoaderCircle size={16} className="spin-icon" /> : <Sparkles size={16} />}
@@ -344,8 +522,15 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
         </div>
       )}
 
-      {initiatives && totals && !isAsking && (
+      {openingRun && (
+        <p className="muted">
+          <LoaderCircle size={14} className="spin-icon" /> Opening saved tender…
+        </p>
+      )}
+
+      {initiatives && totals && !isAsking && !openingRun && (
         <>
+          <SaveNote status={saveStatus} />
           <div className="stat-row">
             <Stat
               label="Social value target"
@@ -457,6 +642,20 @@ const PromptSummary: React.FC<{ read: PromptReading; form: TenderForm; onEdit: (
     </div>
   );
 };
+
+const SAVE_TEXT: Record<SaveStatus, string> = {
+  idle: '',
+  saving: 'Saving to your history…',
+  saved: 'Saved to your history. Changes save automatically.',
+  error: 'Not saved to history. Your next change will try again.'
+};
+
+const SaveNote: React.FC<{ status: SaveStatus }> = ({ status }) =>
+  status === 'idle' ? null : (
+    <p className={status === 'error' ? 'notice notice-error' : 'muted'} role="status" aria-live="polite">
+      {SAVE_TEXT[status]}
+    </p>
+  );
 
 const Stat: React.FC<{ label: string; value: string; note?: string; strong?: boolean }> = ({ label, value, note, strong }) => (
   <div className="stat">

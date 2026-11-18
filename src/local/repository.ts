@@ -22,7 +22,9 @@ async function json<T>(res: Response): Promise<T> {
 
 export async function fetchKnowledge(refresh = false): Promise<KnowledgeState> {
   try {
-    const local = await json<LocalKnowledge>(await fetch(`${BASE}/knowledge${refresh ? '?refresh=1' : ''}`));
+    const local = await json<KnowledgeState>(await fetch(`${BASE}/knowledge${refresh ? '?refresh=1' : ''}`));
+    // The dev server answers "not connected" when no folder is configured: use the backend then.
+    if (!local.connected) return fetchBackendKnowledge();
     return { ...local, origin: 'local' };
   } catch {
     return fetchBackendKnowledge();
@@ -47,7 +49,8 @@ export async function fetchEvidence(queries: { id: string; terms: string[] }[]):
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ queries, kinds: ['past-response', 'contract'] })
     });
-    return (await json<{ results: Record<string, EvidenceHit[]> }>(res)).results;
+    // No reference folder configured: the dev server answers without results.
+    return (await json<{ results?: Record<string, EvidenceHit[]> }>(res)).results ?? {};
   } catch {
     return {};
   }

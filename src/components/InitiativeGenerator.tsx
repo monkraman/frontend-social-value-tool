@@ -1,10 +1,17 @@
 import React from 'react';
 import { PageHeader } from './PageHeader';
-import { LocalGenerator } from './generator/LocalGenerator';
+import { LocalGenerator, type OpenRunRequest } from './generator/LocalGenerator';
 
-export const InitiativeGenerator: React.FC<{ onSendToBidStudio?: (text: string) => void }> = ({ onSendToBidStudio }) => (
+interface InitiativeGeneratorProps {
+  onSendToBidStudio?: (text: string) => void;
+  openRun?: OpenRunRequest;
+  onRunsChanged?: () => void;
+  onActiveRunChange?: (id: string | null) => void;
+}
+
+export const InitiativeGenerator: React.FC<InitiativeGeneratorProps> = (props) => (
   <div className="page">
     <PageHeader title="Initiative Generator" />
-    <LocalGenerator onSendToBidStudio={onSendToBidStudio} />
+    <LocalGenerator {...props} />
   </div>
 );

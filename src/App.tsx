@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { Menu } from 'lucide-react';
 import { Sidebar, type ActiveTab } from './components/Sidebar';
 import { PromptStudio } from './components/PromptStudio';
@@ -16,7 +16,10 @@ import { useBackendHealth } from './hooks/useBackendHealth';
 import { useOpportunityGenerator } from './hooks/useOpportunityGenerator';
 import { useTheme } from './hooks/useTheme';
 import { useChatHistory } from './hooks/useChatHistory';
-import type { PromptHistoryItem, ResponseGenerationResult } from './types';
+import { deleteRun, listRuns, type RunSummary } from './api/generator';
+import type { OpenRunRequest } from './components/generator/LocalGenerator';
+import { useToast } from './context/ToastContext';
+import type { ResponseGenerationResult } from './types';
 
 const DEFAULT_INITIAL_PROMPT =
   'I need to build a Social Value bid response, for a 3-year contract of £10M with 10% Social Value weighting. The client Birmingham City Council in Birmingham wants the Social Value offer to address digital inclusion and youth employment. Based on: previous responses that have scored highly, what Infosys have delivered so far, approved partnerships in our repository, recognised frameworks for SVROI (National TOMS) and geographical location - build a template of initiatives we can present to the client that would achieve 10% SV, and the impact we can expect to deliver.';
@@ -48,18 +51,56 @@ const AppContent: React.FC = () => {
   } = useOpportunityGenerator();
 
   const {
-    history,
-    isLoadingHistory,
     isRefining,
     refineError,
     loadHistory,
     refine,
     initThread,
     resetSession,
-    setSessionFromHistory,
     threadLength,
     syncThreadLength
   } = useChatHistory();
+
+  // ── Initiative Generator history: the signed-in user's own saved tenders ──
+  const toast = useToast();
+  const [runs, setRuns] = useState<RunSummary[]>([]);
+  const [isLoadingRuns, setIsLoadingRuns] = useState(false);
+  const [openRun, setOpenRun] = useState<OpenRunRequest | undefined>(undefined);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
+
+  const refreshRuns = useCallback(async () => {
+    setIsLoadingRuns(true);
+    try {
+      setRuns(await listRuns(50));
+    } catch (e) {
+      console.error('Failed to load history:', e);
+    } finally {
+      setIsLoadingRuns(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) refreshRuns();
+    else setRuns([]);
+  }, [isAuthenticated, refreshRuns]);
+
+  const handleOpenRun = (id: string) => {
+    setActiveTab('generator');
+    setMobileNavOpen(false);
+    setOpenRun({ id, nonce: Date.now() });
+  };
+
+  const handleDeleteRun = async (id: string) => {
+    try {
+      await deleteRun(id);
+      if (id === activeRunId) setOpenRun({ id: null, nonce: Date.now() });
+      toast.success('Removed from your history');
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      refreshRuns();
+    }
+  };
 
   // Ref so async callbacks always see latest prompt text
   const currentPromptRef = useRef<string>(DEFAULT_INITIAL_PROMPT);
@@ -160,28 +201,7 @@ const AppContent: React.FC = () => {
   };
 
   // ────────────────────────────────────────────────────────────────────────────
-  // Restore a past chat from sidebar history
-  // ────────────────────────────────────────────────────────────────────────────
-  const handleRestoreChat = async (item: PromptHistoryItem) => {
-    setCurrentPrompt(item.raw_prompt);
-    setPromptFeedback(null);
-    setRefinementNote(null);
-
-    const restoredResult = item.full_result as ResponseGenerationResult | undefined;
-
-    if (restoredResult) {
-      setResult(restoredResult);
-      // Seed thread from the restored result so further refinements are contextual
-      setSessionFromHistory(item.id, item.raw_prompt, restoredResult);
-    } else if (item.is_rfp_prompt) {
-      // No stored result — re-run
-      setSessionFromHistory(item.id);
-      await handleSendPrompt(item.raw_prompt);
-    }
-  };
-
-  // ────────────────────────────────────────────────────────────────────────────
-  // New prompt / reset
+  // New bid: a blank Initiative Generator
   // ────────────────────────────────────────────────────────────────────────────
   const handleReset = () => {
     setCurrentPrompt('');
@@ -190,12 +210,15 @@ const AppContent: React.FC = () => {
     setRefinementNote(null);
     resetSession();
     setActiveTab('generator');
+    setOpenRun({ id: null, nonce: Date.now() });
   };
 
   // ────────────────────────────────────────────────────────────────────────────
   // Render
   // ────────────────────────────────────────────────────────────────────────────
   const goToTab = (tab: ActiveTab) => {
+    // The generator unmounts on other tabs; coming back reopens the tender that was on screen.
+    if (tab === 'generator' && activeTab !== 'generator' && activeRunId) setOpenRun({ id: activeRunId, nonce: Date.now() });
     setActiveTab(tab);
     setMobileNavOpen(false);
   };
@@ -212,9 +235,11 @@ const AppContent: React.FC = () => {
         healthData={healthData}
         theme={theme}
         onToggleTheme={toggleTheme}
-        chatHistory={history}
-        isLoadingHistory={isLoadingHistory}
-        onRestoreChat={handleRestoreChat}
+        runs={runs}
+        isLoadingRuns={isLoadingRuns}
+        activeRunId={activeTab === 'generator' ? activeRunId : null}
+        onOpenRun={handleOpenRun}
+        onDeleteRun={handleDeleteRun}
       />
 
       <div className="app-body">
@@ -270,6 +295,9 @@ const AppContent: React.FC = () => {
               setCurrentPrompt(promptText);
               setActiveTab('prompt');
             }}
+            openRun={openRun}
+            onRunsChanged={refreshRuns}
+            onActiveRunChange={setActiveRunId}
           />
         )}
         {activeTab === 'tuner' && <Tuner />}
