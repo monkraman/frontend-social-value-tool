@@ -62,10 +62,16 @@ export const InitiativeCard: React.FC<CardProps> = ({
   const source = p.origin === 'library' ? 'From your pattern library' : p.origin === 'ai' ? 'Proposed by the backend AI' : 'Built-in suggestion';
 
   return (
-    <section className="card gen-card">
+    <section className={`card gen-card${ini.included ? '' : ' is-excluded'}`}>
       <div className="card-toolbar">
         <label className="gen-include">
-          <input type="checkbox" checked={ini.included} onChange={(e) => onInclude(e.target.checked)} aria-label={`Include ${p.name}`} />
+          <input
+            type="checkbox"
+            checked={ini.included}
+            onChange={(e) => onInclude(e.target.checked)}
+            aria-label={`Include ${p.name} in the package`}
+            title={ini.included ? 'Untick to leave this out of the package' : 'Tick to add this back to the package'}
+          />
           <h2 className="section-title">
             {index}. {p.name}
           </h2>
@@ -77,7 +83,12 @@ export const InitiativeCard: React.FC<CardProps> = ({
         </div>
       </div>
 
-      {editing ? (
+      {/* Left out of the package: kept on screen, folded, so it can be ticked back in. */}
+      {!ini.included ? (
+        <div className="card-body gen-excluded">
+          <p className="gen-meta">Not in the package. Its value is not counted in the totals. Tick the box to add it back.</p>
+        </div>
+      ) : editing ? (
         <EditForm
           initiative={ini}
           wording={paragraph}
@@ -169,7 +180,7 @@ export const InitiativeCard: React.FC<CardProps> = ({
         </div>
       )}
 
-      {!editing && (
+      {ini.included && !editing && (
         <>
           <details className="gen-more">
             <summary>Draft wording</summary>

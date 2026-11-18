@@ -348,8 +348,6 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
     );
   }
 
-  const included = initiatives?.filter((i) => i.included) ?? [];
-
   return (
     <div className="gen-scope">
       <section className="card">
@@ -590,7 +588,8 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
             </ul>
           )}
 
-          {included.map((ini, i) => (
+          {/* Every initiative stays on screen; an unticked one is left out of the totals, not removed. */}
+          {(initiatives ?? []).map((ini, i) => (
             <InitiativeCard
               key={ini.id}
               index={i + 1}
