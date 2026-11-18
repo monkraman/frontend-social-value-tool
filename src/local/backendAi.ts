@@ -2,11 +2,12 @@
 // Only tender facts and labels are sent. The client name, the documents in the reference folder
 // and any policy text never leave this computer.
 import type { GeneratedInitiative, GeneratorForm, GeneratorResult } from '../api/generator';
-import { exclusiveGroupOf, localisedProxy, questionsFor } from './engine';
-import { frameworkById, macLabel } from './frameworks';
+import { exclusiveGroupOf, initiativeConditional, initiativeValue, localisedProxy, questionsFor } from './engine';
 import { lensFor } from './infosysLens';
+import { doneBefore } from './trackRecord';
+import { frameworkById, macLabel } from './frameworks';
 import { macsForMeasure, unscoredReason } from './measureMac';
-import type { EvidenceHit, Initiative, InitiativeLine, LineStatus, LocalKnowledge, Pattern, PolicyReading, TenderForm } from './types';
+import type { EvidenceHit, Initiative, InitiativeLine, LineStatus, LocalKnowledge, Pattern, PastInitiative, PolicyReading, TenderForm } from './types';
 
 const BRIEF_LIMIT = 5000;
 
@@ -41,6 +42,7 @@ export function backendRequest(form: TenderForm, knowledge: LocalKnowledge, poli
     sv_percent: form.sv_percent,
     region: form.region,
     duration_years: form.duration_years,
+    industry: form.industry || undefined,
     framework: form.framework,
     themes: relevant.length ? relevant : all,
     brief: buildBrief(form, policy)
@@ -52,8 +54,10 @@ const STATUS: Record<string, LineStatus> = { Counted: 'Counted', Conditional: 'C
 function toLines(g: GeneratedInitiative, knowledge: LocalKnowledge, form: TenderForm): InitiativeLine[] {
   const lines = g.lines.map((l, i): InitiativeLine => {
     const m = knowledge.measures.find((x) => x.code === l.measure);
+    // The backend's proxy is the one source of value: the browser multiplies it by the units only.
+    // The local calculation is kept only for its wording of the basis; it uses the same tables.
     const local = m ? localisedProxy(m, knowledge, form) : null;
-    const proxy = local?.proxy ?? l.proxy_gbp;
+    const proxy = l.proxy_gbp;
     const factors = [{ label: 'Units', value: l.units ?? 0, min: 0, max: exclusiveGroupOf(l.measure) === 'spend' ? form.contract_value_gbp : 1_000_000_000, step: 1 }];
     return {
       code: l.measure,
@@ -101,13 +105,35 @@ export function patternsOf(result: GeneratorResult): Pattern[] {
   }));
 }
 
-/** The AI's initiatives as local ones: valued from the local tables, with MAC links and the Infosys lens. */
-export function fromBackend(result: GeneratorResult, knowledge: LocalKnowledge, form: TenderForm, evidence: Record<string, EvidenceHit[]>): Initiative[] {
+/** A citation the backend kept, with the details the track record holds for it. */
+function citation(c: GeneratedInitiative['done_before'][number], knowledge: LocalKnowledge): PastInitiative {
+  const past = knowledge.track_record.find((p) => p.id === c.id);
+  return {
+    id: c.id,
+    name: past?.name ?? c.name ?? c.id,
+    what: past?.what ?? c.what ?? '',
+    volume: past?.volume ?? '',
+    mac: past?.mac ?? String(c.mac ?? '').replace(/^MAC\s*/i, ''),
+    pillar: past?.pillar ?? '',
+    delivered_by: past?.delivered_by ?? '',
+    measures: c.measures.length ? c.measures : (past?.measures ?? []),
+    contract: past?.contract ?? '',
+    why: c.why || undefined
+  };
+}
+
+const backendEvidence = (g: GeneratedInitiative): EvidenceHit[] =>
+  (g.evidence ?? []).map((e) => ({ file: e.document_id, name: e.filename, kind: e.kind, hits: 1, snippet: e.snippet, similarity: e.similarity }));
+
+/** The AI's initiatives as the screen shows them: values, criteria, citations and fit exactly as the backend checked them. */
+export function fromBackend(result: GeneratorResult, knowledge: LocalKnowledge, form: TenderForm, localEvidence: Record<string, EvidenceHit[]> = {}): Initiative[] {
   const cohorts = frameworkById(form.framework).cohorts;
   return patternsOf(result).map((pattern, i) => {
     const g = result.initiatives[i];
-    const lens = lensFor(pattern);
     const lines = toLines(g, knowledge, form);
+    const lens = lensFor(pattern);
+    const fromRepository = backendEvidence(g);
+    const cited = (g.done_before ?? []).map((c) => citation(c, knowledge));
     const ini: Initiative = {
       id: pattern.id,
       pattern,
@@ -115,18 +141,39 @@ export function fromBackend(result: GeneratorResult, knowledge: LocalKnowledge, 
       score: 1000 - i,
       lines,
       direct_macs: [],
-      fit: lens.fit,
-      fit_reason: lens.reason,
-      evidence: evidence[pattern.id] ?? [],
+      // The curated rating when the AI tagged a known type; otherwise the same rule-based rating as before.
+      fit: g.type?.fit ?? lens.fit,
+      fit_reason: g.type?.reason ?? lens.reason,
+      // The repository's passages when there are any; the local reference folder is a dev-only extra.
+      evidence: fromRepository.length ? fromRepository : (localEvidence[pattern.id] ?? []),
+      done_before: [],
       policy_topics: [],
       in_infosys_policy: [],
-      untraced_reason: lines.some((l) => l.proxy_gbp != null) ? null : 'No TOM traced. None of the Open Access measures in your library values this activity.',
+      untraced_reason: lines.some((l) => l.proxy_gbp != null)
+        ? null
+        : g.no_tom_reason || 'No TOM traced. None of the Open Access measures in your library values this activity.',
       questions: [],
       wording: g.bid_paragraph || undefined,
       partner_suggested: g.attribution === 'Partner-led' ? (g.partner || '').trim() || undefined : undefined
     };
+    // Citations the backend checked come first; with none, the same word-matching as before fills in.
+    ini.done_before = cited.length ? cited : doneBefore(ini, knowledge.track_record);
     const own = questionsFor(ini, form, cohorts);
     ini.questions = [...g.questions, ...own.filter((q) => !g.questions.includes(q))];
     return ini;
   });
 }
+
+/** D5: the screen must show the backend's values. Any difference means the two calculations have drifted. */
+export function valueChecks(result: GeneratorResult, initiatives: Initiative[]): string[] {
+  return result.initiatives.flatMap((g, i) => {
+    const ini = initiatives[i];
+    if (!ini) return [];
+    const drift = Math.abs(initiativeValue(ini) - g.value_gbp) + Math.abs(initiativeConditional(ini) - g.conditional_gbp);
+    return drift > 1 ? [`${g.name}: the value on screen differs from the backend's by ${Math.round(drift)} GBP. Report this before using the figures.`] : [];
+  });
+}
+
+/** Words to look for in the local reference folder (dev only), from the curated type the AI tagged. */
+export const searchTerms = (result: GeneratorResult): { id: string; terms: string[] }[] =>
+  patternsOf(result).map((p, i) => ({ id: p.id, terms: result.initiatives[i].type?.terms ?? p.name.split(/\s+/).filter((w) => w.length > 4).slice(0, 4) }));

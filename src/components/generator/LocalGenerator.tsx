@@ -2,16 +2,14 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { LoaderCircle, MessageSquare, RotateCcw, Sliders, Sparkles, Target, Upload, X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { createRun, getRun, runGenerator, updateRun, type RunInput } from '../../api/generator';
-import { backendRequest, fromBackend, patternsOf } from '../../local/backendAi';
+import { backendRequest, fromBackend, searchTerms, valueChecks } from '../../local/backendAi';
 import { formatGbp } from '../../utils/formatters';
 import { FRAMEWORKS, frameworkById, macLabel } from '../../local/frameworks';
-import { lensFor } from '../../local/infosysLens';
 import { readPolicy } from '../../local/policy';
 import { extractFileText, fetchDocumentText, fetchEvidence, fetchKnowledge, type KnowledgeState } from '../../local/repository';
 import { DEFAULT_INDUSTRY, checksOf, fitToTarget, resetUnits, setFactor, targetOf, toggleLine, totalsOf, unitsChanged } from '../../local/engine';
 import type { FrameworkId, Initiative, KnownPartner, LocalDocument, PolicyReading, PolicyTopic, TenderForm } from '../../local/types';
 import { PROMPT_EXAMPLES, readPrompt, type PromptReading } from '../../local/promptParse';
-import { withTrackRecord } from '../../local/trackRecord';
 import { InitiativeCard, type InitiativeEdit } from './InitiativeCard';
 
 const INITIAL_FORM: TenderForm = {
@@ -164,16 +162,18 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
     try {
       const policy: PolicyReading = { buyer: readPolicy(policyText(buyer)), infosys: readPolicy(policyText(infosys)) };
       const result = await runGenerator(backendRequest(tender, knowledge, policy));
-      const evidence = await fetchEvidence(patternsOf(result).map((p) => ({ id: p.id, terms: lensFor(p).terms })));
-      const built = withTrackRecord(fromBackend(result, knowledge, tender, evidence), knowledge.track_record);
+      // Past-response passages come with the result from the backend; the local folder is a dev-only extra.
+      const localEvidence = knowledge.origin === 'local' ? await fetchEvidence(searchTerms(result)) : {};
+      const built = fromBackend(result, knowledge, tender, localEvidence);
+      const checksFromBackend = [...result.checks, ...valueChecks(result, built)];
       setReading(policy);
       setResultForm(tender);
       setResultPrompt(prompt);
-      setAiChecks(result.checks);
+      setAiChecks(checksFromBackend);
       setInitiatives(built);
       setRunId(null);
       onActiveRunChange?.(null);
-      await saveNewRun({ version: 1, prompt, form: tender, reading: policy, aiChecks: result.checks, initiatives: built });
+      await saveNewRun({ version: 1, prompt, form: tender, reading: policy, aiChecks: checksFromBackend, initiatives: built });
     } catch (e) {
       setAiError((e as Error).message);
     } finally {
@@ -488,6 +488,7 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
               value={buyer}
               onChange={setBuyer}
               documents={knowledge.documents}
+              origin={knowledge.origin}
               suggest={['policy', 'request']}
             />
             <PolicyBox
@@ -496,6 +497,7 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
               value={infosys}
               onChange={setInfosys}
               documents={knowledge.documents}
+              origin={knowledge.origin}
               suggest={['policy']}
             />
           </div>
@@ -697,11 +699,13 @@ interface PolicyBoxProps {
   value: PolicyInput;
   onChange: (next: PolicyInput) => void;
   documents: LocalDocument[];
+  /** Where the listed documents live: the local reference folder (dev) or the backend repository. */
+  origin?: 'local' | 'backend';
   suggest: LocalDocument['kind'][];
 }
 
 /** Paste text, add a file from this computer, or pick a document already in the reference folder. */
-const PolicyBox: React.FC<PolicyBoxProps> = ({ title, hint, value, onChange, documents, suggest }) => {
+const PolicyBox: React.FC<PolicyBoxProps> = ({ title, hint, value, onChange, documents, origin, suggest }) => {
   const toast = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -734,7 +738,7 @@ const PolicyBox: React.FC<PolicyBoxProps> = ({ title, hint, value, onChange, doc
         <input
           ref={fileInput}
           type="file"
-          accept=".pdf,.docx,.txt,.md"
+          accept=".pdf,.docx,.xlsx,.txt,.md"
           hidden
           onChange={(e) => {
             const file = e.target.files?.[0];
@@ -746,13 +750,13 @@ const PolicyBox: React.FC<PolicyBoxProps> = ({ title, hint, value, onChange, doc
           className="select-compact"
           value=""
           disabled={busy}
-          aria-label={`${title}: pick from your folder`}
+          aria-label={`${title}: pick a document`}
           onChange={(e) => {
             const path = e.target.value;
-            if (path) add(() => fetchDocumentText(path));
+            if (path) add(() => fetchDocumentText(path, origin));
           }}
         >
-          <option value="">From your folder…</option>
+          <option value="">{origin === 'local' ? 'From your folder…' : 'From the repository…'}</option>
           {sorted.map((d) => (
             <option key={d.path} value={d.path}>
               {d.name}

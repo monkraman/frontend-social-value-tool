@@ -1364,6 +1364,13 @@ button {
   font-size: 0.875rem;
   color: var(--text-secondary);
 }
+.gen-why {
+  display: block;
+  margin-top: 0.15rem;
+}
+.gen-evidence .gen-why {
+  font-style: italic;
+}
 .gen-table td {
   vertical-align: top;
 }

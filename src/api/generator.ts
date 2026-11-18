@@ -22,6 +22,8 @@ export interface GeneratorForm {
   region: string;
   duration_years: number;
   themes: string[];
+  /** The bidder's industry. Localised measures (NT18, NT19) are sized and valued with it. */
+  industry?: string;
   client?: string;
   /** Which framework is being scored. Narrows the criteria map the AI is sent. */
   framework?: string;
@@ -50,12 +52,46 @@ export interface ValuedLine {
   note: string;
 }
 
+/** A past initiative the AI cited, kept by the backend only where it shares a criterion or a measure. */
+export interface BackendCitation {
+  id: string;
+  name: string | null;
+  what: string | null;
+  mac: string | null;
+  measures: string[];
+  why: string;
+}
+
+/** A passage from the document repository that supports an initiative. */
+export interface BackendEvidence {
+  document_id: string;
+  filename: string;
+  kind: string;
+  snippet: string;
+  similarity: number;
+}
+
+/** The curated initiative type the AI tagged; the Infosys-fit rating comes from here. */
+export interface InitiativeType {
+  id: string;
+  name: string;
+  fit: 'Core strength' | 'Deliverable' | 'Needs a partner';
+  reason: string;
+  terms: string[];
+}
+
 export interface GeneratedInitiative {
   name: string;
   theme: string | null;
   description: string | null;
   attribution: 'Infosys' | 'Partner-led';
   partner: string | null;
+  /** Criteria the AI claimed that a proposed measure actually serves (backend-checked). */
+  macs: string[];
+  no_tom_reason: string | null;
+  done_before: BackendCitation[];
+  evidence?: BackendEvidence[];
+  type?: InitiativeType | null;
   lines: ValuedLine[];
   value_gbp: number;
   conditional_gbp: number;
@@ -94,6 +130,22 @@ export async function runGenerator(form: GeneratorForm): Promise<GeneratorResult
     body: JSON.stringify(form)
   });
   if (!res.ok) throw new Error(await detail(res, `Generation failed (${res.status})`));
+  return res.json();
+}
+
+/** Text of a PDF, Word, Excel, TXT or MD file. The backend reads it and keeps nothing. */
+export async function extractDocumentText(file: File): Promise<{ name: string; text: string }> {
+  const body = new FormData();
+  body.append('file', file, file.name);
+  const res = await apiFetch(`${API_BASE_URL}/generator/extract`, { method: 'POST', headers: getAuthHeaders(), body });
+  if (!res.ok) throw new Error(await detail(res, `Could not read ${file.name} (${res.status})`));
+  return res.json();
+}
+
+/** Text of a document already in the repository. */
+export async function repositoryDocumentText(id: string): Promise<{ name: string; text: string }> {
+  const res = await apiFetch(`${API_BASE_URL}/generator/documents/${encodeURIComponent(id)}/text`, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error(await detail(res, `Could not open the document (${res.status})`));
   return res.json();
 }
 

@@ -88,6 +88,8 @@ export interface PastInitiative {
   delivered_by: string;
   measures: string[];
   contract: string;
+  /** Why the AI says this past initiative served the same outcome (backend-checked citations only). */
+  why?: string;
 }
 
 /** A delivery partner Infosys knows, from the capability profile. */
@@ -107,6 +109,8 @@ export interface EvidenceHit {
   kind: string;
   hits: number;
   snippet: string;
+  /** Search similarity (0 to 1) for passages found by the backend. */
+  similarity?: number;
 }
 
 export type FrameworkId = 'PPN0620' | 'PPN002' | 'PPN026';

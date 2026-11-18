@@ -132,6 +132,7 @@ export const InitiativeCard: React.FC<CardProps> = ({
                     {d.contract ? ` on the ${d.contract}` : ''}
                     {d.volume && d.volume !== '—' ? ` · ${d.volume}` : ''} · MAC {d.mac}
                     {d.measures.length ? ` · ${d.measures.join(', ')}` : ''}
+                    {d.why && <span className="gen-meta gen-why">{d.why}</span>}
                   </li>
                 ))}
               </ul>
@@ -139,6 +140,20 @@ export const InitiativeCard: React.FC<CardProps> = ({
               <p className="body-text">Infosys has not committed anything like this before. It would be new.</p>
             )}
           </div>
+
+          {ini.evidence.length > 0 && (
+            <div className="gen-block">
+              <h3 className="gen-label">In past bid documents</h3>
+              <ul className="gen-list gen-evidence">
+                {ini.evidence.map((e) => (
+                  <li key={`${e.file}-${e.snippet.slice(0, 24)}`}>
+                    <strong>{e.name}</strong>
+                    <span className="gen-meta gen-why">“{e.snippet}”</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {ini.untraced_reason && (
             <div className="notice" role="note">

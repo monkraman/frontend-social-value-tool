@@ -3,6 +3,7 @@
 //   2. the backend, which is what the team uses — the dev-server plugin cannot run in a build.
 // The folder wins when it is there, so local edits to the workbooks show up without a deploy.
 import { API_BASE_URL, apiFetch, getAuthHeaders } from '../api/client';
+import { extractDocumentText, repositoryDocumentText } from '../api/generator';
 import type { EvidenceHit, LocalKnowledge } from './types';
 
 const BASE = '/__local';
@@ -62,13 +63,22 @@ export async function fetchEvidence(queries: { id: string; terms: string[] }[]):
   }
 }
 
-/** Text of one document in the reference folder. */
-export async function fetchDocumentText(path: string): Promise<{ name: string; text: string }> {
-  return json(await fetch(`${BASE}/text?path=${encodeURIComponent(path)}`));
+/** Text of one listed document: from the reference folder in dev, otherwise from the backend repository. */
+export async function fetchDocumentText(path: string, origin?: 'local' | 'backend'): Promise<{ name: string; text: string }> {
+  if (origin === 'local' && HAS_LOCAL_FOLDER) return json(await fetch(`${BASE}/text?path=${encodeURIComponent(path)}`));
+  return repositoryDocumentText(path);
 }
 
-/** Text of a file picked from anywhere on this computer. It is read locally and not stored. */
+/** Text of a file picked from this computer. TXT and MD are read in the browser; PDF, Word and Excel by
+ *  the backend, which reads the file and keeps nothing (dev uses the local plugin when it is running). */
 export async function extractFileText(file: File): Promise<{ name: string; text: string }> {
-  if (/\.(txt|md)$/i.test(file.name)) return { name: file.name, text: await file.text() };
-  return json(await fetch(`${BASE}/extract?name=${encodeURIComponent(file.name)}`, { method: 'POST', body: file }));
+  if (/[.](txt|md)$/i.test(file.name)) return { name: file.name, text: await file.text() };
+  if (HAS_LOCAL_FOLDER) {
+    try {
+      return await json(await fetch(`${BASE}/extract?name=${encodeURIComponent(file.name)}`, { method: 'POST', body: file }));
+    } catch {
+      // No local plugin answering: fall through to the backend.
+    }
+  }
+  return extractDocumentText(file);
 }
