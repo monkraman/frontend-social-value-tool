@@ -1,121 +1,42 @@
 # API Integration Specification
 
-This document describes the HTTP endpoints and payloads consumed by the frontend API client in [`src/api/client.ts`](../src/api/client.ts). It is a frontend integration reference, not a substitute for the backend's authoritative API specification.
-
-Confirm endpoint behavior, validation, authentication, and production data sources against the deployed backend before relying on an integration.
+The backend endpoints this frontend calls, grouped by page. The backend's Low-Level Design (`social-value-infoproj/docs/LOW_LEVEL_DESIGN_DOCUMENT_LLD.md`) is the authoritative specification, including request and response shapes for `/generator/run`.
 
 ## Connection details
 
-- **Current base URL:** `http://127.0.0.1:8000`
-- **Configuration:** The URL is hard-coded in `src/api/client.ts`; the frontend does not currently read `VITE_API_URL` or another environment variable.
-- **Content types:** JSON for request and response generation, package calculation, and search; multipart form data for document ingestion.
-- **Cross-origin access:** When frontend and backend origins differ, the backend must allow the frontend origin through its CORS configuration.
+- **Base URL:** resolved in [`src/api/client.ts`](../src/api/client.ts): `/api-proxy` in development (forwarded by Vite), otherwise `VITE_API_URL`, otherwise the Render backend for a deployed site.
+- **Authentication:** every call except `/health`, `/auth/login` and `/auth/status` sends `Authorization: Bearer <JWT>`. A 401 returns the user to the sign-in screen.
+- **Content types:** JSON, except `multipart/form-data` for `/documents/ingest` and `/generator/extract`.
+- **Errors:** the backend returns `{"detail": "<reason>"}`; the frontend shows the reason.
+- **CORS:** when frontend and backend origins differ, the backend's `CORS_ORIGINS` must include the frontend.
 
-## Endpoints used by the frontend
+## Endpoints
 
-### Health check
+| Area | Method and path | Used for |
+| --- | --- | --- |
+| Sign-in | `POST /auth/login`, `GET /auth/me`, `GET /auth/status` | Sign-in and current user |
+| Users | `POST /auth/register` | Creating a user (superadmin) |
+| Initiative Generator | `GET /generator/options`, `GET /generator/knowledge` | Form choices; track record, measures, MAC map, partners, documents |
+| | `POST /generator/parse` | Reading the tender sentence into the form (no AI) |
+| | `POST /generator/extract`, `GET /generator/documents/{id}/text` | Text of an uploaded buyer document, or of a repository document |
+| | `POST /generator/run` | Generating, valuing and checking initiatives; the result includes `model` |
+| | `GET/POST /generator/runs`, `GET/PUT/DELETE /generator/runs/{id}` | Saved runs under "Recent tenders" |
+| AI model | `GET/PUT /admin/ai` | AI model card in diagnostics (superadmin) |
+| Repository | `GET /documents`, `POST /documents/ingest`, `DELETE /documents/{id}`, `POST /documents/{id}/restore`, `GET /documents/{id}/chunks` | Past bid documents |
+| Evidence Search | `POST /search` | Searching past bid passages |
+| TOMs Catalog | `GET/POST /calculations/metrics`, `PUT/DELETE /calculations/metrics/{code}`, `POST /calculations/reset-defaults` | Measure catalogue |
+| Regional Partners | `GET/POST /calculations/partners`, `PUT/DELETE /calculations/partners/{id}` | Partner list |
+| Value Tuner | `GET /calculations/initiatives`, `POST /calculations/package`, `POST /calculations/recommend` | What-if values |
+| Diagnostics | `GET /health`, `GET /audit/logs`, `GET /audit/summary` | System health and audit log |
 
-`GET /health`
+The `/responses/*` calls belong to the earlier prompt-based builder and are not used by the Initiative Generator.
 
-The response is used to report whether the backend is reachable. The frontend accepts any successful HTTP response and does not validate a particular response schema.
+## Local fallback behaviour
 
-### Generate response packages
-
-`POST /responses/generate`
-
-Request body (`OpportunityRequest`):
-
-```json
-{
-  "client": "Example Council",
-  "location": "Example City",
-  "contract_value_gbp": 10000000,
-  "contract_duration_years": 3,
-  "social_value_weighting_percent": 10,
-  "priorities": ["Digital inclusion", "Youth employment"],
-  "top_k": 5
-}
-```
-
-The frontend expects a `ResponseGenerationResult` containing an opportunity summary, `core_package`, `enhanced_package`, `localised_package`, `assumptions`, `validation_required`, and `retrieved_evidence_chunks`. Each package includes initiatives and may include a financial calculation. Refer to [`src/types/index.ts`](../src/types/index.ts) for the current TypeScript model.
-
-The frontend marks a successful HTTP response as non-mock. This flag does not independently verify the provenance, correctness, or approval status of backend data.
-
-### List documents
-
-`GET /documents`
-
-Returns an array of `DocumentItem` values. The frontend uses the document ID, filename, type, creation timestamp, chunk count, and optional metadata.
-
-### Ingest a document
-
-`POST /documents/ingest`
-
-Send `multipart/form-data` with a `file` field containing the selected file. The frontend displays the returned `message` when present. The backend is responsible for file validation, storage, processing, and any ingestion errors.
-
-### Delete a document
-
-`DELETE /documents/{id}`
-
-The frontend treats a successful HTTP status as deletion success. The backend should return a non-success status when it cannot delete the requested document.
-
-### List calculation metrics
-
-`GET /calculations/metrics`
-
-Returns an array of `TOMsMetric` values, including a code, name, theme, unit, unit value in GBP, and description. Values shown by the local fallback are illustrative and must not be treated as an approved rate card.
-
-### Calculate a package
-
-`POST /calculations/package`
-
-Request body:
-
-```json
-{
-  "package_name": "Interactive Custom Model",
-  "contract_value_gbp": 10000000,
-  "duration_years": 3,
-  "target_weighting_percent": 10,
-  "initiatives": [
-    {
-      "initiative_name": "Digital skills workshops",
-      "toms_code": "NT8",
-      "annual_volume": 12
-    }
-  ]
-}
-```
-
-The frontend expects a `PackageCalculation` response. The request field names above reflect the payload sent by the current frontend client.
-
-### Search evidence
-
-`POST /search`
-
-Request body:
-
-```json
-{
-  "query": "digital inclusion initiatives",
-  "top_k": 4
-}
-```
-
-The frontend expects a `SearchResponse` with the query, total result count, and results containing a chunk ID, similarity, content, filename, and document ID.
-
-## Local fallback behavior and limitations
-
-The API client catches request failures, including unsuccessful HTTP responses, and several methods substitute local demonstration data. Specifically:
-
-- Response generation, document listing, metric listing, package calculation, and search have local fallback behavior.
-- Upload can return a simulated success message.
-- Delete reports failure for a non-success HTTP response but treats a network failure as success.
-
-These fallbacks are not backend responses and do not persist document changes. Some fallback records and search results are hard-coded examples. Do not use them as verified evidence, compliance statements, approved partner information, or official TOMs values.
+Some older calls (TOMs Catalog, Value Tuner, Regional Partners) fall back to sample data shipped with the frontend when the backend cannot be reached. That data is illustrative: never present it as evidence, approved partners or official TOM values. The Initiative Generator has no such fallback: if the backend or every AI provider is unavailable, it shows the error.
 
 ## Related documentation
 
 - [Developer quickstart](./DEVELOPER_QUICKSTART.md)
 - [Developer onboarding guide](./DEVELOPER_ONBOARDING_GUIDE.md)
-- [TypeScript API models](../src/types/index.ts)
+- [TypeScript API models](../src/types/index.ts) and [`src/api/generator.ts`](../src/api/generator.ts)

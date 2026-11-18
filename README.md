@@ -1,6 +1,6 @@
-# Social Value RFP Response Builder
+# Infosys Social Value Initiative Generator — Frontend
 
-Frontend for a social value bid-response and planning tool. The application is built with React, TypeScript, and Vite.
+Frontend for the Social Value Initiative Generator: tender entry, AI-proposed initiatives valued with the TOM System, editing, evidence and saved runs. Built with React, TypeScript and Vite. The backend (FastAPI) is the separate `social-value-infoproj` repository; its `docs/` folder holds the High-Level and Low-Level Design documents.
 
 ## Getting started
 
@@ -33,7 +33,13 @@ For complete setup, backend, troubleshooting, and validation instructions, see t
 
 ## Backend and demonstration behavior
 
-The frontend API client currently calls `http://127.0.0.1:8000`. The API base URL is defined in [`src/api/client.ts`](./src/api/client.ts); it is not currently configurable through an environment variable.
+The API base URL is resolved in [`src/api/client.ts`](./src/api/client.ts):
+
+- In development (`npm run dev`), requests go to `/api-proxy`, which Vite forwards to the local backend.
+- In a production build, `VITE_API_URL` is used when set (see `.env.production`).
+- Otherwise a deployed site calls `https://social-value-infoproj.onrender.com`, and a local build calls `http://127.0.0.1:8000`.
+
+Sign-in is required; the JWT is kept in the browser's local storage. AI keys are never held by the frontend: the backend calls the AI providers, and a super-administrator chooses the primary model from the diagnostics panel.
 
 Some API client methods return sample data or simulate successful operations when the backend is unavailable. These responses are intended for local interface development only. Simulated uploads and deletions are not persisted, and sample data must not be represented as verified client evidence or production results. See the [developer quickstart](./docs/DEVELOPER_QUICKSTART.md) and [API integration specification](./docs/API_INTEGRATION_SPEC.md).
 

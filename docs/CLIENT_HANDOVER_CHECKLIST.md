@@ -20,13 +20,17 @@ Use this checklist to record the results of pre-delivery validation. Mark an ite
 - [ ] Confirm that sample fallback data is disabled or clearly identified in the client delivery environment.
 - [ ] Confirm error handling for unavailable services, invalid requests, and backend errors.
 
-The frontend API base URL is currently hard-coded to `http://127.0.0.1:8000` in `src/api/client.ts`. Confirm that this is suitable for the intended environment before handover.
+The production build calls the backend named in `VITE_API_URL` (`.env.production`), falling back to the Render backend; see `src/api/client.ts`. Confirm this points at the intended backend before handover.
 
 ## 3. User interface verification
 
-- [ ] Submit a representative opportunity and verify each response package.
-- [ ] Verify the package-switching, calculation, and export interactions.
-- [ ] Change initiative volumes in the tuner and confirm the displayed calculation.
+- [ ] Run the Initiative Generator for a representative tender and check that every card shows its value, criteria, Infosys fit and the AI model that answered.
+- [ ] Change a quantity under "How much" and confirm the line value and totals update; "Suggested numbers" restores them.
+- [ ] Untick an initiative and confirm it stays on screen, folded, and leaves the total.
+- [ ] Confirm lines marked "Check the quantity" are reviewed before any figure is used in a bid.
+- [ ] Choose a delivery partner, open "Draft bid response" and copy the wording.
+- [ ] Reopen the run from "Recent tenders".
+- [ ] As a super-administrator, open diagnostics and confirm the AI model card shows the expected order.
 - [ ] Test document upload, listing, and deletion with a connected backend.
 - [ ] Run a search and verify the result source and displayed metadata.
 - [ ] Verify theme controls and relevant responsive layouts.
