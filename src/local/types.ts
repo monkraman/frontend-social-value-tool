@@ -72,6 +72,7 @@ export interface LocalKnowledge {
   patterns: Pattern[];
   measure_mac: LocalMacRow[];
   track_record: PastInitiative[];
+  partners?: KnownPartner[];
   documents: LocalDocument[];
   warnings: string[];
 }
@@ -87,6 +88,17 @@ export interface PastInitiative {
   delivered_by: string;
   measures: string[];
   contract: string;
+}
+
+/** A delivery partner Infosys knows, from the capability profile. */
+export interface KnownPartner {
+  name: string;
+  capability: string;
+  /** True where Infosys has actually delivered with them, not just named them in a bid. */
+  worked_with_before: boolean;
+  /** True where they were specific to one past contract and may not be available. */
+  contract_specific: boolean;
+  note: string;
 }
 
 export interface EvidenceHit {
@@ -184,6 +196,10 @@ export interface Initiative {
   done_before?: PastInitiative[];
   /** True once the user has edited the name, description or wording. */
   edited?: boolean;
+  /** A partner the AI proposed. It stays a suggestion — it is not named in the bid until chosen. */
+  partner_suggested?: string;
+  /** What the bid team settled on: a partner's name, or '' for Infosys alone. Undefined until they decide. */
+  partner_choice?: string;
 }
 
 export interface TenderForm {

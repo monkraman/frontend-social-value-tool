@@ -9,7 +9,7 @@ import { lensFor } from '../../local/infosysLens';
 import { readPolicy } from '../../local/policy';
 import { extractFileText, fetchDocumentText, fetchEvidence, fetchKnowledge, type KnowledgeState } from '../../local/repository';
 import { DEFAULT_INDUSTRY, checksOf, fitToTarget, resetUnits, setFactor, targetOf, toggleLine, totalsOf, unitsChanged } from '../../local/engine';
-import type { FrameworkId, Initiative, LocalDocument, PolicyReading, PolicyTopic, TenderForm } from '../../local/types';
+import type { FrameworkId, Initiative, KnownPartner, LocalDocument, PolicyReading, PolicyTopic, TenderForm } from '../../local/types';
 import { PROMPT_EXAMPLES, readPrompt, type PromptReading } from '../../local/promptParse';
 import { withTrackRecord } from '../../local/trackRecord';
 import { InitiativeCard, type InitiativeEdit } from './InitiativeCard';
@@ -124,6 +124,20 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
 
   const totals = useMemo(() => (initiatives ? totalsOf(initiatives, resultForm) : null), [initiatives, resultForm]);
   const changed = useMemo(() => (initiatives ? unitsChanged(initiatives) : false), [initiatives]);
+  // Partners come from the capability profile. Where that is not loaded, fall back to the ones
+  // named on past contracts, so there is always something to choose from.
+  const partners = useMemo<KnownPartner[]>(() => {
+    if (!knowledge?.connected) return [];
+    if (knowledge.partners?.length) return knowledge.partners;
+    const names = new Set<string>();
+    for (const t of knowledge.track_record) {
+      for (const part of t.delivered_by.split(/[/,]| and /)) {
+        const name = part.replace(/\(.*?\)/g, '').trim();
+        if (name && !/^infosys/i.test(name)) names.add(name);
+      }
+    }
+    return [...names].sort().map((name) => ({ name, capability: '', worked_with_before: true, contract_specific: false, note: '' }));
+  }, [knowledge]);
   const checks = useMemo(
     () => (initiatives && knowledge?.connected ? checksOf(initiatives, resultForm, knowledge) : []),
     [initiatives, resultForm, knowledge]
@@ -406,6 +420,8 @@ export const LocalGenerator: React.FC<{ onSendToBidStudio?: (text: string) => vo
                 update(ini.id, (x) => applyEdit(x, e));
                 toast.success('Initiative updated');
               }}
+              onChoosePartner={(choice) => update(ini.id, (x) => ({ ...x, partner_choice: choice }))}
+              partners={partners}
               onCopied={() => toast.success('Copied')}
               onSendToBidStudio={onSendToBidStudio}
             />

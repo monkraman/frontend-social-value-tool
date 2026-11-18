@@ -78,7 +78,10 @@ export function questionsFor(ini: Initiative, form: TenderForm, cohorts?: string
   );
   q.push('Set a timed plan with the first delivery within 6 to 12 months of contract start, and quarterly reporting.');
   if (p.needs) q.push(`Confirm these are in place: ${p.needs.toLowerCase()}.`);
-  if (ini.fit === 'Needs a partner' || /partner|charity|centre/i.test(p.delivered_by)) q.push(`Name the delivery partner (${p.delivered_by}) and confirm they have agreed.`);
+  // Phrased so it stays true whichever partner is picked later: the choice itself lives on the
+  // card, and a question baked in at generation time would go stale the moment it changed.
+  if (ini.partner_suggested || ini.fit === 'Needs a partner')
+    q.push('Confirm the delivery partner has agreed to deliver this, and on what terms.');
   if (p.additionality) q.push(`Additionality: ${p.additionality}`);
   if (ini.evidence.length) q.push('Infosys has offered this before. State the baseline and what is new for this contract, so it is not read as a company-wide programme.');
   if (ini.in_infosys_policy.length) q.push(`Your Infosys policy already covers ${ini.in_infosys_policy.join(', ').toLowerCase()}. Show what this contract adds beyond business as usual.`);
@@ -142,6 +145,21 @@ export function setFactor(ini: Initiative, code: string, index: number, value: n
 export const resetUnits = (ini: Initiative): Initiative => ({ ...ini, lines: ini.lines.map((l) => ({ ...l, factors: l.suggested.map((f) => ({ ...f })) })) });
 
 /** True once any volume differs from what the AI proposed, whether scaled or edited by hand. */
+/** Who the bid may say delivers this.
+ *
+ * A partner the AI proposed has agreed to nothing. Until the bid team picks one, the wording
+ * says a partner is still to be confirmed rather than naming a firm that has never been asked.
+ */
+export function deliveryOf(ini: Initiative): { by: string; partner: string; pending: boolean } {
+  const suggested = (ini.partner_suggested ?? '').trim();
+  if (ini.partner_choice !== undefined) {
+    const chosen = ini.partner_choice.trim();
+    return { by: chosen || 'Infosys', partner: chosen, pending: false };
+  }
+  if (!suggested) return { by: ini.pattern.delivered_by || 'Infosys', partner: '', pending: false };
+  return { by: 'Infosys with a delivery partner, to be confirmed', partner: '', pending: true };
+}
+
 export const unitsChanged = (initiatives: Initiative[]): boolean =>
   initiatives.some((i) => i.lines.some((l) => l.factors.some((f, k) => f.value !== l.suggested[k]?.value)));
 
@@ -206,7 +224,8 @@ export function bidParagraph(ini: Initiative, form: TenderForm): string {
   const parts = [
     [`${p.name}.`, p.what, p.who_benefits ? `This is for ${lower(p.who_benefits)}${form.region ? ` in ${form.region}` : ''}.` : ''].filter(Boolean).join(' '),
     volumes.length ? `Over the ${form.duration_years}-year contract Infosys commits to ${volumes.join('; ')}.` : '',
-    `Delivery is led by ${lower(p.delivered_by)}, with the first activity in the opening 12 months and progress reported to ${form.client || 'the Authority'} every quarter.`,
+    // Not lowercased: this is a partner's name or "Infosys", and both are proper nouns.
+    `Delivery is led by ${deliveryOf(ini).by}, with the first activity in the opening 12 months and progress reported to ${form.client || 'the Authority'} every quarter.`,
     macs.length ? `This evidences ${macs.map((l) => macLabel(l.mac)).join(', ')} of the ${frameworkById(form.framework).short} model.` : ''
   ];
   return parts.filter(Boolean).join(' ');

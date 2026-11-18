@@ -1,7 +1,7 @@
 // A draft bid response for one initiative, laid out like Infosys's past social value responses:
 // method statement, who we prioritise, mobilisation, the commitment, delivery plan, track record, governance, impact.
 import { formatGbp } from '../utils/formatters';
-import { initiativeMacs, isOn, lineValue, unitsOf } from './engine';
+import { deliveryOf, initiativeMacs, isOn, lineValue, unitsOf } from './engine';
 import { frameworkById, macLabel } from './frameworks';
 import { plainMeasure } from './plainLanguage';
 import type { Initiative, TenderForm } from './types';
@@ -42,7 +42,9 @@ export function bidDraft(ini: Initiative, form: TenderForm, client = ''): BidDra
   const p = ini.pattern;
   const years = form.duration_years;
   const counted = ini.lines.filter((l) => isOn(l) && l.proxy_gbp != null && unitsOf(l) > 0);
-  const partner = /infosys|supplier/i.test(p.delivered_by) ? '' : p.delivered_by;
+  // Only a partner the bid team has chosen is named here. An unconfirmed suggestion stays unnamed.
+  const delivery = deliveryOf(ini);
+  const partner = /infosys|supplier/i.test(delivery.partner) ? '' : delivery.partner;
 
   const sections: DraftSection[] = [];
 
@@ -60,7 +62,9 @@ export function bidDraft(ini: Initiative, form: TenderForm, client = ''): BidDra
   sections.push({
     heading: 'Mobilisation',
     paragraphs: [
-      `During mobilisation, Infosys will work with ${partner ? `${partner} and ` : ''}local partners to identify participants, agree baselines and confirm the measures we report against. Activities will be shaped around participants’ needs and barriers, so that content is relevant, accessible and inclusive.`
+      `During mobilisation, Infosys will work with ${partner ? `${partner} and ` : ''}local partners to identify participants, agree baselines and confirm the measures we report against. Activities will be shaped around participants’ needs and barriers, so that content is relevant, accessible and inclusive.${
+        delivery.pending ? ' [Confirm the delivery partner before this goes in a bid.]' : ''
+      }`
     ]
   });
 

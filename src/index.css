@@ -1235,6 +1235,38 @@ button {
   font-variant-numeric: tabular-nums;
   color: var(--text-primary);
 }
+.gen-partner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-strong, var(--border-subtle));
+  background-color: var(--bg-muted);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+.gen-partner.is-set {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  border-style: solid;
+}
+.gen-partner-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  line-height: 1.5;
+}
+.gen-partner-head svg,
+.gen-partner.is-set svg {
+  flex: none;
+  margin-top: 0.15rem;
+  color: var(--text-muted);
+}
+.gen-partner.is-set > span {
+  flex: 1;
+}
 .gen-block {
   display: flex;
   flex-direction: column;

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Check, Copy, FileText, Pencil, RotateCcw, Send, X } from 'lucide-react';
+import { Check, Copy, FileText, Handshake, Pencil, RotateCcw, Send, X } from 'lucide-react';
 import { formatGbp } from '../../utils/formatters';
 import { macLabel } from '../../local/frameworks';
 import { bidDraft, draftText, type BidDraft } from '../../local/bidDraft';
 import { plainMeasure } from '../../local/plainLanguage';
-import { bidParagraph, initiativeConditional, initiativeMacs, initiativeValue, isOn, lineValue, macRating, unitsOf, type MacRating } from '../../local/engine';
-import type { Initiative, InitiativeLine, TenderForm } from '../../local/types';
+import { bidParagraph, deliveryOf, initiativeConditional, initiativeMacs, initiativeValue, isOn, lineValue, macRating, unitsOf, type MacRating } from '../../local/engine';
+import type { Initiative, InitiativeLine, KnownPartner, TenderForm } from '../../local/types';
 
 const RATING_CLASS: Record<MacRating, string> = { Strong: 'pill-strong', Partial: 'pill-partial', 'Not scored': 'pill-none' };
 const FIT_CLASS = { 'Core strength': 'pill-strong', Deliverable: 'pill-partial', 'Needs a partner': 'pill-none' } as const;
@@ -42,14 +42,19 @@ interface CardProps {
   onToggleLine: (code: string) => void;
   onReset: () => void;
   onEdit: (edit: InitiativeEdit) => void;
+  onChoosePartner: (choice: string | undefined) => void;
+  partners: KnownPartner[];
   onCopied: () => void;
   onSendToBidStudio?: (text: string) => void;
 }
 
-export const InitiativeCard: React.FC<CardProps> = ({ index, initiative: ini, form, onInclude, onFactor, onToggleLine, onReset, onEdit, onCopied, onSendToBidStudio }) => {
+export const InitiativeCard: React.FC<CardProps> = ({
+  index, initiative: ini, form, onInclude, onFactor, onToggleLine, onReset, onEdit, onChoosePartner, partners, onCopied, onSendToBidStudio
+}) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<BidDraft | null>(null);
   const p = ini.pattern;
+  const delivery = deliveryOf(ini);
   const macs = initiativeMacs(ini);
   const value = initiativeValue(ini);
   const conditional = initiativeConditional(ini);
@@ -87,8 +92,12 @@ export const InitiativeCard: React.FC<CardProps> = ({ index, initiative: ini, fo
         <div className="card-body">
           <p className="body-text">{p.what}</p>
           <p className="gen-meta">
-            {p.who_benefits ? `For ${p.who_benefits.toLowerCase()} · ` : ''}Delivered by {p.delivered_by} · {ini.edited ? 'Edited by you' : source}
+            {p.who_benefits ? `For ${p.who_benefits.toLowerCase()} · ` : ''}Delivered by {delivery.by} · {ini.edited ? 'Edited by you' : source}
           </p>
+
+          {(ini.partner_suggested || ini.partner_choice) && (
+            <PartnerChoice initiative={ini} partners={partners} onChoose={onChoosePartner} />
+          )}
 
           <div className="chip-row" aria-label="Award criteria">
             {macs.length === 0 && <span className="gen-meta">No criterion under this framework.</span>}
@@ -229,6 +238,90 @@ const bidStudioPrompt = (d: BidDraft) =>
   `Refine this social value commitment into final bid wording for a public sector tender. Keep the numbers, the structure and the Open Access TOM measure codes; tighten the language.\n\n${draftText(d)}`;
 
 const withoutClient = (text: string, client: string) => (client.trim() ? text.split(client.trim()).join('the Authority') : text);
+
+/** A suggested partner is an option, not a commitment. Nothing is named in the bid until one is picked. */
+const PartnerChoice: React.FC<{ initiative: Initiative; partners: KnownPartner[]; onChoose: (c: string | undefined) => void }> = ({
+  initiative: ini,
+  partners,
+  onChoose
+}) => {
+  const suggested = (ini.partner_suggested ?? '').trim();
+  const decided = ini.partner_choice !== undefined;
+  const known = partners.filter((p) => p.name && p.name.toLowerCase() !== suggested.toLowerCase());
+  const before = known.filter((p) => p.worked_with_before && !p.contract_specific);
+  const others = known.filter((p) => !p.worked_with_before || p.contract_specific);
+  const match = partners.find((p) => p.name.toLowerCase() === suggested.toLowerCase());
+
+  if (decided) {
+    const chosen = (ini.partner_choice ?? '').trim();
+    return (
+      <div className="gen-partner is-set">
+        <Handshake size={14} />
+        <span>
+          {chosen ? (
+            <>
+              Delivering with <strong>{chosen}</strong>
+              {partners.find((p) => p.name === chosen)?.worked_with_before ? ' · worked with before' : ''}
+            </>
+          ) : (
+            <>Infosys delivering alone</>
+          )}
+        </span>
+        <button className="btn-link" onClick={() => onChoose(undefined)}>
+          Change
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="gen-partner">
+      <div className="gen-partner-head">
+        <Handshake size={14} />
+        <span>
+          The AI suggests delivering this with <strong>{suggested}</strong>
+          {match?.worked_with_before ? ' — Infosys has worked with them before.' : match ? ' — not used on a contract before.' : '.'} Nothing is named in the bid
+          until you choose.
+        </span>
+      </div>
+      <div className="chip-row">
+        <button className="btn-secondary" onClick={() => onChoose(suggested)}>
+          <Check size={13} /> Use {suggested}
+        </button>
+        <button className="btn-secondary" onClick={() => onChoose('')}>
+          Infosys alone
+        </button>
+        <select
+          className="select-compact"
+          value=""
+          aria-label="Choose a different partner"
+          onChange={(e) => e.target.value && onChoose(e.target.value)}
+        >
+          <option value="">Someone else…</option>
+          {before.length > 0 && (
+            <optgroup label="Worked with before">
+              {before.map((p) => (
+                <option key={p.name} value={p.name}>
+                  {p.name}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {others.length > 0 && (
+            <optgroup label="Not delivered with yet">
+              {others.map((p) => (
+                <option key={p.name} value={p.name}>
+                  {p.name}
+                  {p.contract_specific ? ' (one past contract only)' : ''}
+                </option>
+              ))}
+            </optgroup>
+          )}
+        </select>
+      </div>
+    </div>
+  );
+};
 
 const EditForm: React.FC<{ initiative: Initiative; wording: string; onSave: (e: InitiativeEdit) => void; onCancel: () => void }> = ({ initiative, wording, onSave, onCancel }) => {
   const [e, setE] = useState<InitiativeEdit>({

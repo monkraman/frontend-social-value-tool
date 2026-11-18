@@ -88,7 +88,8 @@ export function patternsOf(result: GeneratorResult): Pattern[] {
     theme_concepts: [],
     what: g.description ?? '',
     who_benefits: '',
-    delivered_by: g.attribution === 'Partner-led' ? g.partner || 'A delivery partner' : 'Infosys',
+    // A partner the AI named has agreed to nothing, so it is not recorded as the deliverer here.
+    delivered_by: 'Infosys',
     unit_driver: '',
     typical_scale: '',
     needs: '',
@@ -121,7 +122,8 @@ export function fromBackend(result: GeneratorResult, knowledge: LocalKnowledge, 
       in_infosys_policy: [],
       untraced_reason: lines.some((l) => l.proxy_gbp != null) ? null : 'No TOM traced. None of the Open Access measures in your library values this activity.',
       questions: [],
-      wording: g.bid_paragraph || undefined
+      wording: g.bid_paragraph || undefined,
+      partner_suggested: g.attribution === 'Partner-led' ? (g.partner || '').trim() || undefined : undefined
     };
     const own = questionsFor(ini, form, cohorts);
     ini.questions = [...g.questions, ...own.filter((q) => !g.questions.includes(q))];
