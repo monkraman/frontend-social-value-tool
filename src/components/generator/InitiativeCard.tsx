@@ -59,7 +59,12 @@ export const InitiativeCard: React.FC<CardProps> = ({
   const conditional = initiativeConditional(ini);
   const paragraph = ini.wording || bidParagraph(ini, form);
   const scored = (mac: string) => form.criteria.length === 0 || form.criteria.includes(mac);
-  const source = p.origin === 'library' ? 'From your pattern library' : p.origin === 'ai' ? 'Proposed by the backend AI' : 'Built-in suggestion';
+  const source =
+    p.origin === 'library'
+      ? 'From your pattern library'
+      : p.origin === 'ai'
+        ? `Proposed by the backend AI${p.ai_model ? ` (${modelName(p.ai_model)})` : ''}`
+        : 'Built-in suggestion';
 
   return (
     <section className={`card gen-card${ini.included ? '' : ' is-excluded'}`}>
@@ -508,3 +513,13 @@ const LineRow: React.FC<{ line: InitiativeLine; onFactor: (index: number, value:
   );
 };
 
+
+const PROVIDER_NAMES: Record<string, string> = { azure: 'Azure OpenAI', gemini: 'Google Gemini', openai: 'OpenAI' };
+
+/** "azure/gpt-4.1-mini" -> "Azure OpenAI · gpt-4.1-mini". */
+function modelName(source: string): string {
+  const [provider, ...rest] = source.split('/');
+  const model = rest.join('/');
+  const name = PROVIDER_NAMES[provider] ?? provider;
+  return model ? `${name} · ${model}` : name;
+}

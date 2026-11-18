@@ -39,6 +39,8 @@ export interface Pattern {
   measures: PatternMeasureLink[];
   /** 'library' = read from the local pattern library; 'built-in' = shipped with the tool; 'ai' = proposed by the backend AI. */
   origin: 'library' | 'built-in' | 'ai';
+  /** For origin 'ai': which provider/model answered, e.g. "azure/gpt-4.1-mini". Absent on older saved runs. */
+  ai_model?: string;
 }
 
 export interface LocalMacRow {

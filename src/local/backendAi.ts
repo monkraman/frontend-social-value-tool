@@ -101,7 +101,8 @@ export function patternsOf(result: GeneratorResult): Pattern[] {
     additionality: '',
     status: 'Active',
     measures: g.lines.map((l, j) => ({ code: l.measure, primary: j === 0, basis: l.basis })),
-    origin: 'ai'
+    origin: 'ai',
+    ai_model: result.model
   }));
 }
 

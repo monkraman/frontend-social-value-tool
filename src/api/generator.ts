@@ -107,6 +107,8 @@ export interface GeneratorResult {
   initiatives: GeneratedInitiative[];
   checks: string[];
   tables: TablesInfo;
+  /** Which provider/model answered, e.g. "azure/gpt-4.1-mini". Absent on older saved runs. */
+  model?: string;
 }
 
 async function detail(res: Response, fallback: string): Promise<string> {
