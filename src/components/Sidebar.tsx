@@ -9,7 +9,6 @@ import {
   LogOut,
   Clock,
   Server,
-  Cpu,
   X,
   ShieldCheck,
   Activity,
@@ -28,6 +27,7 @@ import { frameworkById } from '../local/frameworks';
 import type { FrameworkId } from '../local/types';
 import { ConfirmationModal } from './ConfirmationModal';
 import { useAuth } from '../context/AuthContext';
+import { AiModelPanel } from './AiModelPanel';
 import { fetchAuditLogs, fetchAuditSummary } from '../api/client';
 import { parseApiDate } from '../utils/formatters';
 
@@ -592,38 +592,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 </div>
 
-                {/* AI Model Section */}
-                <div
-                  style={{
-                    padding: '0.85rem',
-                    backgroundColor: 'var(--bg-card)',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-subtle)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <Cpu size={15} style={{ color: 'var(--color-primary)' }} />
-                    <strong style={{ color: 'var(--text-primary)' }}>LLM & Embedding Provider</strong>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.35rem', color: 'var(--text-secondary)' }}>
-                    <span>Active Provider:</span>
-                    <strong style={{ color: 'var(--text-primary)', textTransform: 'capitalize' }}>
-                      {healthData?.active_provider || 'Gemini'}
-                    </strong>
-                    <span>Chat Model:</span>
-                    <span className="tag-mono" style={{ color: 'var(--text-primary)' }}>
-                      {healthData?.providers?.gemini?.model || 'gemini-3.8-flash'}
-                    </span>
-                    <span>Embedding:</span>
-                    <span className="tag-mono" style={{ color: 'var(--text-primary)' }}>
-                      text-embedding-004
-                    </span>
-                    <span>Direct REST:</span>
-                    <span style={{ color: '#16a34a', fontWeight: 600 }}>
-                      Connected
-                    </span>
-                  </div>
-                </div>
+                {/* AI model: live, and switchable by a super-admin */}
+                <AiModelPanel isSuperAdmin={user?.role === 'superadmin'} fallbackProvider={healthData?.active_provider} />
 
                 {/* Statutory Audit & Compliance Card */}
                 <div
