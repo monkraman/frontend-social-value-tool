@@ -6,6 +6,9 @@ import { API_BASE_URL, apiFetch, getAuthHeaders } from '../api/client';
 import type { EvidenceHit, LocalKnowledge } from './types';
 
 const BASE = '/__local';
+// The reference folder is served by the dev-server plugin only. A deployed build has no /__local
+// routes, so it goes straight to the backend instead of making requests that are bound to fail.
+const HAS_LOCAL_FOLDER = import.meta.env.DEV;
 
 export type KnowledgeState = LocalKnowledge | { connected: false; reason: string };
 
@@ -21,6 +24,7 @@ async function json<T>(res: Response): Promise<T> {
 }
 
 export async function fetchKnowledge(refresh = false): Promise<KnowledgeState> {
+  if (!HAS_LOCAL_FOLDER) return fetchBackendKnowledge();
   try {
     const local = await json<KnowledgeState>(await fetch(`${BASE}/knowledge${refresh ? '?refresh=1' : ''}`));
     // The dev server answers "not connected" when no folder is configured: use the backend then.
@@ -43,6 +47,8 @@ async function fetchBackendKnowledge(): Promise<KnowledgeState> {
 }
 
 export async function fetchEvidence(queries: { id: string; terms: string[] }[]): Promise<Record<string, EvidenceHit[]>> {
+  // Past-response evidence comes from the reference folder only; there is none in a deployed build.
+  if (!HAS_LOCAL_FOLDER) return {};
   try {
     const res = await fetch(`${BASE}/evidence`, {
       method: 'POST',
