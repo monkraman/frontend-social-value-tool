@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Check, Copy, FileText, Handshake, Pencil, RotateCcw, Send, X } from 'lucide-react';
+import { Check, Copy, FileText, Handshake, Pencil, RotateCcw, X } from 'lucide-react';
 import { formatGbp } from '../../utils/formatters';
 import { macLabel } from '../../local/frameworks';
 import { bidDraft, draftText, type BidDraft } from '../../local/bidDraft';
@@ -45,11 +45,10 @@ interface CardProps {
   onChoosePartner: (choice: string | undefined) => void;
   partners: KnownPartner[];
   onCopied: () => void;
-  onSendToBidStudio?: (text: string) => void;
 }
 
 export const InitiativeCard: React.FC<CardProps> = ({
-  index, initiative: ini, form, onInclude, onFactor, onToggleLine, onReset, onEdit, onChoosePartner, partners, onCopied, onSendToBidStudio
+  index, initiative: ini, form, onInclude, onFactor, onToggleLine, onReset, onEdit, onChoosePartner, partners, onCopied
 }) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<BidDraft | null>(null);
@@ -226,18 +225,11 @@ export const InitiativeCard: React.FC<CardProps> = ({
           draft={draft}
           onClose={() => setDraft(null)}
           onCopied={onCopied}
-          // The client name is left out of anything sent to the backend AI.
-          onSend={onSendToBidStudio && (() => onSendToBidStudio(withoutClient(bidStudioPrompt(bidDraft(ini, form)), form.client)))}
         />
       )}
     </section>
   );
 };
-
-const bidStudioPrompt = (d: BidDraft) =>
-  `Refine this social value commitment into final bid wording for a public sector tender. Keep the numbers, the structure and the Open Access TOM measure codes; tighten the language.\n\n${draftText(d)}`;
-
-const withoutClient = (text: string, client: string) => (client.trim() ? text.split(client.trim()).join('the Authority') : text);
 
 /** A suggested partner is an option, not a commitment. Nothing is named in the bid until one is picked. */
 const PartnerChoice: React.FC<{ initiative: Initiative; partners: KnownPartner[]; onChoose: (c: string | undefined) => void }> = ({
@@ -369,7 +361,7 @@ const EditForm: React.FC<{ initiative: Initiative; wording: string; onSave: (e: 
   );
 };
 
-const DraftDialog: React.FC<{ draft: BidDraft; onClose: () => void; onCopied: () => void; onSend?: () => void }> = ({ draft, onClose, onCopied, onSend }) => {
+const DraftDialog: React.FC<{ draft: BidDraft; onClose: () => void; onCopied: () => void }> = ({ draft, onClose, onCopied }) => {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
@@ -425,7 +417,7 @@ const DraftDialog: React.FC<{ draft: BidDraft; onClose: () => void; onCopied: ()
         <div className="card-footer gen-actions">
           <span className="gen-meta">Laid out like Infosys’s past social value responses. Check every number before it goes in a bid.</span>
           <button
-            className="btn-secondary"
+            className="btn-primary"
             onClick={() => {
               navigator.clipboard.writeText(draftText(draft));
               onCopied();
@@ -433,11 +425,6 @@ const DraftDialog: React.FC<{ draft: BidDraft; onClose: () => void; onCopied: ()
           >
             <Copy size={14} /> Copy
           </button>
-          {onSend && (
-            <button className="btn-primary" onClick={onSend} title="Opens Bid Studio with this draft. The client name is not included.">
-              <Send size={14} /> Open in Bid Studio
-            </button>
-          )}
         </div>
       </div>
     </div>

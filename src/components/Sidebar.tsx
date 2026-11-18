@@ -31,7 +31,7 @@ import { useAuth } from '../context/AuthContext';
 import { fetchAuditLogs, fetchAuditSummary } from '../api/client';
 import { parseApiDate } from '../utils/formatters';
 
-export type ActiveTab = 'generator' | 'prompt' | 'opportunity' | 'tuner' | 'toms' | 'partners' | 'documents' | 'search';
+export type ActiveTab = 'generator' | 'tuner' | 'toms' | 'partners' | 'documents' | 'search';
 
 export interface SidebarProps {
   activeTab: ActiveTab;

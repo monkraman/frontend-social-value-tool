@@ -3,7 +3,6 @@ import { PageHeader } from './PageHeader';
 import { LocalGenerator, type OpenRunRequest } from './generator/LocalGenerator';
 
 interface InitiativeGeneratorProps {
-  onSendToBidStudio?: (text: string) => void;
   openRun?: OpenRunRequest;
   onRunsChanged?: () => void;
   onActiveRunChange?: (id: string | null) => void;

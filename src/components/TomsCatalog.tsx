@@ -41,11 +41,7 @@ import { MASTER_INITIATIVES } from '../constants/masterInitiatives';
 import { defaultCollectionView } from '../utils/viewport';
 import { THEME_PALETTE } from '../constants/themePalette';
 
-interface TomsCatalogProps {
-  onSendToPrompt?: (promptText: string) => void;
-}
-
-export const TomsCatalog: React.FC<TomsCatalogProps> = () => {
+export const TomsCatalog: React.FC = () => {
   const toast = useToast();
 
   // Active Main Tab: 'toms' (National TOMs 30 Measures) vs 'initiatives' (Client Initiatives List)

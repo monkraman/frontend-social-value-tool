@@ -84,7 +84,6 @@ function runInput(state: SavedState): RunInput {
 }
 
 interface LocalGeneratorProps {
-  onSendToBidStudio?: (text: string) => void;
   /** Set by the sidebar's history and the New bid button. */
   openRun?: OpenRunRequest;
   /** Called after a run is saved or changed, so the history list can refresh. */
@@ -94,7 +93,7 @@ interface LocalGeneratorProps {
 }
 
 /** The Initiative Generator. Each result is saved to the signed-in user's own history and can be reopened. */
-export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ onSendToBidStudio, openRun, onRunsChanged, onActiveRunChange }) => {
+export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsChanged, onActiveRunChange }) => {
   const toast = useToast();
   const [knowledge, setKnowledge] = useState<KnowledgeState | null>(null);
   const [mode, setMode] = useState<'prompt' | 'form'>('prompt');
@@ -608,7 +607,6 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ onSendToBidStudi
               onChoosePartner={(choice) => update(ini.id, (x) => ({ ...x, partner_choice: choice }))}
               partners={partners}
               onCopied={() => toast.success('Copied')}
-              onSendToBidStudio={onSendToBidStudio}
             />
           ))}
 
