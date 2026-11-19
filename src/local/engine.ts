@@ -14,10 +14,12 @@ const NT19_FACTOR = 1.0073;
 
 export const DEFAULT_INDUSTRY = 'Computer programming, consultancy and related services';
 
+/** What the buyer asked for: the weighting applied to the contract value. */
+const targetOf = (form: TenderForm): number => Math.round((form.contract_value_gbp * form.sv_percent) / 100);
+
 /** Measures in the same group are not additive within one initiative. */
 export const exclusiveGroupOf = (code: string): string | null => (EMPLOYMENT.has(code) ? 'employment' : SPEND.has(code) ? 'spend' : null);
 
-export const targetOf = (form: TenderForm): number => Math.round((form.contract_value_gbp * form.sv_percent) / 100);
 
 /** Proxy £ per unit, localised where the TOM System requires it (A-03: NT1, NT18, NT19 only). */
 export function localisedProxy(m: LocalMeasure, k: LocalKnowledge, form: TenderForm): { proxy: number | null; basis: string } {
@@ -90,35 +92,6 @@ export function questionsFor(ini: Initiative, form: TenderForm, cohorts?: string
   return q;
 }
 
-/** Scale the counted volumes of the included initiatives towards the target, inside each measure's range. Only on request. */
-export function fitToTarget(initiatives: Initiative[], target: number): Initiative[] {
-  let next = initiatives;
-  for (let pass = 0; pass < 3; pass++) {
-    const total = next.filter((i) => i.included).reduce((t, i) => t + initiativeValue(i), 0);
-    if (total <= 0 || target <= 0) break;
-    const k = clamp(target / total, 0.25, 6);
-    if (Math.abs(k - 1) < 0.03) break;
-    next = next.map((ini) =>
-      !ini.included
-        ? ini
-        : {
-            ...ini,
-            lines: ini.lines.map((line) => {
-              if (line.status !== 'Counted') return line;
-              const idx = line.factors.findIndex((f) => !f.fixed);
-              if (idx < 0) return line;
-              const f = line.factors[idx];
-              const step = f.step ?? 1;
-              const value = clamp(Math.round((f.value * k) / step) * step, f.min ?? 0, f.max ?? Number.MAX_SAFE_INTEGER);
-              return { ...line, factors: line.factors.map((x, i) => (i === idx ? { ...x, value } : x)) };
-            })
-          }
-    );
-  }
-  return next;
-}
-
-/** Switch a line on or off. Counting a line in a not-additive group turns its alternatives off. */
 export function toggleLine(ini: Initiative, code: string): Initiative {
   const line = ini.lines.find((l) => l.code === code);
   if (!line || line.status === 'Not valued') return ini;

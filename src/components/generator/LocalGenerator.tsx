@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { LoaderCircle, MessageSquare, RotateCcw, Sliders, Sparkles, Target, Upload, X } from 'lucide-react';
+import { LoaderCircle, MessageSquare, RotateCcw, Sliders, Sparkles, Upload, X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { createRun, getRun, runGenerator, updateRun, type RunInput } from '../../api/generator';
 import { backendRequest, fromBackend, searchTerms, valueChecks } from '../../local/backendAi';
@@ -7,7 +7,7 @@ import { formatGbp } from '../../utils/formatters';
 import { FRAMEWORKS, frameworkById, macLabel } from '../../local/frameworks';
 import { readPolicy } from '../../local/policy';
 import { extractFileText, fetchDocumentText, fetchEvidence, fetchKnowledge, type KnowledgeState } from '../../local/repository';
-import { DEFAULT_INDUSTRY, checksOf, fitToTarget, resetUnits, setFactor, targetOf, toggleLine, totalsOf, unitsChanged } from '../../local/engine';
+import { DEFAULT_INDUSTRY, checksOf, resetUnits, setFactor, toggleLine, totalsOf, unitsChanged } from '../../local/engine';
 import type { FrameworkId, Initiative, KnownPartner, LocalDocument, PolicyReading, PolicyTopic, TenderForm } from '../../local/types';
 import { PROMPT_EXAMPLES, readPrompt, type PromptReading } from '../../local/promptParse';
 import { InitiativeCard, type InitiativeEdit } from './InitiativeCard';
@@ -557,16 +557,14 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
 
           <div className="section-row">
             <span className="muted">
-              Values are units × proxy from your tables. The volumes are what the AI proposed: change them to what Infosys can deliver.
+              Values are units × proxy from your tables. Volumes are sized to the {resultForm.sv_percent}% target and no further — going above it
+              commits Infosys to more for no extra score. Lower them to what can actually be delivered.
             </span>
             {changed && (
               <button className="btn-secondary" onClick={() => setInitiatives((list) => list?.map(resetUnits) ?? null)}>
-                <RotateCcw size={14} /> Back to proposed volumes
+                <RotateCcw size={14} /> Undo my changes
               </button>
             )}
-            <button className="btn-secondary" onClick={() => setInitiatives((list) => (list ? fitToTarget(list, targetOf(resultForm)) : list))}>
-              <Target size={14} /> Scale to {resultForm.sv_percent}% target
-            </button>
           </div>
 
           {(reading.buyer.length > 0 || reading.infosys.length > 0) && (
