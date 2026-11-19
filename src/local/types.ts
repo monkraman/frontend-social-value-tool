@@ -75,6 +75,8 @@ export interface LocalKnowledge {
   measure_mac: LocalMacRow[];
   track_record: PastInitiative[];
   partners?: KnownPartner[];
+  /** Past initiative id -> how it was phased on that contract. */
+  delivery?: Record<string, DeliveryStep[]>;
   documents: LocalDocument[];
   warnings: string[];
 }
@@ -92,6 +94,15 @@ export interface PastInitiative {
   contract: string;
   /** Why the AI says this past initiative served the same outcome (backend-checked citations only). */
   why?: string;
+  /** How it was phased on that contract, where the scorecard records it. */
+  delivery?: DeliveryStep[];
+}
+
+/** One step in how a past initiative was actually phased, from the contract scorecard. */
+export interface DeliveryStep {
+  step: string;
+  due: string;
+  cycle: string;
 }
 
 /** A delivery partner Infosys knows, from the capability profile. */

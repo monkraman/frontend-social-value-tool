@@ -138,6 +138,20 @@ export const InitiativeCard: React.FC<CardProps> = ({
                     {d.volume && d.volume !== '—' ? ` · ${d.volume}` : ''} · MAC {d.mac}
                     {d.measures.length ? ` · ${d.measures.join(', ')}` : ''}
                     {d.why && <span className="gen-meta gen-why">{d.why}</span>}
+                    {d.delivery && d.delivery.length > 0 && (
+                      <details className="gen-steps">
+                        <summary>How it was delivered ({d.delivery.length} steps)</summary>
+                        <ol>
+                          {d.delivery.map((s) => (
+                            <li key={s.step}>
+                              {s.step}
+                              {s.due ? <span className="gen-meta"> · {s.due}</span> : null}
+                              {s.cycle ? <span className="gen-meta"> · {s.cycle}</span> : null}
+                            </li>
+                          ))}
+                        </ol>
+                      </details>
+                    )}
                   </li>
                 ))}
               </ul>

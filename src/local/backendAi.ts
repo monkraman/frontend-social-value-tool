@@ -119,7 +119,8 @@ function citation(c: GeneratedInitiative['done_before'][number], knowledge: Loca
     delivered_by: past?.delivered_by ?? '',
     measures: c.measures.length ? c.measures : (past?.measures ?? []),
     contract: past?.contract ?? '',
-    why: c.why || undefined
+    why: c.why || undefined,
+    delivery: knowledge.delivery?.[c.id]
   };
 }
 
@@ -158,7 +159,9 @@ export function fromBackend(result: GeneratorResult, knowledge: LocalKnowledge, 
       partner_suggested: g.attribution === 'Partner-led' ? (g.partner || '').trim() || undefined : undefined
     };
     // Citations the backend checked come first; with none, the same word-matching as before fills in.
-    ini.done_before = cited.length ? cited : doneBefore(ini, knowledge.track_record);
+    ini.done_before = cited.length
+      ? cited
+      : doneBefore(ini, knowledge.track_record).map((past) => ({ ...past, delivery: knowledge.delivery?.[past.id] }));
     const own = questionsFor(ini, form, cohorts);
     ini.questions = [...g.questions, ...own.filter((q) => !g.questions.includes(q))];
     return ini;
