@@ -103,6 +103,10 @@ export interface DeliveryStep {
   step: string;
   due: string;
   cycle: string;
+  /** "Cumulative" steps carry a real quantity; "Percentage" and "Milestone" ones are gates. */
+  kind?: string;
+  /** How much that step delivered on the past contract — the size of that cohort or tranche. */
+  target?: number | null;
 }
 
 /** A delivery partner Infosys knows, from the capability profile. */

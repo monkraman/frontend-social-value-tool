@@ -8,7 +8,7 @@ import { doneBefore } from './trackRecord';
 import { frameworkById, macLabel } from './frameworks';
 import { macsForMeasure, unscoredReason } from './measureMac';
 import { plainMeasure } from './plainLanguage';
-import type { EvidenceHit, Initiative, InitiativeLine, LineStatus, LocalKnowledge, Pattern, PastInitiative, PolicyReading, TenderForm } from './types';
+import type { EvidenceHit, Initiative, InitiativeLine, LineStatus, LocalKnowledge, Pattern, PastInitiative, PolicyReading, TenderForm , UnitFactor} from './types';
 
 const BRIEF_LIMIT = 5000;
 
@@ -50,6 +50,33 @@ export function backendRequest(form: TenderForm, knowledge: LocalKnowledge, poli
   };
 }
 
+/** What a week-based measure is really counting, so the two numbers behind it can be named. */
+const PER_PERSON: Record<string, { who: string; each: string }> = {
+  NT10: { who: 'Apprentices', each: 'Weeks each' },
+  NT9: { who: 'New employees', each: 'Weeks of training each' },
+  NT80: { who: 'Employees upskilled', each: 'Weeks each' },
+  NT12: { who: 'Placements', each: 'Weeks each' },
+  NT13: { who: 'Placements', each: 'Weeks each' }
+};
+
+/** Split a quantity into the two numbers behind it, so either can be changed on its own.
+ *
+ * "633 apprentice weeks" is a number nobody can sanity-check. Six apprentices for a hundred
+ * weeks each is the same figure and obviously wrong or obviously right, so the bid team can
+ * argue with it. The AI already says how many people a line covers.
+ */
+function splitFactors(l: GeneratedInitiative['lines'][number], unit: string, form: TenderForm): UnitFactor[] {
+  const max = exclusiveGroupOf(l.measure) === 'spend' ? form.contract_value_gbp : 1_000_000_000;
+  const units = l.units ?? 0;
+  const per = PER_PERSON[l.measure];
+  const people = Math.round(l.people ?? 0);
+  if (!per || people < 1 || units <= 0) return [{ label: unit, value: units, min: 0, max, step: 1 }];
+  return [
+    { label: per.who, value: people, min: 1, max: 10_000, step: 1 },
+    { label: per.each, value: Math.round(units / people), min: 1, max: 520, step: 1 }
+  ];
+}
+
 const STATUS: Record<string, LineStatus> = { Counted: 'Counted', Conditional: 'Conditional', Alternative: 'Alternative', 'Not valued': 'Not valued' };
 
 function toLines(g: GeneratedInitiative, knowledge: LocalKnowledge, form: TenderForm): InitiativeLine[] {
@@ -62,7 +89,7 @@ function toLines(g: GeneratedInitiative, knowledge: LocalKnowledge, form: Tender
     // Label the quantity with what is actually being counted: the draft wording reads the label,
     // so "633 apprentice weeks" beats "633 units".
     const plain = plainMeasure(l.measure, m?.name ?? l.measure_name ?? l.measure, m?.unit ?? l.unit ?? 'units');
-    const factors = [{ label: plain.unit, value: l.units ?? 0, min: 0, max: exclusiveGroupOf(l.measure) === 'spend' ? form.contract_value_gbp : 1_000_000_000, step: 1 }];
+    const factors = splitFactors(l, plain.unit, form);
     return {
       code: l.measure,
       name: m?.name ?? l.measure_name ?? l.measure,

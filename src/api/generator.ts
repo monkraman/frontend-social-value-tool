@@ -44,6 +44,8 @@ export interface ValuedLine {
   measure_name: string | null;
   unit: string | null;
   units: number | null;
+  /** How many people the quantity covers, where the measure counts time rather than people. */
+  people?: number | null;
   basis: string;
   proxy_gbp: number | null;
   proxy_basis: string | null;

@@ -151,18 +151,37 @@ function phasedFromPastDelivery(ini: Initiative, years: number): DraftSection | 
   const squeeze = span > months - 1 && span > 0 ? (months - 1) / span : 1;
 
   const seen = new Set<string>();
-  const rows = dated
+  const ordered = dated
     .sort((a, b) => a.offset - b.offset)
-    .filter((s) => !seen.has(s.step.toLowerCase()) && seen.add(s.step.toLowerCase()))
-    .map((s) => [when(Math.round(s.offset * squeeze)), s.step, s.cycle || 'Once']);
+    .filter((s) => !seen.has(s.step.toLowerCase()) && seen.add(s.step.toLowerCase()));
+
+  // The cohorts on the past contract were sized for that contract. Keep their proportions and
+  // apply them to what is being committed here, so "Cohort 1" says how much of this bid it is.
+  const line = ini.lines.find((l) => isOn(l) && l.proxy_gbp != null && unitsOf(l) > 0);
+  const plain = line ? plainMeasure(line.code, line.name, line.unit) : null;
+  const tranches = ordered.filter((s) => /cumulative/i.test(s.kind ?? '') && (s.target ?? 0) > 0);
+  // The largest cumulative step is usually the headline total, not a tranche of it.
+  const headline = Math.max(...tranches.map((s) => s.target ?? 0), 0);
+  const parts = tranches.filter((s) => (s.target ?? 0) < headline);
+  const partsTotal = parts.reduce((t, s) => t + (s.target ?? 0), 0);
+  const commitment = line ? unitsOf(line) : 0;
+
+  const share = (s: (typeof ordered)[number]): string => {
+    if (!line || !plain || !partsTotal || !parts.includes(s)) return '';
+    const amount = (commitment * (s.target ?? 0)) / partsTotal;
+    return `${fmt(amount)} ${plain.unit}`;
+  };
+
+  const rows = ordered.map((s) => [when(Math.round(s.offset * squeeze)), s.step, share(s) || '—', s.cycle || 'Once']);
 
   return {
     heading: 'Delivery plan',
     paragraphs: [
-      `Phased as Infosys phased the same work before, timed from contract start over ${years} years. ` +
-        'Confirm the dates with the Authority at mobilisation.'
+      `Phased as Infosys phased the same work before, timed from contract start over ${years} years${
+        partsTotal && plain ? ` and sized to the ${fmt(commitment)} ${plain.unit} committed here` : ''
+      }. Confirm the dates with the Authority at mobilisation.`
     ],
-    table: { head: ['When', 'Step', 'Reported'], rows }
+    table: { head: ['When', 'Step', 'How much', 'Reported'], rows }
   };
 }
 
