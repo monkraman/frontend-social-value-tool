@@ -133,8 +133,23 @@ export function deliveryOf(ini: Initiative): { by: string; partner: string; pend
   return { by: 'Infosys with a delivery partner, to be confirmed', partner: '', pending: true };
 }
 
-export const unitsChanged = (initiatives: Initiative[]): boolean =>
-  initiatives.some((i) => i.lines.some((l) => l.factors.some((f, k) => f.value !== l.suggested[k]?.value)));
+export const unitsChanged = (initiatives: Initiative[]): boolean => initiatives.some(volumesEdited);
+
+/** True once a volume on this initiative differs from what the AI proposed. */
+export const volumesEdited = (ini: Initiative): boolean =>
+  ini.lines.some((l) => l.factors.some((f, k) => f.value !== l.suggested[k]?.value));
+
+/** The wording to show: the AI's until a volume changes under it, then one built from the numbers.
+ *
+ * The AI writes its volumes into the prose. Change sixteen apprentices to twenty and the table,
+ * the value and the paragraph stop agreeing — so once a volume moves, the paragraph is rebuilt
+ * from the lines. Wording the bid team typed themselves is always kept.
+ */
+export function wordingFor(ini: Initiative, form: TenderForm): string {
+  if (ini.edited && ini.wording) return ini.wording;
+  if (ini.wording && !volumesEdited(ini)) return ini.wording;
+  return bidParagraph(ini, form);
+}
 
 export interface Totals {
   target: number;

@@ -1,10 +1,10 @@
 // A draft bid response for one initiative, laid out like Infosys's past social value responses:
 // method statement, who we prioritise, mobilisation, the commitment, delivery plan, track record, governance, impact.
 import { formatGbp } from '../utils/formatters';
-import { deliveryOf, initiativeMacs, isOn, lineValue, unitsOf } from './engine';
+import { deliveryOf, initiativeMacs, isOn, lineValue, unitsOf, wordingFor } from './engine';
 import { frameworkById, macLabel } from './frameworks';
 import { plainMeasure } from './plainLanguage';
-import type { Initiative, TenderForm } from './types';
+import type { Initiative, InitiativeLine, TenderForm } from './types';
 
 export interface DraftSection {
   heading: string;
@@ -51,7 +51,7 @@ export function bidDraft(ini: Initiative, form: TenderForm, client = ''): BidDra
   sections.push({
     heading: 'Method statement',
     paragraphs: [
-      ini.wording?.trim() ||
+      wordingFor(ini, form).trim() ||
         `Through delivery of the contract, Infosys will ${p.what ? p.what.charAt(0).toLowerCase() + p.what.slice(1).replace(/\.$/, '') : `deliver ${p.name.toLowerCase()}`}${form.region ? ` in the ${form.region}` : ''}. This builds on the technology and services delivered under this contract, so that the benefit is additional to business as usual and directly relevant to ${buyer}.`,
       sentence(ini.fit_reason)
     ].filter(Boolean)
@@ -79,26 +79,12 @@ export function bidDraft(ini: Initiative, form: TenderForm, client = ''): BidDra
       : [`Deliver ${p.name.toLowerCase()} with targets agreed with ${buyer} at mobilisation.`]
   });
 
-  const shown = Math.min(years, 5);
-  const head = ['Activity', ...Array.from({ length: shown }, (_, i) => (i === shown - 1 && years > shown ? `Years ${shown}–${years}` : `Year ${i + 1}`))];
-  const perYear = (total: number, i: number) => {
-    const span = i === shown - 1 ? years - shown + 1 : 1;
-    return fmt((total / years) * span);
-  };
-  sections.push({
-    heading: 'Delivery plan',
-    table: {
-      head,
-      rows: [
-        ['Identify cohorts and engage delivery partners', ...head.slice(1).map((_, i) => (i === 0 ? 'Q1' : 'Review and refine'))],
-        ...counted.map((l) => {
-          const plain = plainMeasure(l.code, l.name, l.unit);
-          return [`${plain.name} (${plain.unit})`, ...head.slice(1).map((_, i) => perYear(unitsOf(l), i))];
-        }),
-        ['Progress report to ' + buyer, ...head.slice(1).map(() => '✓')]
-      ]
-    }
-  });
+  const phased = phasedFromPastDelivery(ini, years);
+  if (phased) {
+    sections.push(phased);
+  } else {
+    sections.push(yearByYear(years, buyer, counted));
+  }
 
   if (ini.done_before?.length) {
     const contracts = [...new Set(ini.done_before.map((d) => d.contract).filter(Boolean))].join(' and ');
@@ -129,6 +115,79 @@ export function bidDraft(ini: Initiative, form: TenderForm, client = ''): BidDra
   });
 
   return { title: criterion ? `${macLabel(criterion.code)}: ${criterion.title} — ${p.name}` : p.name, sections };
+}
+
+/** Months between two dd/mm/yyyy dates, or null when either cannot be read. */
+function monthsBetween(from: string, to: string): number | null {
+  const parse = (d: string) => {
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(d.trim());
+    return m ? new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])) : null;
+  };
+  const a = parse(from);
+  const b = parse(to);
+  if (!a || !b) return null;
+  return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+}
+
+const when = (month: number) => (month < 12 ? `Month ${month + 1}` : `Year ${Math.floor(month / 12) + 1}, month ${(month % 12) + 1}`);
+
+/** The sequence Infosys actually followed last time, re-based to this contract.
+ *
+ * The scorecard records real dates from a contract that started years ago and may run longer
+ * than this one. Dates from another contract mean nothing in this bid, so they become offsets
+ * from the first step and are squeezed to fit this contract's term.
+ */
+function phasedFromPastDelivery(ini: Initiative, years: number): DraftSection | null {
+  const steps = (ini.done_before ?? []).flatMap((d) => d.delivery ?? []).filter((s) => s.step && s.due);
+  if (steps.length < 2) return null;
+
+  const dated = steps.map((s) => ({ ...s, offset: 0 }));
+  const earliest = dated.reduce((a, b) => (monthsBetween(b.due, a.due) ?? 0) > 0 ? b : a);
+  for (const s of dated) s.offset = Math.max(0, monthsBetween(earliest.due, s.due) ?? 0);
+
+  const span = Math.max(...dated.map((s) => s.offset));
+  const months = years * 12;
+  // A 15-year programme compressed into a 5-year contract keeps its shape, not its calendar.
+  const squeeze = span > months - 1 && span > 0 ? (months - 1) / span : 1;
+
+  const seen = new Set<string>();
+  const rows = dated
+    .sort((a, b) => a.offset - b.offset)
+    .filter((s) => !seen.has(s.step.toLowerCase()) && seen.add(s.step.toLowerCase()))
+    .map((s) => [when(Math.round(s.offset * squeeze)), s.step, s.cycle || 'Once']);
+
+  return {
+    heading: 'Delivery plan',
+    paragraphs: [
+      `Phased as Infosys phased the same work before, timed from contract start over ${years} years. ` +
+        'Confirm the dates with the Authority at mobilisation.'
+    ],
+    table: { head: ['When', 'Step', 'Reported'], rows }
+  };
+}
+
+/** The fallback when there is no past phasing to follow: volumes spread across the term. */
+function yearByYear(years: number, buyer: string, counted: InitiativeLine[]): DraftSection {
+  const shown = Math.min(years, 5);
+  const head = ['Activity', ...Array.from({ length: shown }, (_, i) => (i === shown - 1 && years > shown ? `Years ${shown}–${years}` : `Year ${i + 1}`))];
+  const perYear = (total: number, i: number) => {
+    const span = i === shown - 1 ? years - shown + 1 : 1;
+    return fmt((total / years) * span);
+  };
+  return {
+    heading: 'Delivery plan',
+    table: {
+      head,
+      rows: [
+        ['Identify cohorts and engage delivery partners', ...head.slice(1).map((_, i) => (i === 0 ? 'Q1' : 'Review and refine'))],
+        ...counted.map((l) => {
+          const plain = plainMeasure(l.code, l.name, l.unit);
+          return [`${plain.name} (${plain.unit})`, ...head.slice(1).map((_, i) => perYear(unitsOf(l), i))];
+        }),
+        [`Progress report to ${buyer}`, ...head.slice(1).map(() => '✓')]
+      ]
+    }
+  };
 }
 
 export function draftText(d: BidDraft): string {

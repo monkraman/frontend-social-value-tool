@@ -4,7 +4,7 @@ import { formatGbp } from '../../utils/formatters';
 import { macLabel } from '../../local/frameworks';
 import { bidDraft, draftText, type BidDraft } from '../../local/bidDraft';
 import { plainMeasure } from '../../local/plainLanguage';
-import { bidParagraph, deliveryOf, initiativeConditional, initiativeMacs, initiativeValue, isOn, lineValue, macRating, unitsOf, type MacRating } from '../../local/engine';
+import { deliveryOf, initiativeConditional, initiativeMacs, initiativeValue, isOn, lineValue, macRating, unitsOf, wordingFor, type MacRating } from '../../local/engine';
 import type { Initiative, InitiativeLine, KnownPartner, TenderForm } from '../../local/types';
 
 const RATING_CLASS: Record<MacRating, string> = { Strong: 'pill-strong', Partial: 'pill-partial', 'Not scored': 'pill-none' };
@@ -57,7 +57,7 @@ export const InitiativeCard: React.FC<CardProps> = ({
   const macs = initiativeMacs(ini);
   const value = initiativeValue(ini);
   const conditional = initiativeConditional(ini);
-  const paragraph = ini.wording || bidParagraph(ini, form);
+  const paragraph = wordingFor(ini, form);
   const scored = (mac: string) => form.criteria.length === 0 || form.criteria.includes(mac);
   const source =
     p.origin === 'library'
@@ -105,7 +105,9 @@ export const InitiativeCard: React.FC<CardProps> = ({
         />
       ) : (
         <div className="card-body">
-          <p className="body-text">{p.what}</p>
+          <p className="body-text">
+            <span className="gen-tag">Commitment</span> {p.what}
+          </p>
           <p className="gen-meta">
             {p.who_benefits ? `For ${p.who_benefits.toLowerCase()} · ` : ''}Delivered by {delivery.by} · {ini.edited ? 'Edited by you' : source}
           </p>

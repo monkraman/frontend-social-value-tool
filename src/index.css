@@ -1311,6 +1311,19 @@ button {
   font-variant-numeric: tabular-nums;
   color: var(--text-primary);
 }
+.gen-tag {
+  display: inline-block;
+  margin-right: 0.35rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  vertical-align: 0.1em;
+}
 .gen-steps {
   margin-top: 0.3rem;
 }

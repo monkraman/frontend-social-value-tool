@@ -7,6 +7,7 @@ import { lensFor } from './infosysLens';
 import { doneBefore } from './trackRecord';
 import { frameworkById, macLabel } from './frameworks';
 import { macsForMeasure, unscoredReason } from './measureMac';
+import { plainMeasure } from './plainLanguage';
 import type { EvidenceHit, Initiative, InitiativeLine, LineStatus, LocalKnowledge, Pattern, PastInitiative, PolicyReading, TenderForm } from './types';
 
 const BRIEF_LIMIT = 5000;
@@ -58,7 +59,10 @@ function toLines(g: GeneratedInitiative, knowledge: LocalKnowledge, form: Tender
     // The local calculation is kept only for its wording of the basis; it uses the same tables.
     const local = m ? localisedProxy(m, knowledge, form) : null;
     const proxy = l.proxy_gbp;
-    const factors = [{ label: 'Units', value: l.units ?? 0, min: 0, max: exclusiveGroupOf(l.measure) === 'spend' ? form.contract_value_gbp : 1_000_000_000, step: 1 }];
+    // Label the quantity with what is actually being counted: the draft wording reads the label,
+    // so "633 apprentice weeks" beats "633 units".
+    const plain = plainMeasure(l.measure, m?.name ?? l.measure_name ?? l.measure, m?.unit ?? l.unit ?? 'units');
+    const factors = [{ label: plain.unit, value: l.units ?? 0, min: 0, max: exclusiveGroupOf(l.measure) === 'spend' ? form.contract_value_gbp : 1_000_000_000, step: 1 }];
     return {
       code: l.measure,
       name: m?.name ?? l.measure_name ?? l.measure,
