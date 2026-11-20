@@ -1,7 +1,7 @@
 // A draft bid response for one initiative, laid out like Infosys's past social value responses:
 // method statement, who we prioritise, mobilisation, the commitment, delivery plan, track record, governance, impact.
 import { formatGbp } from '../utils/formatters';
-import { deliveryOf, initiativeMacs, isOn, lineValue, unitsOf, wordingFor } from './engine';
+import { deliveryOf, initiativeMacs, isOn, lineValue, unitsOf, withoutQuantities, wordingFor } from './engine';
 import { frameworkById, macLabel } from './frameworks';
 import { plainMeasure } from './plainLanguage';
 import type { Initiative, InitiativeLine, TenderForm } from './types';
@@ -40,6 +40,7 @@ export function bidDraft(ini: Initiative, form: TenderForm, client = ''): BidDra
   const lead = macs[0] ?? initiativeMacs(ini)[0];
   const criterion = lead ? fw.criteria.find((c) => c.code === lead.mac) : undefined;
   const p = ini.pattern;
+  const what = ini.edited ? p.what : withoutQuantities(p.what);
   const years = form.duration_years;
   const counted = ini.lines.filter((l) => isOn(l) && l.proxy_gbp != null && unitsOf(l) > 0);
   // Only a partner the bid team has chosen is named here. An unconfirmed suggestion stays unnamed.
@@ -52,7 +53,7 @@ export function bidDraft(ini: Initiative, form: TenderForm, client = ''): BidDra
     heading: 'Method statement',
     paragraphs: [
       wordingFor(ini, form).trim() ||
-        `Through delivery of the contract, Infosys will ${p.what ? p.what.charAt(0).toLowerCase() + p.what.slice(1).replace(/\.$/, '') : `deliver ${p.name.toLowerCase()}`}${form.region ? ` in the ${form.region}` : ''}. This builds on the technology and services delivered under this contract, so that the benefit is additional to business as usual and directly relevant to ${buyer}.`,
+        `Through delivery of the contract, Infosys will ${what ? what.charAt(0).toLowerCase() + what.slice(1).replace(/\.$/, '') : `deliver ${p.name.toLowerCase()}`}${form.region ? ` in the ${form.region}` : ''}. This builds on the technology and services delivered under this contract, so that the benefit is additional to business as usual and directly relevant to ${buyer}.`,
       sentence(ini.fit_reason)
     ].filter(Boolean)
   });

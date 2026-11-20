@@ -191,6 +191,10 @@ export interface InitiativeLine {
   exclusive_group: string | null;
   macs: MacLink[];
   note: string;
+  /** The AI's own arithmetic for the quantity. Only true while the quantity is the AI's. */
+  basis?: string;
+  /** The quantity the AI first proposed, where the package was cut back to the target. */
+  units_proposed?: number;
   evidence_required: string;
 }
 

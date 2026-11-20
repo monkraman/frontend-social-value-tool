@@ -1311,6 +1311,10 @@ button {
   font-variant-numeric: tabular-nums;
   color: var(--text-primary);
 }
+.gen-about {
+  margin-top: -0.35rem;
+  color: var(--text-muted);
+}
 .gen-tag {
   display: inline-block;
   margin-right: 0.35rem;

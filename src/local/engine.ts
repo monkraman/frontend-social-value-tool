@@ -2,6 +2,7 @@
 // the tables, and enforces the counting rules. Pure functions, no network.
 // Rule references (A-xx) are to the Assumptions sheet of the Monk Spaces knowledge base workbook.
 import { frameworkById, macLabel } from './frameworks';
+import { plainMeasure } from './plainLanguage';
 import type { Initiative, InitiativeLine, LocalKnowledge, LocalMeasure, MacLink, TenderForm } from './types';
 
 // A-07: one measure per activity. Only one of these can be counted within an initiative.
@@ -136,8 +137,50 @@ export function deliveryOf(ini: Initiative): { by: string; partner: string; pend
 export const unitsChanged = (initiatives: Initiative[]): boolean => initiatives.some(volumesEdited);
 
 /** True once a volume on this initiative differs from what the AI proposed. */
-export const volumesEdited = (ini: Initiative): boolean =>
-  ini.lines.some((l) => l.factors.some((f, k) => f.value !== l.suggested[k]?.value));
+/** The bid team has changed this line's numbers since the AI's answer came back. */
+export const lineEdited = (l: InitiativeLine): boolean => l.factors.some((f, k) => f.value !== l.suggested[k]?.value);
+
+/** The package was cut back to the target, so this line is no longer what the AI proposed. */
+export const lineTrimmed = (l: InitiativeLine): boolean => l.units_proposed != null && l.units_proposed !== unitsOf({ ...l, factors: l.suggested });
+
+/** True once any number on this initiative differs from what the AI wrote into its prose. */
+export const volumesEdited = (ini: Initiative): boolean => ini.lines.some((l) => lineEdited(l) || lineTrimmed(l));
+
+/** "12 apprentices, 78 weeks each", "10 people", "£300,000 spent": a line's quantity in words. */
+export function quantityPhrase(l: InitiativeLine): string {
+  return l.factors
+    .filter((f) => !f.fixed && f.label !== 'Years')
+    .map((f) => {
+      const n = f.value.toLocaleString('en-GB', { maximumFractionDigits: f.value < 10 ? 1 : 0 });
+      if (/^£/.test(f.label)) return `£${n} ${f.label.replace(/^£\s*/, '')}`.trim();
+      return `${n}${f.percent ? '%' : ''} ${lower(f.label.replace(/\s*\(%\)$/, ''))}`;
+    })
+    .join(', ');
+}
+
+/** What this initiative commits to, written from the lines that are counted.
+ *
+ * "Hiring people out of work for a year or more: 10 people". Built from the same numbers as the
+ * value, so the commitment and the table cannot disagree, and any edit shows up in both.
+ */
+export function commitmentOf(ini: Initiative): string {
+  return ini.lines
+    .filter((l) => isOn(l) && l.proxy_gbp != null && unitsOf(l) > 0)
+    .map((l) => `${plainMeasure(l.code, l.name, l.unit).name}: ${quantityPhrase(l)}`)
+    .join('; ');
+}
+
+/** Take the figures out of the AI's description, so it cannot contradict the table.
+ *
+ * The AI used to write "recruit 40 people" while its own line said 20 — and after any edit
+ * both are wrong. The quantity is shown from the lines; the description keeps only the who,
+ * where and how. "Level 3/4" and durations like "over 5 years" are left alone.
+ */
+export const withoutQuantities = (text: string): string =>
+  text
+    .replace(/(?<![\w/£.-])(?<!Level )\d[\d,]*(?:\.\d+)?%?\s+(?=[a-z])(?!(?:years?|months?|days?|weeks? each)\b)/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
 
 /** The wording to show: the AI's until a volume changes under it, then one built from the numbers.
  *
@@ -199,18 +242,11 @@ const lower = (s: string) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : s);
 /** First-draft wording for the method statement. No £ figures: the value sits in the tables. */
 export function bidParagraph(ini: Initiative, form: TenderForm): string {
   const p = ini.pattern;
-  const volumes = ini.lines
-    .filter(isOn)
-    .map((l) =>
-      l.factors
-        .filter((f) => !f.fixed && f.label !== 'Years')
-        .map((f) => `${f.value.toLocaleString('en-GB')}${f.percent ? '%' : ''} ${lower(f.label.replace(/\s*\(%\)$/, ''))}`)
-        .join(', ')
-    )
-    .filter(Boolean);
+  const volumes = ini.lines.filter(isOn).map(quantityPhrase).filter(Boolean);
   const macs = initiativeMacs(ini).filter((l) => form.criteria.length === 0 || form.criteria.includes(l.mac));
   const parts = [
-    [`${p.name}.`, p.what, p.who_benefits ? `This is for ${lower(p.who_benefits)}${form.region ? ` in ${form.region}` : ''}.` : ''].filter(Boolean).join(' '),
+    // The description's own figures would contradict the volumes stated next; only the bid team's own words keep theirs.
+    [`${p.name}.`, ini.edited ? p.what : withoutQuantities(p.what), p.who_benefits ? `This is for ${lower(p.who_benefits)}${form.region ? ` in ${form.region}` : ''}.` : ''].filter(Boolean).join(' '),
     volumes.length ? `Over the ${form.duration_years}-year contract Infosys commits to ${volumes.join('; ')}.` : '',
     // Not lowercased: this is a partner's name or "Infosys", and both are proper nouns.
     `Delivery is led by ${deliveryOf(ini).by}, with the first activity in the opening 12 months and progress reported to ${form.client || 'the Authority'} every quarter.`,

@@ -4,7 +4,7 @@ import { formatGbp } from '../../utils/formatters';
 import { macLabel } from '../../local/frameworks';
 import { bidDraft, draftText, type BidDraft } from '../../local/bidDraft';
 import { plainMeasure } from '../../local/plainLanguage';
-import { deliveryOf, initiativeConditional, initiativeMacs, initiativeValue, isOn, lineValue, macRating, unitsOf, wordingFor, type MacRating } from '../../local/engine';
+import { commitmentOf, deliveryOf, initiativeConditional, initiativeMacs, initiativeValue, isOn, lineValue, macRating, lineEdited, lineTrimmed, unitsOf, withoutQuantities, wordingFor, type MacRating } from '../../local/engine';
 import type { Initiative, InitiativeLine, KnownPartner, TenderForm } from '../../local/types';
 
 const RATING_CLASS: Record<MacRating, string> = { Strong: 'pill-strong', Partial: 'pill-partial', 'Not scored': 'pill-none' };
@@ -54,6 +54,7 @@ export const InitiativeCard: React.FC<CardProps> = ({
   const [draft, setDraft] = useState<BidDraft | null>(null);
   const p = ini.pattern;
   const delivery = deliveryOf(ini);
+  const commitment = commitmentOf(ini);
   const macs = initiativeMacs(ini);
   const value = initiativeValue(ini);
   const conditional = initiativeConditional(ini);
@@ -105,9 +106,12 @@ export const InitiativeCard: React.FC<CardProps> = ({
         />
       ) : (
         <div className="card-body">
+          {/* The quantity comes from the counted lines, so it always matches the table below and
+              follows any edit. The AI's description keeps the who, where and how, without figures. */}
           <p className="body-text">
-            <span className="gen-tag">Commitment</span> {p.what}
+            <span className="gen-tag">Commitment</span> {commitment || withoutQuantities(p.what)}
           </p>
+          {commitment && p.what && <p className="body-text gen-about">{ini.edited ? p.what : withoutQuantities(p.what)}</p>}
           <p className="gen-meta">
             {p.who_benefits ? `For ${p.who_benefits.toLowerCase()} · ` : ''}Delivered by {delivery.by} · {ini.edited ? 'Edited by you' : source}
           </p>
@@ -487,6 +491,15 @@ const LineRow: React.FC<{ line: InitiativeLine; onFactor: (index: number, value:
       <td>
         <strong>{plain.name}</strong> <span className="tag-mono" title={l.name}>{l.code}</span>
         {plain.explain && <div className="gen-meta">{plain.explain}</div>}
+        {/* The AI's arithmetic only describes the AI's number. Once the package is cut back or the
+            figure is changed, it would explain a quantity that is no longer there. */}
+        {l.basis && !lineEdited(l) && !lineTrimmed(l) && <div className="gen-meta">{l.basis}</div>}
+        {l.units_proposed != null && (lineTrimmed(l) || lineEdited(l)) && (
+          <div className="gen-meta">
+            The AI proposed {l.units_proposed.toLocaleString('en-GB')} {plain.unit}
+            {lineTrimmed(l) && !lineEdited(l) ? ' — cut back so the package stays within the target, which earns no more score above it.' : '.'}
+          </div>
+        )}
         {l.note && <div className="gen-meta">{l.note}</div>}
       </td>
       <td>

@@ -103,7 +103,9 @@ function toLines(g: GeneratedInitiative, knowledge: LocalKnowledge, form: Tender
       status: proxy == null ? 'Not valued' : (STATUS[l.status] ?? 'Counted'),
       exclusive_group: exclusiveGroupOf(l.measure),
       macs: macsForMeasure(l.measure, form.framework, knowledge.measure_mac),
-      note: [l.basis, l.note, unscoredReason(l.measure, form.framework)].filter(Boolean).join(' · '),
+      note: [l.note, unscoredReason(l.measure, form.framework)].filter(Boolean).join(' · '),
+      basis: l.basis || undefined,
+      units_proposed: l.units_proposed ?? undefined,
       evidence_required: m?.target_guidance || m?.evidence_required || ''
     };
   });

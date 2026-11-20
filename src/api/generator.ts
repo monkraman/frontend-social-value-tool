@@ -46,6 +46,9 @@ export interface ValuedLine {
   units: number | null;
   /** How many people the quantity covers, where the measure counts time rather than people. */
   people?: number | null;
+  /** What the AI first proposed, when the package was cut back to the target. */
+  units_proposed?: number | null;
+  people_proposed?: number | null;
   basis: string;
   proxy_gbp: number | null;
   proxy_basis: string | null;
