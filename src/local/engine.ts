@@ -146,6 +146,12 @@ export const lineTrimmed = (l: InitiativeLine): boolean => l.units_proposed != n
 /** True once any number on this initiative differs from what the AI wrote into its prose. */
 export const volumesEdited = (ini: Initiative): boolean => ini.lines.some((l) => lineEdited(l) || lineTrimmed(l));
 
+/** "624 apprentice weeks", but "£200,000 spent" when the unit is money. */
+export function amountIn(n: number, unit: string): string {
+  const v = n.toLocaleString('en-GB', { maximumFractionDigits: n < 10 ? 1 : 0 });
+  return /^£/.test(unit.trim()) ? `£${v} ${unit.trim().replace(/^£\s*/, '')}`.trim() : `${v} ${unit}`.trim();
+}
+
 /** "12 apprentices, 78 weeks each", "10 people", "£300,000 spent": a line's quantity in words. */
 export function quantityPhrase(l: InitiativeLine): string {
   return l.factors

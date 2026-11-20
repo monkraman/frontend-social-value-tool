@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { LoaderCircle, MessageSquare, RotateCcw, Sliders, Sparkles, Upload, X } from 'lucide-react';
+import { FilePenLine, LoaderCircle, MessageSquare, RotateCcw, Sliders, Sparkles, Upload, X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { createRun, getRun, runGenerator, updateRun, type RunInput } from '../../api/generator';
 import { backendRequest, fromBackend, searchTerms, valueChecks } from '../../local/backendAi';
@@ -11,6 +11,8 @@ import { DEFAULT_INDUSTRY, checksOf, resetUnits, setFactor, toggleLine, totalsOf
 import type { FrameworkId, Initiative, KnownPartner, LocalDocument, PolicyReading, PolicyTopic, TenderForm } from '../../local/types';
 import { PROMPT_EXAMPLES, readPrompt, type PromptReading } from '../../local/promptParse';
 import { InitiativeCard, type InitiativeEdit } from './InitiativeCard';
+import { blockFromInitiative, openEditor, type EditorCandidates } from '../../local/rfpDoc';
+import type { CostItem, LocalKnowledge } from '../../local/types';
 
 const INITIAL_FORM: TenderForm = {
   client: '',
@@ -319,6 +321,15 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
     [initiatives, resultForm, knowledge]
   );
 
+  const connected: LocalKnowledge | null = knowledge?.connected ? (knowledge as LocalKnowledge) : null;
+  // Every initiative in the package, as the editor would lay it out, so it can import any of them.
+  const candidates = (): EditorCandidates => ({
+    tender: resultForm.client.trim() || 'Social value response',
+    client: resultForm.client,
+    framework: resultForm.framework,
+    blocks: (initiatives ?? []).filter((x) => x.included).map((x) => blockFromInitiative(x, resultForm, connected))
+  });
+
   if (!knowledge) {
     return (
       <p className="muted">
@@ -565,6 +576,9 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
                 <RotateCcw size={14} /> Undo my changes
               </button>
             )}
+            <button className="btn-secondary" onClick={() => openEditor(candidates())} title="Write the bid response from these initiatives">
+              <FilePenLine size={14} /> RFP editor
+            </button>
           </div>
 
           {(reading.buyer.length > 0 || reading.infosys.length > 0) && (
@@ -605,7 +619,9 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
               }}
               onChoosePartner={(choice) => update(ini.id, (x) => ({ ...x, partner_choice: choice }))}
               partners={partners}
-              onCopied={() => toast.success('Copied')}
+              knowledge={connected}
+              onCosts={(items: CostItem[] | undefined) => update(ini.id, (x) => ({ ...x, costs: items }))}
+              onOpenEditor={() => openEditor(candidates(), [blockFromInitiative(ini, resultForm, connected)])}
             />
           ))}
 

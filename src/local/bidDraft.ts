@@ -1,7 +1,7 @@
 // A draft bid response for one initiative, laid out like Infosys's past social value responses:
 // method statement, who we prioritise, mobilisation, the commitment, delivery plan, track record, governance, impact.
 import { formatGbp } from '../utils/formatters';
-import { deliveryOf, initiativeMacs, isOn, lineValue, unitsOf, withoutQuantities, wordingFor } from './engine';
+import { amountIn, deliveryOf, initiativeMacs, isOn, lineValue, unitsOf, withoutQuantities, wordingFor } from './engine';
 import { frameworkById, macLabel } from './frameworks';
 import { plainMeasure } from './plainLanguage';
 import type { Initiative, InitiativeLine, TenderForm } from './types';
@@ -75,7 +75,7 @@ export function bidDraft(ini: Initiative, form: TenderForm, client = ''): BidDra
     bullets: counted.length
       ? counted.map((l) => {
           const plain = plainMeasure(l.code, l.name, l.unit);
-          return `${plain.name}: ${fmt(unitsOf(l))} ${plain.unit} (${l.code}), worth ${formatGbp(lineValue(l))} in social value.`;
+          return `${plain.name}: ${amountIn(unitsOf(l), plain.unit)} (${l.code}), worth ${formatGbp(lineValue(l))} in social value.`;
         })
       : [`Deliver ${p.name.toLowerCase()} with targets agreed with ${buyer} at mobilisation.`]
   });
@@ -170,7 +170,7 @@ function phasedFromPastDelivery(ini: Initiative, years: number): DraftSection | 
   const share = (s: (typeof ordered)[number]): string => {
     if (!line || !plain || !partsTotal || !parts.includes(s)) return '';
     const amount = (commitment * (s.target ?? 0)) / partsTotal;
-    return `${fmt(amount)} ${plain.unit}`;
+    return amountIn(amount, plain.unit);
   };
 
   const rows = ordered.map((s) => [when(Math.round(s.offset * squeeze)), s.step, share(s) || '—', s.cycle || 'Once']);
@@ -179,7 +179,7 @@ function phasedFromPastDelivery(ini: Initiative, years: number): DraftSection | 
     heading: 'Delivery plan',
     paragraphs: [
       `Phased as Infosys phased the same work before, timed from contract start over ${years} years${
-        partsTotal && plain ? ` and sized to the ${fmt(commitment)} ${plain.unit} committed here` : ''
+        partsTotal && plain ? ` and sized to the ${amountIn(commitment, plain.unit)} committed here` : ''
       }. Confirm the dates with the Authority at mobilisation.`
     ],
     table: { head: ['When', 'Step', 'How much', 'Reported'], rows }

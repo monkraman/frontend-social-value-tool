@@ -21,6 +21,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { PageHeader } from './PageHeader';
+import { GeneratedBids } from './GeneratedBids';
 
 export const Documents: React.FC = () => {
   const {
@@ -255,6 +256,8 @@ export const Documents: React.FC = () => {
   return (
     <div className="page">
       <PageHeader title="Repository" />
+
+      <GeneratedBids />
 
       {/* Upload Drop Zone - Compact & Clean */}
       <div

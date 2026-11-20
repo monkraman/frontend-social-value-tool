@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Check, Copy, FileText, Handshake, Pencil, RotateCcw, X } from 'lucide-react';
+import { Check, FilePenLine, FileText, Handshake, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { formatGbp } from '../../utils/formatters';
 import { macLabel } from '../../local/frameworks';
-import { bidDraft, draftText, type BidDraft } from '../../local/bidDraft';
+import { bidDraft, type BidDraft } from '../../local/bidDraft';
+import { BASIS_LABEL, cheaperOptions, costsOf, defaultCosts, initiativeCost, itemCost, newCostId, pastCosts, peopleOf, quantityLabel, quantityOf, returnOnCost, valuePerPound, costTables } from '../../local/costs';
 import { plainMeasure } from '../../local/plainLanguage';
 import { commitmentOf, deliveryOf, initiativeConditional, initiativeMacs, initiativeValue, isOn, lineValue, macRating, lineEdited, lineTrimmed, unitsOf, withoutQuantities, wordingFor, type MacRating } from '../../local/engine';
-import type { Initiative, InitiativeLine, KnownPartner, TenderForm } from '../../local/types';
+import type { CostBasis, CostItem, Initiative, InitiativeLine, KnownPartner, LocalKnowledge, StaffRate, TenderForm } from '../../local/types';
 
 const RATING_CLASS: Record<MacRating, string> = { Strong: 'pill-strong', Partial: 'pill-partial', 'Not scored': 'pill-none' };
 const FIT_CLASS = { 'Core strength': 'pill-strong', Deliverable: 'pill-partial', 'Needs a partner': 'pill-none' } as const;
@@ -44,11 +45,13 @@ interface CardProps {
   onEdit: (edit: InitiativeEdit) => void;
   onChoosePartner: (choice: string | undefined) => void;
   partners: KnownPartner[];
-  onCopied: () => void;
+  knowledge: LocalKnowledge | null;
+  onCosts: (items: CostItem[] | undefined) => void;
+  onOpenEditor: () => void;
 }
 
 export const InitiativeCard: React.FC<CardProps> = ({
-  index, initiative: ini, form, onInclude, onFactor, onToggleLine, onReset, onEdit, onChoosePartner, partners, onCopied
+  index, initiative: ini, form, onInclude, onFactor, onToggleLine, onReset, onEdit, onChoosePartner, partners, knowledge, onCosts, onOpenEditor
 }) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<BidDraft | null>(null);
@@ -115,10 +118,6 @@ export const InitiativeCard: React.FC<CardProps> = ({
           <p className="gen-meta">
             {p.who_benefits ? `For ${p.who_benefits.toLowerCase()} · ` : ''}Delivered by {delivery.by} · {ini.edited ? 'Edited by you' : source}
           </p>
-
-          {(ini.partner_suggested || ini.partner_choice) && (
-            <PartnerChoice initiative={ini} partners={partners} onChoose={onChoosePartner} />
-          )}
 
           <div className="chip-row" aria-label="Award criteria">
             {macs.length === 0 && <span className="gen-meta">No criterion under this framework.</span>}
@@ -222,18 +221,16 @@ export const InitiativeCard: React.FC<CardProps> = ({
 
       {ini.included && !editing && (
         <>
+          <PartnerSection initiative={ini} partners={partners} onChoose={onChoosePartner} />
+
+          <CostSection initiative={ini} knowledge={knowledge} form={form} onCosts={onCosts} />
+
           <details className="gen-more">
             <summary>Draft wording</summary>
             <div className="gen-more-body">
               <p className="body-text">{paragraph}</p>
-              <button
-                className="btn-link"
-                onClick={() => {
-                  navigator.clipboard.writeText(paragraph);
-                  onCopied();
-                }}
-              >
-                <Copy size={12} /> Copy
+              <button className="btn-link" onClick={onOpenEditor}>
+                <FilePenLine size={12} /> Edit in RFP editor
               </button>
             </div>
           </details>
@@ -275,94 +272,329 @@ export const InitiativeCard: React.FC<CardProps> = ({
         <DraftDialog
           draft={draft}
           onClose={() => setDraft(null)}
-          onCopied={onCopied}
+          onOpenEditor={() => {
+            setDraft(null);
+            onOpenEditor();
+          }}
         />
       )}
     </section>
   );
 };
 
-/** A suggested partner is an option, not a commitment. Nothing is named in the bid until one is picked. */
-const PartnerChoice: React.FC<{ initiative: Initiative; partners: KnownPartner[]; onChoose: (c: string | undefined) => void }> = ({
+/** Who delivers it. A partner the AI suggested is an option only: nothing is named in the bid until chosen. */
+const PartnerSection: React.FC<{ initiative: Initiative; partners: KnownPartner[]; onChoose: (c: string | undefined) => void }> = ({
   initiative: ini,
   partners,
   onChoose
 }) => {
   const suggested = (ini.partner_suggested ?? '').trim();
-  const decided = ini.partner_choice !== undefined;
+  const chosen = ini.partner_choice;
+  const [typing, setTyping] = useState(false);
+  const [own, setOwn] = useState('');
   const known = partners.filter((p) => p.name && p.name.toLowerCase() !== suggested.toLowerCase());
   const before = known.filter((p) => p.worked_with_before && !p.contract_specific);
   const others = known.filter((p) => !p.worked_with_before || p.contract_specific);
-  const match = partners.find((p) => p.name.toLowerCase() === suggested.toLowerCase());
-
-  if (decided) {
-    const chosen = (ini.partner_choice ?? '').trim();
-    return (
-      <div className="gen-partner is-set">
-        <Handshake size={14} />
-        <span>
-          {chosen ? (
-            <>
-              Delivering with <strong>{chosen}</strong>
-              {partners.find((p) => p.name === chosen)?.worked_with_before ? ' · worked with before' : ''}
-            </>
-          ) : (
-            <>Infosys delivering alone</>
-          )}
-        </span>
-        <button className="btn-link" onClick={() => onChoose(undefined)}>
-          Change
-        </button>
-      </div>
-    );
-  }
+  const named = (name: string) => partners.find((p) => p.name.toLowerCase() === name.toLowerCase());
+  const status =
+    chosen === undefined ? (suggested ? `AI suggests ${suggested} · not chosen yet` : 'not chosen yet') : chosen.trim() ? chosen : 'Infosys alone';
+  const value = chosen === undefined ? '__none' : chosen.trim() === '' ? '__alone' : chosen;
+  const listed = value === '__none' || value === '__alone' || value === suggested || partners.some((p) => p.name === value);
+  const useOwn = () => {
+    if (!own.trim()) return;
+    onChoose(own.trim());
+    setTyping(false);
+  };
+  const select = (v: string) => {
+    if (v === '__own') {
+      setTyping(true);
+      return;
+    }
+    setTyping(false);
+    onChoose(v === '__none' ? undefined : v === '__alone' ? '' : v);
+  };
 
   return (
-    <div className="gen-partner">
-      <div className="gen-partner-head">
-        <Handshake size={14} />
-        <span>
-          The AI suggests delivering this with <strong>{suggested}</strong>
-          {match?.worked_with_before ? ' — Infosys has worked with them before.' : match ? ' — not used on a contract before.' : '.'} Nothing is named in the bid
-          until you choose.
+    <details className="gen-more" open={chosen === undefined && !!suggested}>
+      <summary>
+        Delivery partner <span className="gen-meta">· {status}</span>
+      </summary>
+      <div className="gen-more-body">
+        {suggested && chosen === undefined && (
+          <p className="body-text">
+            <Handshake size={13} /> The AI suggests <strong>{suggested}</strong>
+            {named(suggested)?.worked_with_before
+              ? ' — Infosys has worked with them before.'
+              : named(suggested)
+                ? ' — not used on a contract before.'
+                : ' — not in the capability profile.'}{' '}
+            Nothing is named in the bid until you choose.
+          </p>
+        )}
+        <div className="chip-row">
+          <select className="select-compact" value={typing ? '__own' : value} aria-label="Delivery partner" onChange={(e) => select(e.target.value)}>
+            <option value="__none">Not chosen yet</option>
+            <option value="__alone">Infosys alone</option>
+            {suggested && <option value={suggested}>{suggested} (AI suggestion)</option>}
+            {!listed && <option value={value}>{value}</option>}
+            {before.length > 0 && (
+              <optgroup label="Worked with before">
+                {before.map((p) => (
+                  <option key={p.name} value={p.name}>
+                    {p.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {others.length > 0 && (
+              <optgroup label="Not delivered with yet">
+                {others.map((p) => (
+                  <option key={p.name} value={p.name}>
+                    {p.name}
+                    {p.contract_specific ? ' (one past contract only)' : ''}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            <option value="__own">Another partner (type the name)…</option>
+          </select>
+          {typing && (
+            <>
+              <input
+                className="input-compact"
+                autoFocus
+                value={own}
+                placeholder="Partner name"
+                aria-label="Partner name"
+                onChange={(e) => setOwn(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && useOwn()}
+              />
+              <button className="btn-secondary" disabled={!own.trim()} onClick={useOwn}>
+                <Check size={13} /> Use
+              </button>
+            </>
+          )}
+        </div>
+        {chosen && named(chosen)?.capability && <p className="gen-meta">{named(chosen)!.capability}</p>}
+      </div>
+    </details>
+  );
+};
+
+const ratio = (n: number) => `£${n.toFixed(2)}`;
+
+/** What it costs Infosys to deliver: rows of rate × quantity, the quantity taken from the valuation where it can be. */
+const CostSection: React.FC<{ initiative: Initiative; knowledge: LocalKnowledge | null; form: TenderForm; onCosts: (items: CostItem[] | undefined) => void }> = ({
+  initiative: ini,
+  knowledge,
+  form,
+  onCosts
+}) => {
+  const items = costsOf(ini, knowledge);
+  const total = initiativeCost(ini, knowledge);
+  const back = returnOnCost(ini, knowledge);
+  const tables = costTables(knowledge);
+  const past = pastCosts(ini, knowledge).filter((e) => !items.some((i) => i.label === e.description));
+  const cheaper = cheaperOptions(ini, knowledge, form);
+  const counted = ini.lines.filter((l) => isOn(l) && l.proxy_gbp != null);
+  const change = (id: string, patch: Partial<CostItem>) => onCosts(items.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+  const add = (c: Omit<CostItem, 'id'>) => onCosts([...items, { ...c, id: newCostId() }]);
+  const first = counted[0];
+  const peopleLink = first ? { code: first.code, what: (peopleOf(first) != null ? 'people' : 'units') as 'people' | 'units' } : undefined;
+  const perLine = counted
+    .map((l) => [l.code, valuePerPound(l.code, tables)] as const)
+    .filter(([, v]) => v != null)
+    .map(([code, v]) => `${code} ${ratio(v!)}`);
+
+  return (
+    <details className="gen-more">
+      <summary>
+        Cost to deliver{' '}
+        <span className="gen-meta">
+          · {total > 0 ? formatGbp(total) : 'not costed'}
+          {back != null ? ` · ${ratio(back)} of social value per £1` : ''}
         </span>
+      </summary>
+      <div className="gen-more-body">
+        {items.length > 0 ? (
+          <div className="table-scroll">
+            <table className="data-table gen-table gen-cost">
+              <thead>
+                <tr>
+                  <th>Cost item</th>
+                  <th>Rate £</th>
+                  <th>Per</th>
+                  <th>How many</th>
+                  <th>× each</th>
+                  <th>Cost</th>
+                  <th aria-label="Remove" />
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((c) => (
+                  <CostRow key={c.id} item={c} initiative={ini} counted={counted} onChange={(patch) => change(c.id, patch)} onRemove={() => onCosts(items.filter((x) => x.id !== c.id))} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="body-text">The workbook has no unit cost for these measures. Add the costs below.</p>
+        )}
+
+        <div className="chip-row gen-cost-add">
+          <button className="btn-secondary" onClick={() => add({ label: 'Staff time', basis: 'hour', rate: 0, quantity: 0, link: peopleLink, each: 1, each_label: 'hours each' })}>
+            <Plus size={13} /> Rate per hour
+          </button>
+          <button className="btn-secondary" onClick={() => add({ label: 'Day rate', basis: 'day', rate: 0, quantity: 0, link: peopleLink, each: 1, each_label: 'days each' })}>
+            <Plus size={13} /> Rate per day
+          </button>
+          <button className="btn-secondary" onClick={() => add({ label: 'Cost per person', basis: 'person', rate: 0, quantity: 0, link: peopleLink, each: 1 })}>
+            <Plus size={13} /> Per person
+          </button>
+          <button className="btn-secondary" onClick={() => add({ label: 'Devices, licences or partner fee', basis: 'fixed', rate: 0, quantity: 0, each: 1 })}>
+            <Plus size={13} /> Fixed sum
+          </button>
+          {tables.rate_card.length > 0 && (
+            <select
+              className="select-compact"
+              value=""
+              aria-label="Add a staff grade from the rate card"
+              onChange={(e) => {
+                const r: StaffRate | undefined = tables.rate_card.find((x) => x.grade === e.target.value);
+                if (r) add({ label: `${r.role} (${r.location})`, basis: 'hour', rate: Math.round((r.per_hour ?? 0) * 100) / 100, quantity: 0, link: peopleLink, each: 1, each_label: 'hours each' });
+              }}
+            >
+              <option value="">Staff rate card…</option>
+              {tables.rate_card.map((r) => (
+                <option key={r.grade} value={r.grade}>
+                  {r.role} · {r.location} · £{(r.per_hour ?? 0).toFixed(2)}/hr
+                </option>
+              ))}
+            </select>
+          )}
+          {ini.costs && (
+            <button className="btn-link" onClick={() => onCosts(undefined)} title={`Back to the ${defaultCosts(ini, knowledge).length} row(s) worked out from the workbook`}>
+              <RotateCcw size={12} /> Workbook costs
+            </button>
+          )}
+        </div>
+
+        {past.length > 0 && (
+          <div className="gen-block">
+            <h3 className="gen-label">What similar work cost before</h3>
+            <ul className="gen-list">
+              {past.map((e) => (
+                <li key={e.description}>
+                  {e.description}
+                  {e.vendor ? <span className="gen-meta"> · {e.vendor}</span> : null} · <strong>{formatGbp(e.amount_gbp ?? 0)}</strong>{' '}
+                  <button className="btn-link" onClick={() => add({ label: e.description, basis: 'fixed', rate: e.amount_gbp ?? 0, quantity: 0, each: 1 })}>
+                    <Plus size={12} /> Add
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {cheaper.length > 0 && (
+          <div className="gen-block">
+            <h3 className="gen-label">Cheaper ways to score the same criterion</h3>
+            <ul className="gen-list">
+              {cheaper.map((o) => (
+                <li key={o.code}>
+                  <strong>{o.name}</strong> ({o.code}) returns {ratio(o.value_per_gbp)} per £1 of cost, against {ratio(o.instead_value_per_gbp)} for{' '}
+                  {o.instead_of.toLowerCase()} · {macLabel(o.mac)}
+                </li>
+              ))}
+            </ul>
+            <p className="gen-meta">From the workbook Levers sheet. Unit economics only: what the buyer asks for still decides.</p>
+          </div>
+        )}
+        {perLine.length > 0 && <p className="gen-meta">Social value per £1 of cost: {perLine.join(' · ')}.</p>}
       </div>
-      <div className="chip-row">
-        <button className="btn-secondary" onClick={() => onChoose(suggested)}>
-          <Check size={13} /> Use {suggested}
-        </button>
-        <button className="btn-secondary" onClick={() => onChoose('')}>
-          Infosys alone
-        </button>
-        <select
-          className="select-compact"
-          value=""
-          aria-label="Choose a different partner"
-          onChange={(e) => e.target.value && onChoose(e.target.value)}
-        >
-          <option value="">Someone else…</option>
-          {before.length > 0 && (
-            <optgroup label="Worked with before">
-              {before.map((p) => (
-                <option key={p.name} value={p.name}>
-                  {p.name}
-                </option>
-              ))}
-            </optgroup>
-          )}
-          {others.length > 0 && (
-            <optgroup label="Not delivered with yet">
-              {others.map((p) => (
-                <option key={p.name} value={p.name}>
-                  {p.name}
-                  {p.contract_specific ? ' (one past contract only)' : ''}
-                </option>
-              ))}
-            </optgroup>
-          )}
+    </details>
+  );
+};
+
+const CostRow: React.FC<{ item: CostItem; initiative: Initiative; counted: InitiativeLine[]; onChange: (patch: Partial<CostItem>) => void; onRemove: () => void }> = ({
+  item: c,
+  initiative: ini,
+  counted,
+  onChange,
+  onRemove
+}) => {
+  const num = (v: string) => Number(v) || 0;
+  return (
+    <tr>
+      <td>
+        <input className="input-compact gen-cost-label" value={c.label} aria-label="Cost item" onChange={(e) => onChange({ label: e.target.value })} />
+      </td>
+      <td>
+        <input className="input-compact gen-num" type="number" min={0} step="any" value={c.rate} aria-label="Rate" onChange={(e) => onChange({ rate: num(e.target.value) })} />
+      </td>
+      <td>
+        <select className="select-compact" value={c.basis} aria-label="Rate per" onChange={(e) => onChange({ basis: e.target.value as CostBasis })}>
+          {(Object.keys(BASIS_LABEL) as CostBasis[]).map((b) => (
+            <option key={b} value={b}>
+              {BASIS_LABEL[b]}
+            </option>
+          ))}
         </select>
-      </div>
-    </div>
+      </td>
+      <td>
+        {c.basis === 'fixed' ? (
+          <span className="gen-meta">—</span>
+        ) : c.link ? (
+          <span className="gen-linked" title="Taken from the valuation table, so it follows any change there">
+            {fmtUnits(quantityOf(c, ini))} {quantityLabel(c, ini)}{' '}
+            <button className="btn-link" onClick={() => onChange({ link: undefined, quantity: quantityOf(c, ini) })}>
+              type instead
+            </button>
+          </span>
+        ) : (
+          <span className="gen-linked">
+            <input className="input-compact gen-num" type="number" min={0} step="any" value={c.quantity} aria-label="How many" onChange={(e) => onChange({ quantity: num(e.target.value) })} />
+            {counted.length > 0 && (
+              <select
+                className="select-compact"
+                value=""
+                aria-label="Take the number from the valuation"
+                onChange={(e) => {
+                  const [code, what] = e.target.value.split('|');
+                  if (code) onChange({ link: { code, what: what as 'units' | 'people' } });
+                }}
+              >
+                <option value="">from the table…</option>
+                {counted.flatMap((l) => {
+                  const plain = plainMeasure(l.code, l.name, l.unit);
+                  const people = peopleOf(l);
+                  return [
+                    ...(people != null ? [<option key={`${l.code}p`} value={`${l.code}|people`}>{`${fmtUnits(people)} ${l.factors[0].label.toLowerCase()}`}</option>] : []),
+                    <option key={`${l.code}u`} value={`${l.code}|units`}>{`${fmtUnits(unitsOf(l))} ${plain.unit}`}</option>
+                  ];
+                })}
+              </select>
+            )}
+          </span>
+        )}
+      </td>
+      <td>
+        {c.basis === 'fixed' ? (
+          <span className="gen-meta">—</span>
+        ) : (
+          <span className="gen-linked">
+            <input className="input-compact gen-num" type="number" min={0} step="any" value={c.each} aria-label="Multiplier" onChange={(e) => onChange({ each: num(e.target.value) })} />
+            <input className="input-compact gen-each" value={c.each_label ?? ''} placeholder="e.g. hours each" aria-label="What the multiplier counts" onChange={(e) => onChange({ each_label: e.target.value })} />
+          </span>
+        )}
+      </td>
+      <td className="gen-num-cell">{formatGbp(itemCost(c, ini))}</td>
+      <td>
+        <button className="icon-button" aria-label={`Remove ${c.label}`} onClick={onRemove}>
+          <Trash2 size={13} />
+        </button>
+      </td>
+    </tr>
   );
 };
 
@@ -412,7 +644,7 @@ const EditForm: React.FC<{ initiative: Initiative; wording: string; onSave: (e: 
   );
 };
 
-const DraftDialog: React.FC<{ draft: BidDraft; onClose: () => void; onCopied: () => void }> = ({ draft, onClose, onCopied }) => {
+const DraftDialog: React.FC<{ draft: BidDraft; onClose: () => void; onOpenEditor: () => void }> = ({ draft, onClose, onOpenEditor }) => {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
@@ -467,14 +699,8 @@ const DraftDialog: React.FC<{ draft: BidDraft; onClose: () => void; onCopied: ()
         </article>
         <div className="card-footer gen-actions">
           <span className="gen-meta">Laid out like Infosys’s past social value responses. Check every number before it goes in a bid.</span>
-          <button
-            className="btn-primary"
-            onClick={() => {
-              navigator.clipboard.writeText(draftText(draft));
-              onCopied();
-            }}
-          >
-            <Copy size={14} /> Copy
+          <button className="btn-primary" onClick={onOpenEditor} title="Opens the RFP editor in its own window with this initiative added">
+            <FilePenLine size={14} /> Edit in RFP editor
           </button>
         </div>
       </div>

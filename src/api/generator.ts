@@ -229,3 +229,80 @@ export async function deleteRun(id: string): Promise<void> {
   const res = await apiFetch(`${RUNS()}/${encodeURIComponent(id)}`, { method: 'DELETE', headers: getAuthHeaders() });
   if (!res.ok && res.status !== 404) throw new Error(await detail(res, `Could not delete (${res.status})`));
 }
+
+// --- Bids written in the RFP editor: shared with the team, changed only by their author ---
+
+export interface BidSummary {
+  id: string;
+  title: string;
+  client: string | null;
+  framework: string | null;
+  status: string;
+  initiative_count: number;
+  value_gbp: number | null;
+  cost_gbp: number | null;
+  author: string;
+  mine: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BidInput {
+  title: string;
+  client: string | null;
+  framework: string | null;
+  status: string;
+  initiative_count: number;
+  value_gbp: number | null;
+  cost_gbp: number | null;
+  document: Record<string, unknown>;
+}
+
+export interface BidDetail extends BidSummary {
+  document: Record<string, unknown>;
+}
+
+const BIDS = () => `${API_BASE_URL}/generator/bids`;
+
+export async function listBids(limit = 100): Promise<BidSummary[]> {
+  const res = await apiFetch(`${BIDS()}?limit=${limit}`, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error(await detail(res, `Could not load saved bids (${res.status})`));
+  return res.json();
+}
+
+export async function getBid(id: string): Promise<BidDetail> {
+  const res = await apiFetch(`${BIDS()}/${encodeURIComponent(id)}`, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error(await detail(res, `Could not open this bid (${res.status})`));
+  return res.json();
+}
+
+export async function saveBid(bid: BidInput, id?: string): Promise<BidSummary> {
+  const res = await apiFetch(id ? `${BIDS()}/${encodeURIComponent(id)}` : BIDS(), {
+    method: id ? 'PUT' : 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(bid)
+  });
+  if (!res.ok) throw new Error(await detail(res, `Could not save the bid (${res.status})`));
+  return res.json();
+}
+
+export async function deleteBid(id: string): Promise<void> {
+  const res = await apiFetch(`${BIDS()}/${encodeURIComponent(id)}`, { method: 'DELETE', headers: getAuthHeaders() });
+  if (!res.ok && res.status !== 404) throw new Error(await detail(res, `Could not delete (${res.status})`));
+}
+
+/** The Word file, built by the backend in the Schedule 8 layout and saved by the browser. */
+export async function downloadBidWord(document: Record<string, unknown>, filename: string): Promise<void> {
+  const res = await apiFetch(`${BIDS()}/docx`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ document })
+  });
+  if (!res.ok) throw new Error(await detail(res, `Could not build the Word file (${res.status})`));
+  const url = URL.createObjectURL(await res.blob());
+  const a = window.document.createElement('a');
+  a.href = url;
+  a.download = `${filename.replace(/[^\w .-]+/g, '').trim() || 'Social value response'}.docx`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

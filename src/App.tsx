@@ -7,6 +7,7 @@ import { Search } from './components/Search';
 import { TomsCatalog } from './components/TomsCatalog';
 import { PartnersEcosystem } from './components/PartnersEcosystem';
 import { InitiativeGenerator } from './components/InitiativeGenerator';
+import { RfpEditor } from './components/generator/RfpEditor';
 import { LoginScreen } from './components/LoginScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -92,6 +93,16 @@ const AppContent: React.FC = () => {
 
   if (!isAuthenticated) {
     return <LoginScreen />;
+  }
+
+  // The RFP editor opens in its own window: ?editor=current (from the generator) or ?editor=<saved bid id>.
+  const editorBid = new URLSearchParams(window.location.search).get('editor');
+  if (editorBid) {
+    return (
+      <main className="app-main rfp-window">
+        <RfpEditor openBid={editorBid} />
+      </main>
+    );
   }
 
   // ────────────────────────────────────────────────────────────────────────────
