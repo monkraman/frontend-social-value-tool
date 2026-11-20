@@ -116,7 +116,6 @@ export const RfpEditor: React.FC<{ openBid: string }> = ({ openBid }) => {
 
   const shown = useMemo(() => numbered(doc), [doc]);
   const value = doc.blocks.reduce((t, b) => t + (b.value_gbp ?? 0), 0);
-  const cost = doc.blocks.reduce((t, b) => t + (b.cost_gbp ?? 0), 0);
   const notIn = (candidates?.blocks ?? []).filter((b) => !doc.blocks.some((x) => x.initiative_id === b.initiative_id));
 
   const save = async () => {
@@ -130,7 +129,7 @@ export const RfpEditor: React.FC<{ openBid: string }> = ({ openBid }) => {
           status: state.status,
           initiative_count: doc.blocks.length,
           value_gbp: value || null,
-          cost_gbp: cost || null,
+          cost_gbp: null,
           document: numbered(doc) as unknown as Record<string, unknown>
         },
         state.bidId ?? undefined
@@ -203,7 +202,7 @@ export const RfpEditor: React.FC<{ openBid: string }> = ({ openBid }) => {
             <div className="field">
               <span>Package</span>
               <p className="body-text">
-                {doc.blocks.length} initiative{doc.blocks.length === 1 ? '' : 's'} · {formatGbp(value)} social value{cost ? ` · ${formatGbp(cost)} to deliver` : ''}
+                {doc.blocks.length} initiative{doc.blocks.length === 1 ? '' : 's'} · {formatGbp(value)} social value
               </p>
             </div>
           </div>

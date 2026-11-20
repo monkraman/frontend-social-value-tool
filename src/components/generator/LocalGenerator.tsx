@@ -13,7 +13,7 @@ import type { FrameworkId, Initiative, KnownPartner, LocalDocument, PolicyReadin
 import { PROMPT_EXAMPLES, readPrompt, type PromptReading } from '../../local/promptParse';
 import { InitiativeCard, type InitiativeEdit } from './InitiativeCard';
 import { blockFromInitiative, openEditor, type EditorCandidates } from '../../local/rfpDoc';
-import type { CostItem, LocalKnowledge } from '../../local/types';
+import type { LocalKnowledge, PastInitiative } from '../../local/types';
 
 const INITIAL_FORM: TenderForm = {
   client: '',
@@ -59,6 +59,30 @@ const applyEdit = (ini: Initiative, e: InitiativeEdit): Initiative => ({
     };
   })
 });
+
+/** Swap the AI's initiative for one Infosys has delivered before. Only the words change: the
+ * measures and targets stay as they were, so the value and the package total do not move. */
+const replaceWithPast = (ini: Initiative, past: PastInitiative): Initiative => ({
+  ...ini,
+  replaced_from: ini.replaced_from ?? { name: ini.pattern.name, what: ini.pattern.what, wording: ini.wording, wording_edited: ini.wording_edited },
+  replaced_with: past.id,
+  edited: true,
+  wording_edited: false,
+  wording: undefined,
+  pattern: { ...ini.pattern, name: past.name, what: past.what || ini.pattern.what }
+});
+
+const undoReplace = (ini: Initiative): Initiative =>
+  ini.replaced_from
+    ? {
+        ...ini,
+        pattern: { ...ini.pattern, name: ini.replaced_from.name, what: ini.replaced_from.what },
+        wording: ini.replaced_from.wording,
+        wording_edited: ini.replaced_from.wording_edited,
+        replaced_from: undefined,
+        replaced_with: undefined
+      }
+    : ini;
 
 /** Ask to open a saved run (id) or start a blank tender (null). `nonce` makes a repeat request count. */
 export interface OpenRunRequest {
@@ -446,9 +470,12 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
           )}
         </div>
 
-        <div className="card-section">
+        <details className="gen-more">
+          <summary>
+            Framework <span className="gen-summary-note">· {framework.short} · {criteria.length ? `${criteria.length} criteri${criteria.length === 1 ? 'on' : 'a'} selected` : 'all criteria'}</span>
+          </summary>
+          <div className="gen-more-body gen-framework">
           <div className="section-row">
-            <h3 className="section-title">Framework</h3>
             <div className="segmented" role="tablist" aria-label="Framework">
               {FRAMEWORKS.map((f) => (
                 <button
@@ -500,7 +527,8 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
               <li key={n}>{n}</li>
             ))}
           </ul>
-        </div>
+          </div>
+        </details>
 
         <details className="gen-more" open={buyer.docs.length + infosys.docs.length > 0 || undefined}>
           <summary>
@@ -577,8 +605,20 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
                   : `${formatGbp(totals.target - totals.counted)} short of target`
               }
             />
-            <Stat label="Conditional" value={formatGbp(totals.conditional)} />
-            <Stat label="Initiatives · unvalued" value={`${totals.included} · ${totals.untraced}`} />
+            <Stat
+              label="Conditional value"
+              value={formatGbp(totals.conditional)}
+              note="Counts only once evidenced, e.g. carbon savings. Not in the package value."
+            />
+            <Stat
+              label="Initiatives"
+              value={`${totals.included} included`}
+              note={
+                totals.untraced
+                  ? `${totals.included - totals.untraced} valued · ${totals.untraced} without a TOM measure`
+                  : 'All valued with a TOM measure'
+              }
+            />
           </div>
 
           <div className="section-row">
@@ -637,8 +677,8 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
               }}
               onChoosePartner={(choice) => update(ini.id, (x) => ({ ...x, partner_choice: choice }))}
               partners={partners}
-              knowledge={connected}
-              onCosts={(items: CostItem[] | undefined) => update(ini.id, (x) => ({ ...x, costs: items }))}
+              onReplace={(past) => update(ini.id, (x) => replaceWithPast(x, past))}
+              onUndoReplace={() => update(ini.id, undoReplace)}
               onOpenEditor={() => openEditor(candidates(), [blockFromInitiative(ini, resultForm, connected)])}
             />
           ))}

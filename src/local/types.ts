@@ -77,8 +77,6 @@ export interface LocalKnowledge {
   partners?: KnownPartner[];
   /** Past initiative id -> how it was phased on that contract. */
   delivery?: Record<string, DeliveryStep[]>;
-  /** What delivering each measure costs Infosys, from the workbook's Levers and Cost sheets. */
-  costs?: CostTables;
   documents: LocalDocument[];
   warnings: string[];
 }
@@ -109,60 +107,6 @@ export interface DeliveryStep {
   kind?: string;
   /** How much that step delivered on the past contract - the size of that cohort or tranche. */
   target?: number | null;
-}
-
-/** One measure's unit cost and the value £1 of that cost buys (Levers sheet). */
-export interface MeasureCost {
-  code: string;
-  driver: string;
-  cost_uk: number | null;
-  value_per_gbp_uk: number | null;
-  cost_offshore: number | null;
-  value_per_gbp_offshore: number | null;
-  note: string;
-}
-
-/** A staff grade's rate (Cost sheet, rate card). */
-export interface StaffRate {
-  grade: string;
-  role: string;
-  location: string;
-  hours_per_day: number | null;
-  per_hour: number | null;
-  per_month: number | null;
-}
-
-/** A non-staff cost a past initiative needed: devices, licences, partner fees (Cost sheet). */
-export interface CostExample {
-  description: string;
-  vendor: string;
-  category: string;
-  /** The past initiative it belonged to, e.g. INI-19. */
-  initiative: string;
-  amount_gbp: number | null;
-}
-
-export interface CostTables {
-  levers: MeasureCost[];
-  rate_card: StaffRate[];
-  examples: CostExample[];
-}
-
-export type CostBasis = 'hour' | 'day' | 'month' | 'person' | 'unit' | 'fixed';
-
-/** One row of what an initiative costs to deliver. */
-export interface CostItem {
-  id: string;
-  label: string;
-  basis: CostBasis;
-  rate: number;
-  /** How many of the basis. Ignored while `link` is set. */
-  quantity: number;
-  /** Take the quantity from a line of the valuation, so it follows any edit there. */
-  link?: { code: string; what: 'units' | 'people' };
-  /** A second multiplier, e.g. hours each person spends. 1 when not needed. */
-  each: number;
-  each_label?: string;
 }
 
 /** A delivery partner Infosys knows, from the capability profile. */
@@ -283,8 +227,9 @@ export interface Initiative {
   partner_suggested?: string;
   /** What the bid team settled on: a partner's name, or '' for Infosys alone. Undefined until they decide. */
   partner_choice?: string;
-  /** What it costs to deliver, as the bid team set it. Undefined = worked out from the workbook. */
-  costs?: CostItem[];
+  /** The past initiative this one was replaced with, and what it said before, so it can be undone. */
+  replaced_with?: string;
+  replaced_from?: { name: string; what: string; wording?: string; wording_edited?: boolean };
 }
 
 export interface TenderForm {

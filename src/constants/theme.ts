@@ -50,8 +50,8 @@ export const LIGHT_THEME = {
     bgMuted: '#EEF2F7',        // Subtle pills, toolbars, table headers
 
     textPrimary: '#1B2533',    // Deep navy-charcoal
-    textSecondary: '#4A5668',  // Body copy
-    textMuted: '#7A8597',      // Hints, timestamps
+    textSecondary: '#2F3A49',  // Body copy: dark enough to read comfortably
+    textMuted: '#5B6676',      // Disclaimers and hints only
     textInverse: '#FFFFFF',
 
     borderSubtle: '#E3E8EF',
@@ -96,8 +96,8 @@ export const DARK_THEME = {
     bgMuted: '#1F2D42',
 
     textPrimary: '#E8EEF6',
-    textSecondary: '#A9B6C8',
-    textMuted: '#7D8BA0',
+    textSecondary: '#C9D3E0',
+    textMuted: '#9AA7B9',
     textInverse: '#0E1520',
 
     borderSubtle: '#24344B',

@@ -23,8 +23,8 @@
 
   /* Text & Content */
   --text-primary: #1B2533;
-  --text-secondary: #4A5668;
-  --text-muted: #7A8597;
+  --text-secondary: #2F3A49;
+  --text-muted: #5B6676;
   --text-inverse: #FFFFFF;
 
   /* Borders & Dividers */
@@ -1668,3 +1668,86 @@ button {
   padding: 0 0.15rem;
 }
 .gen-checks { padding-left: 1rem; }
+
+/* ==========================================================================
+   Readable labels: headers and figures in full colour; grey is for disclaimers only
+   ========================================================================== */
+.stat-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.stat-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+.stat-note {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.data-table th {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-medium);
+}
+.gen-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.gen-tag {
+  color: var(--color-primary-text, var(--text-primary));
+  background-color: var(--color-primary-subtle, var(--bg-muted));
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.gen-more > summary {
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+.gen-summary-note {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.gen-todo {
+  font-weight: 600;
+  color: #B42318;
+}
+.gen-todo::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin: 0 0.35rem 0.1rem 0.15rem;
+  border-radius: 50%;
+  background-color: #D92D20;
+}
+:root[data-theme='dark'] .gen-todo {
+  color: #FDA29B;
+}
+.gen-replaced {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-success, #067647);
+}
+.gen-use-past {
+  display: inline-flex;
+  margin-top: 0.25rem;
+}
+.gen-criteria-title {
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+}
+.gen-framework .muted {
+  font-size: 0.8125rem;
+}
+.gen-card .gen-table .gen-meta {
+  color: var(--text-secondary);
+}

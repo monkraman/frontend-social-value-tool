@@ -3,7 +3,6 @@
 // The generator hands blocks to the editor through this browser's storage, so the editor can open
 // in its own window and keep what was written there while the generator moves on.
 import { bidDraft, type DraftSection } from './bidDraft';
-import { initiativeCost } from './costs';
 import { amountIn, initiativeMacs, initiativeValue, isOn, unitsOf } from './engine';
 import { macLabel } from './frameworks';
 import { plainMeasure } from './plainLanguage';
@@ -28,7 +27,6 @@ export interface BidBlock {
   sections: DraftSection[];
   kpis: Kpi[];
   value_gbp?: number;
-  cost_gbp?: number;
 }
 
 export interface BidDocument {
@@ -53,11 +51,10 @@ export const INTRODUCTION =
 export const emptyDocument = (): BidDocument => ({ title: 'Social value response', client: '', framework: '', introduction: [INTRODUCTION], blocks: [] });
 
 /** One initiative as a Schedule 8 block: the draft bid response plus a KPI per counted line. */
-export function blockFromInitiative(ini: Initiative, form: TenderForm, knowledge: LocalKnowledge | null): BidBlock {
+export function blockFromInitiative(ini: Initiative, form: TenderForm, _knowledge?: LocalKnowledge | null): BidBlock {
   const draft = bidDraft(ini, form, form.client);
   const lead = initiativeMacs(ini).find((m) => form.criteria.length === 0 || form.criteria.includes(m.mac)) ?? initiativeMacs(ini)[0];
   const counted = ini.lines.filter((l) => isOn(l) && l.proxy_gbp != null && unitsOf(l) > 0);
-  const cost = initiativeCost(ini, knowledge);
   return {
     id: `${ini.id}-${Date.now().toString(36)}`,
     initiative_id: ini.id,
@@ -69,8 +66,7 @@ export function blockFromInitiative(ini: Initiative, form: TenderForm, knowledge
       const plain = plainMeasure(l.code, l.name, l.unit);
       return { ref: '', indicator: plain.name, target: `${amountIn(unitsOf(l), plain.unit)} over the contract`, measure: l.code, cycle: 'Quarterly' };
     }),
-    value_gbp: Math.round(initiativeValue(ini)),
-    cost_gbp: cost > 0 ? Math.round(cost) : undefined
+    value_gbp: Math.round(initiativeValue(ini))
   };
 }
 

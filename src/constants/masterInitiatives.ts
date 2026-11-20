@@ -333,8 +333,8 @@ export const MASTER_INITIATIVES: MasterInitiative[] = [
     "id": "INI-37",
     "pillar": "SV3",
     "mac": "\u2014",
-    "name": "Gender sensitivity training (cost line, no commitment)",
-    "description": "\u00a3150,000 in the bid cost tracker; no matching commitment in Schedule 8 or the scorecard.",
+    "name": "Gender sensitivity training",
+    "description": "Planned for the contract; no matching commitment in Schedule 8 or the scorecard.",
     "committed_volume": "\u2014",
     "delivered_by": "TBC"
   }

@@ -3,10 +3,9 @@ import { Check, FilePenLine, FileText, Handshake, Pencil, Plus, RotateCcw, Trash
 import { formatGbp } from '../../utils/formatters';
 import { macLabel } from '../../local/frameworks';
 import { bidDraft, type BidDraft } from '../../local/bidDraft';
-import { BASIS_LABEL, cheaperOptions, initiativeCost, itemCost, newCostId, pastCosts, peopleOf, quantityLabel, quantityOf, returnOnCost, valuePerPound, costTables } from '../../local/costs';
 import { plainMeasure } from '../../local/plainLanguage';
 import { amountIn, commitmentOf, deliveryOf, initiativeConditional, initiativeMacs, initiativeValue, isOn, lineValue, macRating, lineEdited, lineTrimmed, unitsOf, withoutQuantities, wordingFor, type MacRating } from '../../local/engine';
-import type { CostBasis, CostItem, Initiative, UnitFactor, InitiativeLine, KnownPartner, LocalKnowledge, StaffRate, TenderForm } from '../../local/types';
+import type { Initiative, UnitFactor, InitiativeLine, KnownPartner, PastInitiative, TenderForm } from '../../local/types';
 
 const RATING_CLASS: Record<MacRating, string> = { Strong: 'pill-strong', Partial: 'pill-partial', 'Not scored': 'pill-none' };
 const FIT_CLASS = { 'Core strength': 'pill-strong', Deliverable: 'pill-partial', 'Needs a partner': 'pill-none' } as const;
@@ -47,13 +46,13 @@ interface CardProps {
   onEdit: (edit: InitiativeEdit) => void;
   onChoosePartner: (choice: string | undefined) => void;
   partners: KnownPartner[];
-  knowledge: LocalKnowledge | null;
-  onCosts: (items: CostItem[] | undefined) => void;
+  onReplace: (past: PastInitiative) => void;
+  onUndoReplace: () => void;
   onOpenEditor: () => void;
 }
 
 export const InitiativeCard: React.FC<CardProps> = ({
-  index, initiative: ini, form, onInclude, onFactor, onToggleLine, onReset, onEdit, onChoosePartner, partners, knowledge, onCosts, onOpenEditor
+  index, initiative: ini, form, onInclude, onFactor, onToggleLine, onReset, onEdit, onChoosePartner, partners, onReplace, onUndoReplace, onOpenEditor
 }) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<BidDraft | null>(null);
@@ -193,9 +192,12 @@ export const InitiativeCard: React.FC<CardProps> = ({
 
           <details className="gen-more">
             <summary>
-              Track record <span className="gen-meta">· {ini.done_before?.length ? `${ini.done_before.length} similar commitment${ini.done_before.length === 1 ? '' : 's'}` : 'new for Infosys'}</span>
+              Track record <span className="gen-summary-note">· {ini.done_before?.length ? `${ini.done_before.length} similar commitment${ini.done_before.length === 1 ? '' : 's'}` : 'new for Infosys'}</span>
             </summary>
             <div className="gen-more-body">
+              {ini.done_before?.length ? (
+                <p className="gen-meta">Replacing keeps the measures and targets; only the name and wording change.</p>
+              ) : null}
             {ini.done_before?.length ? (
               <ul className="gen-list">
                 {ini.done_before.map((d) => (
@@ -205,6 +207,22 @@ export const InitiativeCard: React.FC<CardProps> = ({
                     {d.volume && d.volume.trim() !== '-' ? ` · ${d.volume}` : ''} · MAC {d.mac}
                     {d.measures.length ? ` · ${d.measures.join(', ')}` : ''}
                     {d.why && <span className="gen-meta gen-why">{d.why}</span>}
+                    {ini.replaced_with === d.id ? (
+                      <span className="gen-replaced">
+                        <Check size={12} /> In use for this initiative ·{' '}
+                        <button className="btn-link" onClick={onUndoReplace}>
+                          Restore the suggested initiative
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        className="btn-link gen-use-past"
+                        onClick={() => onReplace(d)}
+                        title="Use this past initiative's name and description. Measures and targets stay as they are."
+                      >
+                        <RotateCcw size={12} /> Replace with this initiative
+                      </button>
+                    )}
                     {d.delivery && d.delivery.length > 0 && (
                       <details className="gen-steps">
                         <summary>Delivery steps ({d.delivery.length})</summary>
@@ -229,8 +247,6 @@ export const InitiativeCard: React.FC<CardProps> = ({
           </details>
 
           <PartnerSection initiative={ini} partners={partners} onChoose={onChoosePartner} />
-
-          <CostSection initiative={ini} knowledge={knowledge} form={form} onCosts={onCosts} />
 
           <details className="gen-more">
             <summary>Draft wording</summary>
@@ -324,7 +340,8 @@ const PartnerSection: React.FC<{ initiative: Initiative; partners: KnownPartner[
   return (
     <details className="gen-more" open={chosen === undefined && !!suggested}>
       <summary>
-        Delivery partner <span className="gen-meta">· {status}</span>
+        Delivery partner{' '}
+        {chosen === undefined ? <span className="gen-todo">· To complete: {status}</span> : <span className="gen-summary-note">· {status}</span>}
       </summary>
       <div className="gen-more-body">
         {suggested && chosen === undefined && (
@@ -385,218 +402,6 @@ const PartnerSection: React.FC<{ initiative: Initiative; partners: KnownPartner[
         {chosen && named(chosen)?.capability && <p className="gen-meta">{named(chosen)!.capability}</p>}
       </div>
     </details>
-  );
-};
-
-const ratio = (n: number) => `£${n.toFixed(2)}`;
-
-/** What it costs Infosys to deliver: rows of rate × quantity, the quantity taken from the valuation where it can be. */
-const CostSection: React.FC<{ initiative: Initiative; knowledge: LocalKnowledge | null; form: TenderForm; onCosts: (items: CostItem[] | undefined) => void }> = ({
-  initiative: ini,
-  knowledge,
-  form,
-  onCosts
-}) => {
-  const items = ini.costs ?? [];
-  const total = initiativeCost(ini, knowledge);
-  const back = returnOnCost(ini, knowledge);
-  const tables = costTables(knowledge);
-  const past = pastCosts(ini, knowledge).filter((e) => !items.some((i) => i.label === e.description));
-  const cheaper = cheaperOptions(ini, knowledge, form);
-  const counted = ini.lines.filter((l) => isOn(l) && l.proxy_gbp != null);
-  const change = (id: string, patch: Partial<CostItem>) => onCosts(items.map((c) => (c.id === id ? { ...c, ...patch } : c)));
-  const add = (c: Omit<CostItem, 'id'>) => onCosts([...items, { ...c, id: newCostId() }]);
-  const first = counted[0];
-  const peopleLink = first ? { code: first.code, what: (peopleOf(first) != null ? 'people' : 'units') as 'people' | 'units' } : undefined;
-  const perLine = counted
-    .map((l) => [l.code, valuePerPound(l.code, tables)] as const)
-    .filter(([, v]) => v != null)
-    .map(([code, v]) => `${code} ${ratio(v!)}`);
-
-  return (
-    <details className="gen-more">
-      <summary>
-        Cost to deliver{' '}
-        <span className="gen-meta">
-          · {total > 0 ? formatGbp(total) : 'not yet costed'}
-          {back != null ? ` · ${ratio(back)} of social value per £1` : ''}
-        </span>
-      </summary>
-      <div className="gen-more-body">
-        {items.length > 0 ? (
-          <div className="table-scroll">
-            <table className="data-table gen-table gen-cost">
-              <thead>
-                <tr>
-                  <th>Cost item</th>
-                  <th>Rate (£)</th>
-                  <th>Basis</th>
-                  <th>Quantity</th>
-                  <th>Multiplier</th>
-                  <th>Cost</th>
-                  <th aria-label="Remove" />
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((c) => (
-                  <CostRow key={c.id} item={c} initiative={ini} counted={counted} onChange={(patch) => change(c.id, patch)} onRemove={() => onCosts(items.filter((x) => x.id !== c.id))} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="body-text">Add the cost lines for this initiative. Quantities can be linked to the targets above.</p>
-        )}
-
-        <div className="chip-row gen-cost-add">
-          <button className="btn-secondary" onClick={() => add({ label: 'Staff time', basis: 'hour', rate: 0, quantity: 0, link: peopleLink, each: 1, each_label: 'hours each' })}>
-            <Plus size={13} /> Rate per hour
-          </button>
-          <button className="btn-secondary" onClick={() => add({ label: 'Day rate', basis: 'day', rate: 0, quantity: 0, link: peopleLink, each: 1, each_label: 'days each' })}>
-            <Plus size={13} /> Rate per day
-          </button>
-          <button className="btn-secondary" onClick={() => add({ label: 'Cost per person', basis: 'person', rate: 0, quantity: 0, link: peopleLink, each: 1 })}>
-            <Plus size={13} /> Per person
-          </button>
-          <button className="btn-secondary" onClick={() => add({ label: 'Devices, licences or partner fee', basis: 'fixed', rate: 0, quantity: 0, each: 1 })}>
-            <Plus size={13} /> Fixed sum
-          </button>
-          {tables.rate_card.length > 0 && (
-            <select
-              className="select-compact"
-              value=""
-              aria-label="Add a staff grade from the rate card"
-              onChange={(e) => {
-                const r: StaffRate | undefined = tables.rate_card.find((x) => x.grade === e.target.value);
-                if (r) add({ label: `${r.role} (${r.location})`, basis: 'hour', rate: Math.round((r.per_hour ?? 0) * 100) / 100, quantity: 0, link: peopleLink, each: 1, each_label: 'hours each' });
-              }}
-            >
-              <option value="">Staff rate card</option>
-              {tables.rate_card.map((r) => (
-                <option key={r.grade} value={r.grade}>
-                  {r.role} · {r.location} · £{(r.per_hour ?? 0).toFixed(2)}/hr
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-
-        {past.length > 0 && (
-          <div className="gen-block">
-            <h3 className="gen-label">Past costs on similar work</h3>
-            <ul className="gen-list">
-              {past.map((e) => (
-                <li key={e.description}>
-                  {e.description}
-                  {e.vendor ? <span className="gen-meta"> · {e.vendor}</span> : null} · <strong>{formatGbp(e.amount_gbp ?? 0)}</strong>{' '}
-                  <button className="btn-link" onClick={() => add({ label: e.description, basis: 'fixed', rate: e.amount_gbp ?? 0, quantity: 0, each: 1 })}>
-                    <Plus size={12} /> Add
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {cheaper.length > 0 && (
-          <div className="gen-block">
-            <h3 className="gen-label">Lower-cost measures for the same criterion</h3>
-            <ul className="gen-list">
-              {cheaper.map((o) => (
-                <li key={o.code}>
-                  <strong>{o.name}</strong> ({o.code}) returns {ratio(o.value_per_gbp)} per £1 of cost, against {ratio(o.instead_value_per_gbp)} for{' '}
-                  {o.instead_of.toLowerCase()} · {macLabel(o.mac)}
-                </li>
-              ))}
-            </ul>
-            <p className="gen-meta">From the workbook Levers sheet. Unit economics only; the buyer's priorities still apply.</p>
-          </div>
-        )}
-        {perLine.length > 0 && <p className="gen-meta">Social value per £1 of cost: {perLine.join(' · ')}.</p>}
-      </div>
-    </details>
-  );
-};
-
-const CostRow: React.FC<{ item: CostItem; initiative: Initiative; counted: InitiativeLine[]; onChange: (patch: Partial<CostItem>) => void; onRemove: () => void }> = ({
-  item: c,
-  initiative: ini,
-  counted,
-  onChange,
-  onRemove
-}) => {
-  const num = (v: string) => Number(v) || 0;
-  return (
-    <tr>
-      <td>
-        <input className="input-compact gen-cost-label" value={c.label} aria-label="Cost item" onChange={(e) => onChange({ label: e.target.value })} />
-      </td>
-      <td>
-        <input className="input-compact gen-num" type="number" min={0} step="any" value={c.rate} aria-label="Rate" onChange={(e) => onChange({ rate: num(e.target.value) })} />
-      </td>
-      <td>
-        <select className="select-compact" value={c.basis} aria-label="Rate per" onChange={(e) => onChange({ basis: e.target.value as CostBasis })}>
-          {(Object.keys(BASIS_LABEL) as CostBasis[]).map((b) => (
-            <option key={b} value={b}>
-              {BASIS_LABEL[b]}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td>
-        {c.basis === 'fixed' ? (
-          <span className="gen-meta">-</span>
-        ) : c.link ? (
-          <span className="gen-linked" title="Linked to the target in the valuation table">
-            {fmtUnits(quantityOf(c, ini))} {quantityLabel(c, ini)}{' '}
-            <button className="btn-link" onClick={() => onChange({ link: undefined, quantity: quantityOf(c, ini) })}>
-              Enter manually
-            </button>
-          </span>
-        ) : (
-          <span className="gen-linked">
-            <input className="input-compact gen-num" type="number" min={0} step="any" value={c.quantity} aria-label="How many" onChange={(e) => onChange({ quantity: num(e.target.value) })} />
-            {counted.length > 0 && (
-              <select
-                className="select-compact"
-                value=""
-                aria-label="Take the number from the valuation"
-                onChange={(e) => {
-                  const [code, what] = e.target.value.split('|');
-                  if (code) onChange({ link: { code, what: what as 'units' | 'people' } });
-                }}
-              >
-                <option value="">Link to target…</option>
-                {counted.flatMap((l) => {
-                  const plain = plainMeasure(l.code, l.name, l.unit);
-                  const people = peopleOf(l);
-                  return [
-                    ...(people != null ? [<option key={`${l.code}p`} value={`${l.code}|people`}>{`${fmtUnits(people)} ${l.factors[0].label.toLowerCase()}`}</option>] : []),
-                    <option key={`${l.code}u`} value={`${l.code}|units`}>{`${fmtUnits(unitsOf(l))} ${plain.unit}`}</option>
-                  ];
-                })}
-              </select>
-            )}
-          </span>
-        )}
-      </td>
-      <td>
-        {c.basis === 'fixed' ? (
-          <span className="gen-meta">-</span>
-        ) : (
-          <span className="gen-linked">
-            <input className="input-compact gen-num" type="number" min={0} step="any" value={c.each} aria-label="Multiplier" onChange={(e) => onChange({ each: num(e.target.value) })} />
-            <input className="input-compact gen-each" value={c.each_label ?? ''} placeholder="e.g. hours per person" aria-label="What the multiplier counts" onChange={(e) => onChange({ each_label: e.target.value })} />
-          </span>
-        )}
-      </td>
-      <td className="gen-num-cell">{formatGbp(itemCost(c, ini))}</td>
-      <td>
-        <button className="icon-button" aria-label={`Remove ${c.label}`} onClick={onRemove}>
-          <Trash2 size={13} />
-        </button>
-      </td>
-    </tr>
   );
 };
 
