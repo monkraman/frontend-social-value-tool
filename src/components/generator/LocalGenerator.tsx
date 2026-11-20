@@ -13,7 +13,7 @@ import type { FrameworkId, Initiative, KnownPartner, LocalDocument, PolicyReadin
 import { PROMPT_EXAMPLES, readPrompt, type PromptReading } from '../../local/promptParse';
 import { InitiativeCard, type InitiativeEdit } from './InitiativeCard';
 import { blockFromInitiative, openEditor, type EditorCandidates } from '../../local/rfpDoc';
-import type { LocalKnowledge, PastInitiative } from '../../local/types';
+import type { CostItem, LocalKnowledge, PastInitiative } from '../../local/types';
 
 const INITIAL_FORM: TenderForm = {
   client: '',
@@ -677,6 +677,7 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
               }}
               onChoosePartner={(choice) => update(ini.id, (x) => ({ ...x, partner_choice: choice }))}
               partners={partners}
+              onCosts={(items: CostItem[] | undefined) => update(ini.id, (x) => ({ ...x, costs: items }))}
               onReplace={(past) => update(ini.id, (x) => replaceWithPast(x, past))}
               onUndoReplace={() => update(ini.id, undoReplace)}
               onOpenEditor={() => openEditor(candidates(), [blockFromInitiative(ini, resultForm, connected)])}

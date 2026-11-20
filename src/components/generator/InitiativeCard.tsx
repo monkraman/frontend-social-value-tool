@@ -3,9 +3,10 @@ import { Check, FilePenLine, FileText, Handshake, Pencil, Plus, RotateCcw, Trash
 import { formatGbp } from '../../utils/formatters';
 import { macLabel } from '../../local/frameworks';
 import { bidDraft, type BidDraft } from '../../local/bidDraft';
+import { BASIS_LABEL, initiativeCost, itemCost, newCostId, peopleOf, quantityLabel, quantityOf, returnOnCost } from '../../local/costs';
 import { plainMeasure } from '../../local/plainLanguage';
 import { amountIn, commitmentOf, deliveryOf, initiativeConditional, initiativeMacs, initiativeValue, isOn, lineValue, macRating, lineEdited, lineTrimmed, unitsOf, withoutQuantities, wordingFor, type MacRating } from '../../local/engine';
-import type { Initiative, UnitFactor, InitiativeLine, KnownPartner, PastInitiative, TenderForm } from '../../local/types';
+import type { CostBasis, CostItem, Initiative, UnitFactor, InitiativeLine, KnownPartner, PastInitiative, TenderForm } from '../../local/types';
 
 const RATING_CLASS: Record<MacRating, string> = { Strong: 'pill-strong', Partial: 'pill-partial', 'Not scored': 'pill-none' };
 const FIT_CLASS = { 'Core strength': 'pill-strong', Deliverable: 'pill-partial', 'Needs a partner': 'pill-none' } as const;
@@ -47,12 +48,13 @@ interface CardProps {
   onChoosePartner: (choice: string | undefined) => void;
   partners: KnownPartner[];
   onReplace: (past: PastInitiative) => void;
+  onCosts: (items: CostItem[] | undefined) => void;
   onUndoReplace: () => void;
   onOpenEditor: () => void;
 }
 
 export const InitiativeCard: React.FC<CardProps> = ({
-  index, initiative: ini, form, onInclude, onFactor, onToggleLine, onReset, onEdit, onChoosePartner, partners, onReplace, onUndoReplace, onOpenEditor
+  index, initiative: ini, form, onInclude, onFactor, onToggleLine, onReset, onEdit, onChoosePartner, partners, onCosts, onReplace, onUndoReplace, onOpenEditor
 }) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<BidDraft | null>(null);
@@ -248,6 +250,8 @@ export const InitiativeCard: React.FC<CardProps> = ({
 
           <PartnerSection initiative={ini} partners={partners} onChoose={onChoosePartner} />
 
+          <CostSection initiative={ini} onCosts={onCosts} />
+
           <details className="gen-more">
             <summary>Draft wording</summary>
             <div className="gen-more-body">
@@ -402,6 +406,161 @@ const PartnerSection: React.FC<{ initiative: Initiative; partners: KnownPartner[
         {chosen && named(chosen)?.capability && <p className="gen-meta">{named(chosen)!.capability}</p>}
       </div>
     </details>
+  );
+};
+
+const ratio = (n: number) => `£${n.toFixed(2)}`;
+
+/** What it costs to deliver, entered by the bid team: rate × quantity × multiplier. No rates are supplied by the tool. */
+const CostSection: React.FC<{ initiative: Initiative; onCosts: (items: CostItem[] | undefined) => void }> = ({ initiative: ini, onCosts }) => {
+  const items = ini.costs ?? [];
+  const total = initiativeCost(ini);
+  const back = returnOnCost(ini);
+  const counted = ini.lines.filter((l) => isOn(l) && l.proxy_gbp != null);
+  const change = (id: string, patch: Partial<CostItem>) => onCosts(items.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+  const add = (c: Omit<CostItem, 'id'>) => onCosts([...items, { ...c, id: newCostId() }]);
+  const first = counted[0];
+  const peopleLink = first ? { code: first.code, what: (peopleOf(first) != null ? 'people' : 'units') as 'people' | 'units' } : undefined;
+
+  return (
+    <details className="gen-more">
+      <summary>
+        Cost to deliver{' '}
+        {total > 0 ? (
+          <span className="gen-summary-note">
+            · {formatGbp(total)}
+            {back != null ? ` · ${ratio(back)} of social value per £1 spent` : ''}
+          </span>
+        ) : (
+          <span className="gen-todo">· To complete: enter the costs</span>
+        )}
+      </summary>
+      <div className="gen-more-body">
+        {items.length > 0 ? (
+          <div className="table-scroll">
+            <table className="data-table gen-table gen-cost">
+              <thead>
+                <tr>
+                  <th>Cost item</th>
+                  <th>Rate (£)</th>
+                  <th>Basis</th>
+                  <th>Quantity</th>
+                  <th>Multiplier</th>
+                  <th>Cost</th>
+                  <th aria-label="Remove" />
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((c) => (
+                  <CostRow key={c.id} item={c} initiative={ini} counted={counted} onChange={(patch) => change(c.id, patch)} onRemove={() => onCosts(items.filter((x) => x.id !== c.id))} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="body-text">Enter what this initiative will cost. Choose a rate type below, then enter your rate; quantities can be linked to the targets above so they follow any change.</p>
+        )}
+
+        <div className="chip-row gen-cost-add">
+          <button className="btn-secondary" onClick={() => add({ label: 'Staff time', basis: 'hour', rate: 0, quantity: 0, link: peopleLink, each: 1, each_label: 'hours each' })}>
+            <Plus size={13} /> Rate per hour
+          </button>
+          <button className="btn-secondary" onClick={() => add({ label: 'Day rate', basis: 'day', rate: 0, quantity: 0, link: peopleLink, each: 1, each_label: 'days each' })}>
+            <Plus size={13} /> Rate per day
+          </button>
+          <button className="btn-secondary" onClick={() => add({ label: 'Cost per person', basis: 'person', rate: 0, quantity: 0, link: peopleLink, each: 1 })}>
+            <Plus size={13} /> Per person
+          </button>
+          <button className="btn-secondary" onClick={() => add({ label: 'Fixed cost', basis: 'fixed', rate: 0, quantity: 0, each: 1 })}>
+            <Plus size={13} /> Fixed sum
+          </button>
+        </div>
+
+
+      </div>
+    </details>
+  );
+};
+
+const CostRow: React.FC<{ item: CostItem; initiative: Initiative; counted: InitiativeLine[]; onChange: (patch: Partial<CostItem>) => void; onRemove: () => void }> = ({
+  item: c,
+  initiative: ini,
+  counted,
+  onChange,
+  onRemove
+}) => {
+  const num = (v: string) => Number(v) || 0;
+  return (
+    <tr>
+      <td>
+        <input className="input-compact gen-cost-label" value={c.label} aria-label="Cost item" onChange={(e) => onChange({ label: e.target.value })} />
+      </td>
+      <td>
+        <input className="input-compact gen-num" type="number" min={0} step="any" value={c.rate} aria-label="Rate" onChange={(e) => onChange({ rate: num(e.target.value) })} />
+      </td>
+      <td>
+        <select className="select-compact" value={c.basis} aria-label="Rate per" onChange={(e) => onChange({ basis: e.target.value as CostBasis })}>
+          {(Object.keys(BASIS_LABEL) as CostBasis[]).map((b) => (
+            <option key={b} value={b}>
+              {BASIS_LABEL[b]}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td>
+        {c.basis === 'fixed' ? (
+          <span className="gen-meta">-</span>
+        ) : c.link ? (
+          <span className="gen-linked" title="Linked to the target in the valuation table">
+            {fmtUnits(quantityOf(c, ini))} {quantityLabel(c, ini)}{' '}
+            <button className="btn-link" onClick={() => onChange({ link: undefined, quantity: quantityOf(c, ini) })}>
+              Enter manually
+            </button>
+          </span>
+        ) : (
+          <span className="gen-linked">
+            <input className="input-compact gen-num" type="number" min={0} step="any" value={c.quantity} aria-label="How many" onChange={(e) => onChange({ quantity: num(e.target.value) })} />
+            {counted.length > 0 && (
+              <select
+                className="select-compact"
+                value=""
+                aria-label="Take the number from the valuation"
+                onChange={(e) => {
+                  const [code, what] = e.target.value.split('|');
+                  if (code) onChange({ link: { code, what: what as 'units' | 'people' } });
+                }}
+              >
+                <option value="">Link to target…</option>
+                {counted.flatMap((l) => {
+                  const plain = plainMeasure(l.code, l.name, l.unit);
+                  const people = peopleOf(l);
+                  return [
+                    ...(people != null ? [<option key={`${l.code}p`} value={`${l.code}|people`}>{`${fmtUnits(people)} ${l.factors[0].label.toLowerCase()}`}</option>] : []),
+                    <option key={`${l.code}u`} value={`${l.code}|units`}>{`${fmtUnits(unitsOf(l))} ${plain.unit}`}</option>
+                  ];
+                })}
+              </select>
+            )}
+          </span>
+        )}
+      </td>
+      <td>
+        {c.basis === 'fixed' ? (
+          <span className="gen-meta">-</span>
+        ) : (
+          <span className="gen-linked">
+            <input className="input-compact gen-num" type="number" min={0} step="any" value={c.each} aria-label="Multiplier" onChange={(e) => onChange({ each: num(e.target.value) })} />
+            <input className="input-compact gen-each" value={c.each_label ?? ''} placeholder="e.g. hours per person" aria-label="What the multiplier counts" onChange={(e) => onChange({ each_label: e.target.value })} />
+          </span>
+        )}
+      </td>
+      <td className="gen-num-cell">{formatGbp(itemCost(c, ini))}</td>
+      <td>
+        <button className="icon-button" aria-label={`Remove ${c.label}`} onClick={onRemove}>
+          <Trash2 size={13} />
+        </button>
+      </td>
+    </tr>
   );
 };
 

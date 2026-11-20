@@ -109,6 +109,23 @@ export interface DeliveryStep {
   target?: number | null;
 }
 
+export type CostBasis = 'hour' | 'day' | 'month' | 'person' | 'unit' | 'fixed';
+
+/** One line of what an initiative costs to deliver, entered by the bid team. */
+export interface CostItem {
+  id: string;
+  label: string;
+  basis: CostBasis;
+  rate: number;
+  /** How many of the basis. Ignored while `link` is set. */
+  quantity: number;
+  /** Take the quantity from a target, so it follows any edit there. */
+  link?: { code: string; what: 'units' | 'people' };
+  /** A second multiplier, e.g. hours per person. 1 when not needed. */
+  each: number;
+  each_label?: string;
+}
+
 /** A delivery partner Infosys knows, from the capability profile. */
 export interface KnownPartner {
   name: string;
@@ -229,6 +246,8 @@ export interface Initiative {
   partner_choice?: string;
   /** The past initiative this one was replaced with, and what it said before, so it can be undone. */
   replaced_with?: string;
+  /** What it costs to deliver, as entered by the bid team. */
+  costs?: CostItem[];
   replaced_from?: { name: string; what: string; wording?: string; wording_edited?: boolean };
 }
 
