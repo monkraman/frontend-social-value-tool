@@ -1,3 +1,4 @@
+import { undash } from '../utils/undash';
 // Optional: ask the backend's AI to propose initiatives, then value and rate them locally.
 // Only tender facts and labels are sent. The client name, the documents in the reference folder
 // and any policy text never leave this computer.
@@ -70,11 +71,28 @@ function splitFactors(l: GeneratedInitiative['lines'][number], unit: string, for
   const units = l.units ?? 0;
   const per = PER_PERSON[l.measure];
   const people = Math.round(l.people ?? 0);
-  if (!per || people < 1 || units <= 0) return [{ label: unit, value: units, min: 0, max, step: 1 }];
+  if (!per || people < 1 || units <= 0) return fromBasis(l.basis, units) ?? [{ label: unit, value: units, min: 0, max, step: 1 }];
   return [
     { label: per.who, value: people, min: 1, max: 10_000, step: 1 },
     { label: per.each, value: Math.round(units / people), min: 1, max: 520, step: 1 }
   ];
+}
+
+/** "12 sessions x 5 hours x 40 attendees" as three numbers that can each be changed, when they
+ * multiply to the AI's quantity. A basis that does not add up stays one number: the backend has
+ * already flagged it, and splitting it would change the value. */
+function fromBasis(basis: string | undefined, units: number): UnitFactor[] | null {
+  const parts = (basis ?? '').split('=')[0].split(/\s+[x×*]\s+/i).map((p) => p.trim());
+  if (parts.length < 2) return null;
+  const factors: UnitFactor[] = [];
+  for (const part of parts) {
+    const m = /^([\d,]+(?:\.\d+)?)\s+(.{1,40})$/.exec(part);
+    if (!m) return null;
+    const label = m[2].replace(/\s*\(.*\)$/, '').trim();
+    factors.push({ label: label[0].toUpperCase() + label.slice(1), value: Number(m[1].replace(/,/g, '')), min: 0, max: 1_000_000_000, step: 1 });
+  }
+  const product = factors.reduce((t, f) => t * f.value, 1);
+  return Math.abs(product - units) <= Math.max(1, units * 0.005) ? factors : null;
 }
 
 const STATUS: Record<string, LineStatus> = { Counted: 'Counted', Conditional: 'Conditional', Alternative: 'Alternative', 'Not valued': 'Not valued' };
@@ -162,6 +180,7 @@ const backendEvidence = (g: GeneratedInitiative): EvidenceHit[] =>
 
 /** The AI's initiatives as the screen shows them: values, criteria, citations and fit exactly as the backend checked them. */
 export function fromBackend(result: GeneratorResult, knowledge: LocalKnowledge, form: TenderForm, localEvidence: Record<string, EvidenceHit[]> = {}): Initiative[] {
+  result = undash(result);
   const cohorts = frameworkById(form.framework).cohorts;
   return patternsOf(result).map((pattern, i) => {
     const g = result.initiatives[i];

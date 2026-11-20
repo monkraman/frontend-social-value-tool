@@ -1,4 +1,4 @@
-// Initiative Generator API — mirrors social-value-infoproj/app/api/generator.py
+// Initiative Generator API - mirrors social-value-infoproj/app/api/generator.py
 import { API_BASE_URL, apiFetch, getAuthHeaders } from './client';
 
 export interface TablesInfo {

@@ -25,13 +25,9 @@ const BRAND = {
 };
 
 // Shared Typography and Corner Radii
-const SHARED_TYPOGRAPHY = {
-  // Humanist sans for UI and reading text
-  sans: "'Source Sans 3', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif",
-  // Editorial serif for page titles, section headings and headline figures
-  display: "'Source Serif 4', Georgia, 'Times New Roman', serif",
-  mono: "'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-};
+// One typeface across the whole tool: titles, figures and codes use the same font as the text.
+const SANS = "'Source Sans 3', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif";
+const SHARED_TYPOGRAPHY = { sans: SANS, display: SANS, mono: SANS };
 
 const SHARED_RADII = {
   sm: '6px',
@@ -40,7 +36,7 @@ const SHARED_RADII = {
   full: '9999px'
 };
 
-// 1. Light Theme Palette (default) — Infosys white & blue
+// 1. Light Theme Palette (default) - Infosys white & blue
 export const LIGHT_THEME = {
   fonts: SHARED_TYPOGRAPHY,
   radii: SHARED_RADII,
@@ -86,7 +82,7 @@ export const LIGHT_THEME = {
   }
 } as const;
 
-// 2. Dark Theme Palette — Infosys navy
+// 2. Dark Theme Palette - Infosys navy
 export const DARK_THEME = {
   fonts: SHARED_TYPOGRAPHY,
   radii: SHARED_RADII,
@@ -198,7 +194,7 @@ export function applyTheme(mode: ThemeMode = 'light'): void {
   try {
     localStorage.setItem(THEME_STORAGE_KEY, mode);
   } catch {
-    // Storage unavailable (private mode) — theme still applies for this session
+    // Storage unavailable (private mode) - theme still applies for this session
   }
 
   // Fonts

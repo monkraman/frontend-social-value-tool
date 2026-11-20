@@ -168,7 +168,7 @@ export function macsForMeasure(code: string, framework: FrameworkId, local: Loca
   for (const r of local) {
     if (r.code !== code || frameworkOfVersion(r.framework_version) !== framework) continue;
     const mac = normaliseMac(r.mac);
-    if (!/^\d/.test(mac)) continue; // "—" marks a measure the library says is not scored
+    if (!/^\d/.test(mac)) continue; // "-" marks a measure the library says is not scored
     const strength: MacStrength = /^supporting$/i.test(r.strength ?? '') ? 'supporting' : 'direct';
     links.push({ mac, strength, reason: r.note || r.serves, source: 'library' });
   }

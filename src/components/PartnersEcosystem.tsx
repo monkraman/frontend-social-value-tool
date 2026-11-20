@@ -566,7 +566,7 @@ export const PartnersEcosystem: React.FC = () => {
                               style={{
                                 fontSize: '0.72rem',
                                 fontWeight: 700,
-                                fontFamily: 'monospace',
+                                fontFamily: 'inherit',
                                 padding: '0.15rem 0.45rem',
                                 backgroundColor: 'var(--bg-surface-subtle)',
                                 border: '1px solid var(--border-subtle)',
@@ -577,7 +577,7 @@ export const PartnersEcosystem: React.FC = () => {
                               {p.toms_code}
                             </span>
                           ) : (
-                            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>—</span>
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>-</span>
                           )}
                         </td>
 
@@ -718,7 +718,7 @@ export const PartnersEcosystem: React.FC = () => {
                             style={{
                               fontSize: '0.68rem',
                               fontWeight: 700,
-                              fontFamily: 'monospace',
+                              fontFamily: 'inherit',
                               padding: '0.12rem 0.4rem',
                               backgroundColor: 'rgba(0,0,0,0.03)',
                               border: '1px solid var(--border-subtle)',

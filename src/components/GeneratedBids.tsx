@@ -86,11 +86,11 @@ export const GeneratedBids: React.FC = () => {
                     <td>
                       <strong>{b.title}</strong>
                     </td>
-                    <td>{b.client || '—'}</td>
+                    <td>{b.client || '-'}</td>
                     <td>{b.status}</td>
                     <td>{b.initiative_count}</td>
-                    <td>{b.value_gbp ? formatGbp(b.value_gbp) : '—'}</td>
-                    <td>{b.mine ? 'You' : b.author || '—'}</td>
+                    <td>{b.value_gbp ? formatGbp(b.value_gbp) : '-'}</td>
+                    <td>{b.mine ? 'You' : b.author || '-'}</td>
                     <td>{formatDate(b.updated_at)}</td>
                     <td>
                       <div className="page-actions">

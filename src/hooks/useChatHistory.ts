@@ -17,7 +17,7 @@ export interface ConversationTurn {
  * Manages:
  *  1. Sidebar history list (last 10 RFP prompts from backend)
  *  2. In-memory conversation thread (ALL turns of the current session)
- *  3. Refinement API calls — always sends the FULL thread to the backend
+ *  3. Refinement API calls - always sends the FULL thread to the backend
  *     so the AI never forgets ANY previous instruction.
  */
 export function useChatHistory() {
@@ -27,7 +27,7 @@ export function useChatHistory() {
   const [refineError, setRefineError] = useState<string | null>(null);
 
   // ─── Session thread (in-memory, full conversation) ────────────────────────
-  // This is THE key — every user message and every AI reply is appended here.
+  // This is THE key - every user message and every AI reply is appended here.
   // On each refinement the full array is sent to the backend.
   const conversationThread = useRef<ConversationTurn[]>([]);
 
@@ -99,7 +99,7 @@ export function useChatHistory() {
    * Refine the current result with new user feedback.
    *
    * The FULL conversation thread (every prior user message + AI reply)
-   * is sent to the backend on every call — so the AI has perfect memory
+   * is sent to the backend on every call - so the AI has perfect memory
    * of the entire session and NEVER forgets earlier instructions.
    */
   const refine = useCallback(
@@ -142,7 +142,7 @@ export function useChatHistory() {
       // The thread at this point has all previous turns.
       // The backend will append the feedback as the last user turn internally,
       // but we send the thread WITHOUT the new feedback so the backend can
-      // control the append — OR we send it including the new feedback.
+      // control the append - OR we send it including the new feedback.
       // (We include it here so callers get the full picture if they inspect.)
       const threadToSend = conversationThread.current; // snapshot before mutation
       const turnNum = turnIndex.current + 1;
@@ -220,7 +220,7 @@ export function useChatHistory() {
 
   // ─── Restore from history ──────────────────────────────────────────────────
   /**
-   * When user clicks a past chat in sidebar — seed the thread from the
+   * When user clicks a past chat in sidebar - seed the thread from the
    * stored result so further refinements have context.
    */
   const setSessionFromHistory = useCallback(

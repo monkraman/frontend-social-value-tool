@@ -1,6 +1,7 @@
+import { undash } from '../utils/undash';
 // Where the generator's knowledge comes from. Two sources, same shape:
 //   1. the reference folder on this computer, served by the dev server (local-repository/plugin.ts);
-//   2. the backend, which is what the team uses — the dev-server plugin cannot run in a build.
+//   2. the backend, which is what the team uses - the dev-server plugin cannot run in a build.
 // The folder wins when it is there, so local edits to the workbooks show up without a deploy.
 import { API_BASE_URL, apiFetch, getAuthHeaders } from '../api/client';
 import { extractDocumentText, repositoryDocumentText } from '../api/generator';
@@ -30,7 +31,7 @@ export async function fetchKnowledge(refresh = false): Promise<KnowledgeState> {
     const local = await json<KnowledgeState>(await fetch(`${BASE}/knowledge${refresh ? '?refresh=1' : ''}`));
     // The dev server answers "not connected" when no folder is configured: use the backend then.
     if (!local.connected) return fetchBackendKnowledge();
-    return { ...local, origin: 'local' };
+    return undash({ ...local, origin: 'local' as const });
   } catch {
     return fetchBackendKnowledge();
   }
@@ -41,7 +42,7 @@ async function fetchBackendKnowledge(): Promise<KnowledgeState> {
   try {
     const res = await apiFetch(`${API_BASE_URL}/generator/knowledge`, { headers: getAuthHeaders() });
     if (res.status === 401 || res.status === 403) return { connected: false, reason: NO_BACKEND };
-    return { ...(await json<LocalKnowledge>(res)), origin: 'backend' };
+    return undash({ ...(await json<LocalKnowledge>(res)), origin: 'backend' as const });
   } catch (e) {
     return { connected: false, reason: (e as Error).message || NOT_LOCAL };
   }

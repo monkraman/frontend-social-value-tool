@@ -3,10 +3,10 @@ import { Check, FilePenLine, FileText, Handshake, Pencil, Plus, RotateCcw, Trash
 import { formatGbp } from '../../utils/formatters';
 import { macLabel } from '../../local/frameworks';
 import { bidDraft, type BidDraft } from '../../local/bidDraft';
-import { BASIS_LABEL, cheaperOptions, costsOf, defaultCosts, initiativeCost, itemCost, newCostId, pastCosts, peopleOf, quantityLabel, quantityOf, returnOnCost, valuePerPound, costTables } from '../../local/costs';
+import { BASIS_LABEL, cheaperOptions, initiativeCost, itemCost, newCostId, pastCosts, peopleOf, quantityLabel, quantityOf, returnOnCost, valuePerPound, costTables } from '../../local/costs';
 import { plainMeasure } from '../../local/plainLanguage';
-import { commitmentOf, deliveryOf, initiativeConditional, initiativeMacs, initiativeValue, isOn, lineValue, macRating, lineEdited, lineTrimmed, unitsOf, withoutQuantities, wordingFor, type MacRating } from '../../local/engine';
-import type { CostBasis, CostItem, Initiative, InitiativeLine, KnownPartner, LocalKnowledge, StaffRate, TenderForm } from '../../local/types';
+import { amountIn, commitmentOf, deliveryOf, initiativeConditional, initiativeMacs, initiativeValue, isOn, lineValue, macRating, lineEdited, lineTrimmed, unitsOf, withoutQuantities, wordingFor, type MacRating } from '../../local/engine';
+import type { CostBasis, CostItem, Initiative, UnitFactor, InitiativeLine, KnownPartner, LocalKnowledge, StaffRate, TenderForm } from '../../local/types';
 
 const RATING_CLASS: Record<MacRating, string> = { Strong: 'pill-strong', Partial: 'pill-partial', 'Not scored': 'pill-none' };
 const FIT_CLASS = { 'Core strength': 'pill-strong', Deliverable: 'pill-partial', 'Needs a partner': 'pill-none' } as const;
@@ -32,6 +32,8 @@ export interface InitiativeEdit {
   who_benefits: string;
   delivered_by: string;
   wording: string;
+  /** Each measure's target as the numbers that multiply into it, e.g. 12 sessions × 5 hours × 40 attendees. */
+  targets: { code: string; factors: UnitFactor[] }[];
 }
 
 interface CardProps {
@@ -132,42 +134,9 @@ export const InitiativeCard: React.FC<CardProps> = ({
             ))}
           </div>
 
-          <div className="gen-block">
-            <h3 className="gen-label">Done before</h3>
-            {ini.done_before?.length ? (
-              <ul className="gen-list">
-                {ini.done_before.map((d) => (
-                  <li key={d.id}>
-                    <strong>{d.name}</strong>
-                    {d.contract ? ` on the ${d.contract}` : ''}
-                    {d.volume && d.volume !== '—' ? ` · ${d.volume}` : ''} · MAC {d.mac}
-                    {d.measures.length ? ` · ${d.measures.join(', ')}` : ''}
-                    {d.why && <span className="gen-meta gen-why">{d.why}</span>}
-                    {d.delivery && d.delivery.length > 0 && (
-                      <details className="gen-steps">
-                        <summary>How it was delivered ({d.delivery.length} steps)</summary>
-                        <ol>
-                          {d.delivery.map((s) => (
-                            <li key={s.step}>
-                              {s.step}
-                              {s.due ? <span className="gen-meta"> · {s.due}</span> : null}
-                              {s.cycle ? <span className="gen-meta"> · {s.cycle}</span> : null}
-                            </li>
-                          ))}
-                        </ol>
-                      </details>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="body-text">Infosys has not committed anything like this before. It would be new.</p>
-            )}
-          </div>
-
           {ini.evidence.length > 0 && (
             <div className="gen-block">
-              <h3 className="gen-label">In past bid documents</h3>
+              <h3 className="gen-label">Past bid documents</h3>
               <ul className="gen-list gen-evidence">
                 {ini.evidence.map((e) => (
                   <li key={`${e.file}-${e.snippet.slice(0, 24)}`}>
@@ -187,16 +156,16 @@ export const InitiativeCard: React.FC<CardProps> = ({
 
           {ini.lines.length > 0 && (
             <div className="gen-block">
-              <h3 className="gen-label">How it is valued</h3>
+              <h3 className="gen-label">Valuation</h3>
               <div className="table-scroll">
                 <table className="data-table gen-table">
                   <thead>
                     <tr>
-                      <th>What we count</th>
-                      <th>How much</th>
-                      <th>Worth per unit</th>
+                      <th>Measure</th>
+                      <th>Target</th>
+                      <th>Value per unit</th>
                       <th>Value</th>
-                      <th>Counted</th>
+                      <th>Included</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -208,10 +177,10 @@ export const InitiativeCard: React.FC<CardProps> = ({
               </div>
               <div className="section-row">
                 <span className="gen-meta">
-                  {conditional > 0 ? `${formatGbp(conditional)} is conditional and not in the total. ` : ''}Change any number and the value updates.
+                  {conditional > 0 ? `${formatGbp(conditional)} is conditional and not in the total. ` : ''}Values update as targets change.
                 </span>
                 <button className="btn-link" onClick={onReset}>
-                  <RotateCcw size={12} /> Suggested numbers
+                  <RotateCcw size={12} /> Reset targets
                 </button>
               </div>
             </div>
@@ -221,6 +190,44 @@ export const InitiativeCard: React.FC<CardProps> = ({
 
       {ini.included && !editing && (
         <>
+
+          <details className="gen-more">
+            <summary>
+              Track record <span className="gen-meta">· {ini.done_before?.length ? `${ini.done_before.length} similar commitment${ini.done_before.length === 1 ? '' : 's'}` : 'new for Infosys'}</span>
+            </summary>
+            <div className="gen-more-body">
+            {ini.done_before?.length ? (
+              <ul className="gen-list">
+                {ini.done_before.map((d) => (
+                  <li key={d.id}>
+                    <strong>{d.name}</strong>
+                    {d.contract ? ` on the ${d.contract}` : ''}
+                    {d.volume && d.volume.trim() !== '-' ? ` · ${d.volume}` : ''} · MAC {d.mac}
+                    {d.measures.length ? ` · ${d.measures.join(', ')}` : ''}
+                    {d.why && <span className="gen-meta gen-why">{d.why}</span>}
+                    {d.delivery && d.delivery.length > 0 && (
+                      <details className="gen-steps">
+                        <summary>Delivery steps ({d.delivery.length})</summary>
+                        <ol>
+                          {d.delivery.map((s) => (
+                            <li key={s.step}>
+                              {s.step}
+                              {s.due ? <span className="gen-meta"> · {s.due}</span> : null}
+                              {s.cycle ? <span className="gen-meta"> · {s.cycle}</span> : null}
+                            </li>
+                          ))}
+                        </ol>
+                      </details>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="body-text">No similar commitment on past contracts. This would be new for Infosys.</p>
+            )}
+          </div>
+          </details>
+
           <PartnerSection initiative={ini} partners={partners} onChoose={onChoosePartner} />
 
           <CostSection initiative={ini} knowledge={knowledge} form={form} onCosts={onCosts} />
@@ -236,7 +243,7 @@ export const InitiativeCard: React.FC<CardProps> = ({
           </details>
 
           <details className="gen-more">
-            <summary>Why it fits</summary>
+            <summary>Fit with Infosys</summary>
             <div className="gen-more-body body-text">
               <p>{ini.fit_reason}</p>
               {ini.policy_topics.length > 0 && <p>It matches what the buyer’s policy asks for: {ini.policy_topics.join(', ').toLowerCase()}.</p>}
@@ -248,7 +255,7 @@ export const InitiativeCard: React.FC<CardProps> = ({
 
           {ini.questions.length > 0 && (
             <details className="gen-more">
-              <summary>Before committing ({ini.questions.length})</summary>
+              <summary>Open questions ({ini.questions.length})</summary>
               <ul className="gen-more-body gen-list body-text">
                 {ini.questions.map((q) => (
                   <li key={q}>{q}</li>
@@ -297,7 +304,7 @@ const PartnerSection: React.FC<{ initiative: Initiative; partners: KnownPartner[
   const others = known.filter((p) => !p.worked_with_before || p.contract_specific);
   const named = (name: string) => partners.find((p) => p.name.toLowerCase() === name.toLowerCase());
   const status =
-    chosen === undefined ? (suggested ? `AI suggests ${suggested} · not chosen yet` : 'not chosen yet') : chosen.trim() ? chosen : 'Infosys alone';
+    chosen === undefined ? (suggested ? `suggested: ${suggested}` : 'not selected') : chosen.trim() ? chosen : 'Infosys alone';
   const value = chosen === undefined ? '__none' : chosen.trim() === '' ? '__alone' : chosen;
   const listed = value === '__none' || value === '__alone' || value === suggested || partners.some((p) => p.name === value);
   const useOwn = () => {
@@ -322,20 +329,20 @@ const PartnerSection: React.FC<{ initiative: Initiative; partners: KnownPartner[
       <div className="gen-more-body">
         {suggested && chosen === undefined && (
           <p className="body-text">
-            <Handshake size={13} /> The AI suggests <strong>{suggested}</strong>
+            <Handshake size={13} /> Suggested partner: <strong>{suggested}</strong>
             {named(suggested)?.worked_with_before
-              ? ' — Infosys has worked with them before.'
+              ? '. Infosys has worked with them before.'
               : named(suggested)
-                ? ' — not used on a contract before.'
-                : ' — not in the capability profile.'}{' '}
-            Nothing is named in the bid until you choose.
+                ? '. Not used on a contract before.'
+                : '. Not in the capability profile.'}{' '}
+            The bid names a partner only once one is selected.
           </p>
         )}
         <div className="chip-row">
           <select className="select-compact" value={typing ? '__own' : value} aria-label="Delivery partner" onChange={(e) => select(e.target.value)}>
-            <option value="__none">Not chosen yet</option>
+            <option value="__none">Not selected</option>
             <option value="__alone">Infosys alone</option>
-            {suggested && <option value={suggested}>{suggested} (AI suggestion)</option>}
+            {suggested && <option value={suggested}>{suggested} (suggested)</option>}
             {!listed && <option value={value}>{value}</option>}
             {before.length > 0 && (
               <optgroup label="Worked with before">
@@ -356,7 +363,7 @@ const PartnerSection: React.FC<{ initiative: Initiative; partners: KnownPartner[
                 ))}
               </optgroup>
             )}
-            <option value="__own">Another partner (type the name)…</option>
+            <option value="__own">Other partner…</option>
           </select>
           {typing && (
             <>
@@ -390,7 +397,7 @@ const CostSection: React.FC<{ initiative: Initiative; knowledge: LocalKnowledge 
   form,
   onCosts
 }) => {
-  const items = costsOf(ini, knowledge);
+  const items = ini.costs ?? [];
   const total = initiativeCost(ini, knowledge);
   const back = returnOnCost(ini, knowledge);
   const tables = costTables(knowledge);
@@ -411,7 +418,7 @@ const CostSection: React.FC<{ initiative: Initiative; knowledge: LocalKnowledge 
       <summary>
         Cost to deliver{' '}
         <span className="gen-meta">
-          · {total > 0 ? formatGbp(total) : 'not costed'}
+          · {total > 0 ? formatGbp(total) : 'not yet costed'}
           {back != null ? ` · ${ratio(back)} of social value per £1` : ''}
         </span>
       </summary>
@@ -422,10 +429,10 @@ const CostSection: React.FC<{ initiative: Initiative; knowledge: LocalKnowledge 
               <thead>
                 <tr>
                   <th>Cost item</th>
-                  <th>Rate £</th>
-                  <th>Per</th>
-                  <th>How many</th>
-                  <th>× each</th>
+                  <th>Rate (£)</th>
+                  <th>Basis</th>
+                  <th>Quantity</th>
+                  <th>Multiplier</th>
                   <th>Cost</th>
                   <th aria-label="Remove" />
                 </tr>
@@ -438,7 +445,7 @@ const CostSection: React.FC<{ initiative: Initiative; knowledge: LocalKnowledge 
             </table>
           </div>
         ) : (
-          <p className="body-text">The workbook has no unit cost for these measures. Add the costs below.</p>
+          <p className="body-text">Add the cost lines for this initiative. Quantities can be linked to the targets above.</p>
         )}
 
         <div className="chip-row gen-cost-add">
@@ -464,7 +471,7 @@ const CostSection: React.FC<{ initiative: Initiative; knowledge: LocalKnowledge 
                 if (r) add({ label: `${r.role} (${r.location})`, basis: 'hour', rate: Math.round((r.per_hour ?? 0) * 100) / 100, quantity: 0, link: peopleLink, each: 1, each_label: 'hours each' });
               }}
             >
-              <option value="">Staff rate card…</option>
+              <option value="">Staff rate card</option>
               {tables.rate_card.map((r) => (
                 <option key={r.grade} value={r.grade}>
                   {r.role} · {r.location} · £{(r.per_hour ?? 0).toFixed(2)}/hr
@@ -472,16 +479,11 @@ const CostSection: React.FC<{ initiative: Initiative; knowledge: LocalKnowledge 
               ))}
             </select>
           )}
-          {ini.costs && (
-            <button className="btn-link" onClick={() => onCosts(undefined)} title={`Back to the ${defaultCosts(ini, knowledge).length} row(s) worked out from the workbook`}>
-              <RotateCcw size={12} /> Workbook costs
-            </button>
-          )}
         </div>
 
         {past.length > 0 && (
           <div className="gen-block">
-            <h3 className="gen-label">What similar work cost before</h3>
+            <h3 className="gen-label">Past costs on similar work</h3>
             <ul className="gen-list">
               {past.map((e) => (
                 <li key={e.description}>
@@ -498,7 +500,7 @@ const CostSection: React.FC<{ initiative: Initiative; knowledge: LocalKnowledge 
 
         {cheaper.length > 0 && (
           <div className="gen-block">
-            <h3 className="gen-label">Cheaper ways to score the same criterion</h3>
+            <h3 className="gen-label">Lower-cost measures for the same criterion</h3>
             <ul className="gen-list">
               {cheaper.map((o) => (
                 <li key={o.code}>
@@ -507,7 +509,7 @@ const CostSection: React.FC<{ initiative: Initiative; knowledge: LocalKnowledge 
                 </li>
               ))}
             </ul>
-            <p className="gen-meta">From the workbook Levers sheet. Unit economics only: what the buyer asks for still decides.</p>
+            <p className="gen-meta">From the workbook Levers sheet. Unit economics only; the buyer's priorities still apply.</p>
           </div>
         )}
         {perLine.length > 0 && <p className="gen-meta">Social value per £1 of cost: {perLine.join(' · ')}.</p>}
@@ -543,12 +545,12 @@ const CostRow: React.FC<{ item: CostItem; initiative: Initiative; counted: Initi
       </td>
       <td>
         {c.basis === 'fixed' ? (
-          <span className="gen-meta">—</span>
+          <span className="gen-meta">-</span>
         ) : c.link ? (
-          <span className="gen-linked" title="Taken from the valuation table, so it follows any change there">
+          <span className="gen-linked" title="Linked to the target in the valuation table">
             {fmtUnits(quantityOf(c, ini))} {quantityLabel(c, ini)}{' '}
             <button className="btn-link" onClick={() => onChange({ link: undefined, quantity: quantityOf(c, ini) })}>
-              type instead
+              Enter manually
             </button>
           </span>
         ) : (
@@ -564,7 +566,7 @@ const CostRow: React.FC<{ item: CostItem; initiative: Initiative; counted: Initi
                   if (code) onChange({ link: { code, what: what as 'units' | 'people' } });
                 }}
               >
-                <option value="">from the table…</option>
+                <option value="">Link to target…</option>
                 {counted.flatMap((l) => {
                   const plain = plainMeasure(l.code, l.name, l.unit);
                   const people = peopleOf(l);
@@ -580,11 +582,11 @@ const CostRow: React.FC<{ item: CostItem; initiative: Initiative; counted: Initi
       </td>
       <td>
         {c.basis === 'fixed' ? (
-          <span className="gen-meta">—</span>
+          <span className="gen-meta">-</span>
         ) : (
           <span className="gen-linked">
             <input className="input-compact gen-num" type="number" min={0} step="any" value={c.each} aria-label="Multiplier" onChange={(e) => onChange({ each: num(e.target.value) })} />
-            <input className="input-compact gen-each" value={c.each_label ?? ''} placeholder="e.g. hours each" aria-label="What the multiplier counts" onChange={(e) => onChange({ each_label: e.target.value })} />
+            <input className="input-compact gen-each" value={c.each_label ?? ''} placeholder="e.g. hours per person" aria-label="What the multiplier counts" onChange={(e) => onChange({ each_label: e.target.value })} />
           </span>
         )}
       </td>
@@ -604,9 +606,12 @@ const EditForm: React.FC<{ initiative: Initiative; wording: string; onSave: (e: 
     what: initiative.pattern.what,
     who_benefits: initiative.pattern.who_benefits,
     delivered_by: initiative.pattern.delivered_by,
-    wording
+    wording,
+    targets: initiative.lines.filter((l) => l.proxy_gbp != null).map((l) => ({ code: l.code, factors: l.factors.map((f) => ({ ...f })) }))
   });
-  const field = (key: keyof InitiativeEdit) => ({ value: e[key], onChange: (ev: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setE({ ...e, [key]: ev.target.value }) });
+  const setFactors = (code: string, change: (f: UnitFactor[]) => UnitFactor[]) =>
+    setE((x) => ({ ...x, targets: x.targets.map((t) => (t.code === code ? { ...t, factors: change(t.factors) } : t)) }));
+  const field = (key: 'name' | 'what' | 'who_benefits' | 'delivered_by' | 'wording') => ({ value: e[key], onChange: (ev: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setE({ ...e, [key]: ev.target.value }) });
   return (
     <div className="card-body">
       <div className="field-grid">
@@ -631,12 +636,66 @@ const EditForm: React.FC<{ initiative: Initiative; wording: string; onSave: (e: 
         <span>Draft wording</span>
         <textarea rows={5} {...field('wording')} />
       </label>
+      {e.targets.length > 0 && (
+        <div className="field">
+          <span>Targets</span>
+          {e.targets.map((t) => {
+            const line = initiative.lines.find((l) => l.code === t.code)!;
+            const plain = plainMeasure(line.code, line.name, line.unit);
+            const total = t.factors.reduce((p, f) => p * (f.percent ? f.value / 100 : f.value), 1);
+            return (
+              <div key={t.code} className="gen-target-edit">
+                <div className="gen-target-head">
+                  <strong>{plain.name}</strong> <span className="tag-mono">{t.code}</span>
+                  <span className="gen-meta"> = {fmtUnits(total)} {plain.unit}</span>
+                </div>
+                <div className="gen-factors">
+                  {t.factors.map((f, i) => (
+                    <span key={i} className="gen-factor-edit">
+                      {i > 0 && <span className="gen-times">×</span>}
+                      <input
+                        type="number"
+                        className="input-compact gen-num"
+                        value={f.value}
+                        min={0}
+                        step="any"
+                        disabled={f.fixed}
+                        aria-label={`${plain.name}: ${f.label} value`}
+                        onChange={(ev) => setFactors(t.code, (fs) => fs.map((x, j) => (j === i ? { ...x, value: Number(ev.target.value) || 0 } : x)))}
+                      />
+                      <input
+                        className="input-compact gen-each"
+                        value={f.label}
+                        disabled={f.fixed}
+                        aria-label={`${plain.name}: factor ${i + 1} name`}
+                        onChange={(ev) => setFactors(t.code, (fs) => fs.map((x, j) => (j === i ? { ...x, label: ev.target.value } : x)))}
+                      />
+                      {t.factors.length > 1 && !f.fixed && (
+                        <button type="button" className="icon-button" aria-label={`Remove ${f.label}`} onClick={() => setFactors(t.code, (fs) => fs.filter((_, j) => j !== i))}>
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    className="btn-link"
+                    onClick={() => setFactors(t.code, (fs) => [...fs, { label: 'Multiplier', value: 1, min: 0, max: 1_000_000_000, step: 1 }])}
+                  >
+                    <Plus size={12} /> Factor
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
       <div className="gen-actions section-row">
-        <span className="gen-meta">Numbers are edited in the table once you save.</span>
+        <span className="gen-meta">Each target is the product of its factors.</span>
         <button className="btn-secondary" onClick={onCancel}>
           Cancel
         </button>
-        <button className="btn-primary" onClick={() => onSave(e)} disabled={!e.name.trim()}>
+        <button className="btn-primary" onClick={() => onSave({ ...e, wording: e.wording.trim() === wording.trim() ? '' : e.wording })} disabled={!e.name.trim()}>
           <Check size={14} /> Save
         </button>
       </div>
@@ -698,7 +757,7 @@ const DraftDialog: React.FC<{ draft: BidDraft; onClose: () => void; onOpenEditor
           ))}
         </article>
         <div className="card-footer gen-actions">
-          <span className="gen-meta">Laid out like Infosys’s past social value responses. Check every number before it goes in a bid.</span>
+          <span className="gen-meta">Follows the structure of past Infosys social value responses. Check all figures before submission.</span>
           <button className="btn-primary" onClick={onOpenEditor} title="Opens the RFP editor in its own window with this initiative added">
             <FilePenLine size={14} /> Edit in RFP editor
           </button>
@@ -722,8 +781,8 @@ const LineRow: React.FC<{ line: InitiativeLine; onFactor: (index: number, value:
         {l.basis && !lineEdited(l) && !lineTrimmed(l) && <div className="gen-meta">{l.basis}</div>}
         {l.units_proposed != null && (lineTrimmed(l) || lineEdited(l)) && (
           <div className="gen-meta">
-            The AI proposed {l.units_proposed.toLocaleString('en-GB')} {plain.unit}
-            {lineTrimmed(l) && !lineEdited(l) ? ' — cut back so the package stays within the target, which earns no more score above it.' : '.'}
+            Originally proposed: {amountIn(l.units_proposed, plain.unit)}
+            {lineTrimmed(l) && !lineEdited(l) ? ', reduced to keep the package within the target.' : '.'}
           </div>
         )}
         {l.note && <div className="gen-meta">{l.note}</div>}
@@ -749,11 +808,11 @@ const LineRow: React.FC<{ line: InitiativeLine; onFactor: (index: number, value:
           )}
         </div>
         <div className="gen-meta">
-          = {fmtUnits(unitsOf(l))} {plain.unit}
+          = {amountIn(unitsOf(l), plain.unit)}
         </div>
       </td>
-      <td title={l.proxy_basis}>{valued ? fmtProxy(l.proxy_gbp as number) : '—'}</td>
-      <td>{valued ? formatGbp(lineValue(l)) : '—'}</td>
+      <td title={l.proxy_basis}>{valued ? fmtProxy(l.proxy_gbp as number) : '-'}</td>
+      <td>{valued ? formatGbp(lineValue(l)) : '-'}</td>
       <td>
         {valued ? (
           <label className="gen-switch" title={l.exclusive_group ? 'Only one of these can be counted: counting this one switches the other off.' : undefined}>

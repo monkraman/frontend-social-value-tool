@@ -115,7 +115,7 @@ export function bidDraft(ini: Initiative, form: TenderForm, client = ''): BidDra
     ]
   });
 
-  return { title: criterion ? `${macLabel(criterion.code)}: ${criterion.title} — ${p.name}` : p.name, sections };
+  return { title: criterion ? `${macLabel(criterion.code)}: ${criterion.title} - ${p.name}` : p.name, sections };
 }
 
 /** Months between two dd/mm/yyyy dates, or null when either cannot be read. */
@@ -173,7 +173,7 @@ function phasedFromPastDelivery(ini: Initiative, years: number): DraftSection | 
     return amountIn(amount, plain.unit);
   };
 
-  const rows = ordered.map((s) => [when(Math.round(s.offset * squeeze)), s.step, share(s) || '—', s.cycle || 'Once']);
+  const rows = ordered.map((s) => [when(Math.round(s.offset * squeeze)), s.step, share(s) || '-', s.cycle || 'Once']);
 
   return {
     heading: 'Delivery plan',
@@ -182,7 +182,7 @@ function phasedFromPastDelivery(ini: Initiative, years: number): DraftSection | 
         partsTotal && plain ? ` and sized to the ${amountIn(commitment, plain.unit)} committed here` : ''
       }. Confirm the dates with the Authority at mobilisation.`
     ],
-    table: { head: ['When', 'Step', 'How much', 'Reported'], rows }
+    table: { head: ['When', 'Step', 'Target', 'Reporting'], rows }
   };
 }
 

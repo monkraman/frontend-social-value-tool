@@ -83,25 +83,25 @@ export const AVAILABLE_FRAMEWORKS = [
 
 const SAMPLE_PRESETS: Array<{ label: string; prompt: string; region: string }> = [
   {
-    label: 'Birmingham City Council — £10M / 3yr (10% SV)',
+    label: 'Birmingham City Council - £10M / 3yr (10% SV)',
     region: 'Birmingham',
     prompt:
       'I need to build a Social Value bid response, for a 3-year contract of £10M with 10% Social Value weighting. The client Birmingham City Council in Birmingham wants the Social Value offer to address digital inclusion and youth employment. Based on: previous responses that have scored highly, what Infosys have delivered so far, approved partnerships in our repository, recognised frameworks for SVROI (National TOMS) and geographical location - build a template of initiatives we can present to the client that would achieve 10% SV, and the impact we can expect to deliver.'
   },
   {
-    label: 'NHS Foundation Trust — £8M / 5yr (10% SV)',
+    label: 'NHS Foundation Trust - £8M / 5yr (10% SV)',
     region: 'National UK',
     prompt:
       'I need to build a Social Value bid response for a 5-year contract of £8M with 10% Social Value weighting for an NHS Foundation Trust. The client wants the Social Value offer to address community digital health inclusion, staff wellbeing, and tackling economic inequality through local healthcare apprenticeships.'
   },
   {
-    label: 'Manchester City Council — £5M / 4yr (10% SV)',
+    label: 'Manchester City Council - £5M / 4yr (10% SV)',
     region: 'Manchester',
     prompt:
       'I need to build a Social Value bid response for a 4-year contract of £5M with 10% Social Value weighting for Manchester City Council in Manchester. Priorities include green economy skills, carbon reduction in supply chains, and supporting local GM SMEs and VCSE providers.'
   },
   {
-    label: 'Leeds Teaching Hospitals — £12M / 3yr (10% SV)',
+    label: 'Leeds Teaching Hospitals - £12M / 3yr (10% SV)',
     region: 'Leeds',
     prompt:
       'I need to build a Social Value bid response for a 3-year contract of £12M with 10% Social Value weighting for Leeds Teaching Hospitals in Leeds. The client requires quantifiable commitments targeting local youth training, ethical digital supply chain, and local charity volunteering.'
@@ -155,7 +155,7 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
       tomsCodes: ['NT31'],
       description: 'Direct greenhouse emissions decarbonisation (NT31), circular reuse of IT equipment, and cloud energy optimisation.',
       includedMeasuresLabel: 'NT31 Decarbonisation (tCO2e)',
-      feasibilityNote: 'Cloud optimisation & corporate asset circular reuse — £252.11 proxy value per tCO2e.'
+      feasibilityNote: 'Cloud optimisation & corporate asset circular reuse - £252.11 proxy value per tCO2e.'
     },
     {
       id: 'Community',
@@ -181,7 +181,7 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
       tomsCodes: ['NT18'],
       description: 'Ringfenced contract procurement direct to regional SMEs, VCSE suppliers (NT18), and fair supply chain payment.',
       includedMeasuresLabel: 'NT18 Local SME Spend',
-      feasibilityNote: 'Pass-through project delivery subcontracting with regional vendors — £1.089 multiplier.'
+      feasibilityNote: 'Pass-through project delivery subcontracting with regional vendors - £1.089 multiplier.'
     }
   ];
 
@@ -847,7 +847,7 @@ export const OpportunityFinder: React.FC<OpportunityFinderProps> = () => {
                     onClick={() => setPromptText(p.prompt)}
                     className={`chip${promptText === p.prompt ? ' is-active' : ''}`}
                   >
-                    {p.label.split(' — ')[0]}
+                    {p.label.split(' - ')[0]}
                   </button>
                 ))}
               </div>

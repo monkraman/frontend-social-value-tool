@@ -187,7 +187,7 @@ export const Tuner: React.FC = () => {
                       {rateKnown ? `${formatGbp(unitRate)}/${m?.unit || 'units'}` : 'Loading rate…'}
                     </span>
                     <strong className="display-num" style={{ fontSize: '1rem', color: 'var(--color-primary-text)' }}>
-                      {subtotal === null ? '—' : formatGbp(subtotal)}
+                      {subtotal === null ? '-' : formatGbp(subtotal)}
                     </strong>
                     <button
                       onClick={() => removeInitiative(idx)}

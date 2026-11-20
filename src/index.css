@@ -8,8 +8,9 @@
 :root {
   /* Fonts */
   --font-sans: 'Source Sans 3', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
-  --font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
-  --font-mono: 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* One typeface across the tool: headings, figures and codes all use the body font. */
+  --font-display: var(--font-sans);
+  --font-mono: var(--font-sans);
 
   /* Backgrounds */
   --bg-app: #F4F6FA;
@@ -182,7 +183,7 @@ button {
   font-family: inherit;
 }
 
-/* Primary Action Button — Infosys blue */
+/* Primary Action Button - Infosys blue */
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -217,7 +218,7 @@ button {
   box-shadow: none;
 }
 
-/* Secondary Button — white with a blue hover */
+/* Secondary Button - white with a blue hover */
 .btn-secondary {
   display: inline-flex;
   align-items: center;
@@ -278,7 +279,7 @@ button {
   border: 1px solid var(--color-primary-border);
 }
 
-/* Reference tag (TOMs codes, formulas, IDs) — brand chip */
+/* Reference tag (TOMs codes, formulas, IDs) - brand chip */
 .tag-mono {
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
@@ -398,7 +399,7 @@ button {
   box-shadow: var(--shadow-sm), inset 0 -2px 0 var(--color-primary);
 }
 
-/* Infosys Brand Logo — swaps tone with the theme */
+/* Infosys Brand Logo - swaps tone with the theme */
 .brand-logo {
   display: block;
   height: auto;
@@ -417,7 +418,7 @@ button {
 }
 
 /* ==========================================================================
-   Page primitives — every screen is <div className="page"> + <PageHeader>
+   Page primitives - every screen is <div className="page"> + <PageHeader>
    ========================================================================== */
 .page {
   width: 100%;
@@ -628,7 +629,7 @@ button {
   color: var(--color-primary-text);
 }
 
-/* Selectable option cards (themes) — colour comes from --tone */
+/* Selectable option cards (themes) - colour comes from --tone */
 .toggle-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1627,3 +1628,43 @@ button {
   width: 100%;
   min-width: 6rem;
 }
+
+/* Points to review: folded by default */
+.gen-checks > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.gen-checks > ul {
+  margin-top: 0.5rem;
+  padding-left: 1.1rem;
+}
+
+/* Readable text inside an initiative: commitments, measures and lists in near-black */
+.gen-card .body-text,
+.gen-card .gen-about,
+.gen-card .gen-list,
+.gen-card .gen-table td,
+.gen-card .gen-more-body {
+  color: var(--text-primary);
+}
+.gen-card .gen-meta {
+  color: var(--text-secondary);
+}
+.gen-target-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--border-subtle);
+}
+.gen-factor-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.gen-times {
+  color: var(--text-secondary);
+  padding: 0 0.15rem;
+}
+.gen-checks { padding-left: 1rem; }

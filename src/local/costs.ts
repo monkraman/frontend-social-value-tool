@@ -20,9 +20,6 @@ export const costTables = (k: LocalKnowledge | null | undefined): CostTables => 
 
 const leverOf = (code: string, t: CostTables): MeasureCost | undefined => t.levers.find((l) => l.code === code);
 
-/** UK delivery unless only offshore is costed. Offshore is a choice the bid team makes per row. */
-const unitCost = (lever: MeasureCost | undefined): number | null => lever?.cost_uk ?? lever?.cost_offshore ?? null;
-
 /** The better of UK and offshore delivery: what £1 of Infosys cost returns in social value. */
 export function valuePerPound(code: string, t: CostTables): number | null {
   const l = leverOf(code, t);
@@ -58,23 +55,10 @@ export const itemCost = (item: CostItem, ini: Initiative): number => (item.basis
 let seq = 0;
 export const newCostId = () => `c${Date.now().toString(36)}${(seq++).toString(36)}`;
 
-/** Worked out from the workbook: one row per counted line, at the measure's unit cost. */
-export function defaultCosts(ini: Initiative, k: LocalKnowledge | null): CostItem[] {
-  const t = costTables(k);
-  return ini.lines
-    .filter((l) => isOn(l) && l.proxy_gbp != null)
-    .flatMap((l): CostItem[] => {
-      const lever = leverOf(l.code, t);
-      const rate = unitCost(lever);
-      if (rate == null || !lever) return [];
-      const plain = plainMeasure(l.code, l.name, l.unit);
-      return [{ id: `auto-${l.code}`, label: lever.driver || `${plain.name}: cost per ${plain.unit}`, basis: 'unit', rate, quantity: 0, link: { code: l.code, what: 'units' }, each: 1 }];
-    });
-}
+/** Only what the bid team entered: nothing is costed on their behalf. */
+export const costsOf = (ini: Initiative): CostItem[] => ini.costs ?? [];
 
-export const costsOf = (ini: Initiative, k: LocalKnowledge | null): CostItem[] => ini.costs ?? defaultCosts(ini, k);
-
-export const initiativeCost = (ini: Initiative, k: LocalKnowledge | null): number => costsOf(ini, k).reduce((t, c) => t + itemCost(c, ini), 0);
+export const initiativeCost = (ini: Initiative, _k?: LocalKnowledge | null): number => costsOf(ini).reduce((t, c) => t + itemCost(c, ini), 0);
 
 /** Social value per £1 Infosys spends delivering it, or null when nothing is costed. */
 export function returnOnCost(ini: Initiative, k: LocalKnowledge | null): number | null {

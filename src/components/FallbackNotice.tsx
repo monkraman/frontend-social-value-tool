@@ -19,6 +19,6 @@ export const FallbackNotice: React.FC = () => (
     }}
   >
     <Info size={16} style={{ color: '#B7791F', flexShrink: 0, marginTop: '0.1rem' }} />
-    <span>AI unavailable — showing the standard National TOMs template, not tailored to your documents.</span>
+    <span>AI unavailable - showing the standard National TOMs template, not tailored to your documents.</span>
   </div>
 );

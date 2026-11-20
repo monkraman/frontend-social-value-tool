@@ -787,7 +787,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
                                 borderRadius: '4px',
                                 color: '#ef4444',
-                                fontFamily: 'monospace',
+                                fontFamily: 'inherit',
                                 fontSize: '0.72rem',
                                 wordBreak: 'break-all'
                               }}

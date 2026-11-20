@@ -1,3 +1,4 @@
+import { undashText } from '../../utils/undash';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FilePenLine, LoaderCircle, MessageSquare, RotateCcw, Sliders, Sparkles, Upload, X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
@@ -41,8 +42,22 @@ const policyText = (p: PolicyInput) => [p.pasted, ...p.docs.map((d) => d.text)].
 const applyEdit = (ini: Initiative, e: InitiativeEdit): Initiative => ({
   ...ini,
   edited: true,
-  wording: e.wording.trim() || undefined,
-  pattern: { ...ini.pattern, name: e.name.trim(), what: e.what.trim(), who_benefits: e.who_benefits.trim(), delivered_by: e.delivered_by.trim() || 'Infosys' }
+  // Wording left as generated keeps following the targets; only wording the user rewrote is frozen.
+  ...(e.wording.trim() ? { wording: e.wording.trim(), wording_edited: true } : { wording_edited: ini.wording_edited ?? false }),
+  pattern: { ...ini.pattern, name: e.name.trim(), what: e.what.trim(), who_benefits: e.who_benefits.trim(), delivered_by: e.delivered_by.trim() || 'Infosys' },
+  lines: ini.lines.map((l) => {
+    const t = e.targets.find((x) => x.code === l.code);
+    if (!t || !t.factors.length) return l;
+    // A changed set of factors (one added or removed) keeps the suggestion's shape for "Reset targets"
+    // only where it still lines up; otherwise the suggestion becomes the AI's single total.
+    const sameShape = t.factors.length === l.suggested.length;
+    const total = l.suggested.reduce((p, f) => p * (f.percent ? f.value / 100 : f.value), 1);
+    return {
+      ...l,
+      factors: t.factors.map((f) => ({ ...f, label: f.label.trim() || 'Multiplier' })),
+      suggested: sameShape ? l.suggested : [{ label: t.factors[0].label, value: total, min: 0, max: 1_000_000_000, step: 1 }]
+    };
+  })
 });
 
 /** Ask to open a saved run (id) or start a blank tender (null). `nonce` makes a repeat request count. */
@@ -548,13 +563,13 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
               note={`${resultForm.sv_percent}% of the £${(resultForm.contract_value_gbp / 1_000_000).toLocaleString('en-GB', { maximumFractionDigits: 1 })}m contract`}
             />
             <Stat
-              label="These initiatives are worth"
+              label="Package value"
               value={formatGbp(totals.counted)}
               note={`${((totals.counted / resultForm.contract_value_gbp) * 100).toFixed(1)}% of the contract`}
               strong
             />
             <Stat
-              label="Target reached"
+              label="Target achieved"
               value={`${totals.percent_of_target.toFixed(0)}%`}
               note={
                 totals.counted >= totals.target
@@ -563,12 +578,12 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
               }
             />
             <Stat label="Conditional" value={formatGbp(totals.conditional)} />
-            <Stat label="Initiatives · without a TOM" value={`${totals.included} · ${totals.untraced}`} />
+            <Stat label="Initiatives · unvalued" value={`${totals.included} · ${totals.untraced}`} />
           </div>
 
           <div className="section-row">
             <span className="muted">
-              Values are units × proxy from your tables. Volumes are sized to the {resultForm.sv_percent}% target and no further — going above it
+              Values are units × proxy from your tables. Volumes are sized to the {resultForm.sv_percent}% target and no further - going above it
               commits Infosys to more for no extra score. Lower them to what can actually be delivered.
             </span>
             {changed && (
@@ -584,22 +599,25 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
           {(reading.buyer.length > 0 || reading.infosys.length > 0) && (
             <section className="card">
               <div className="card-toolbar">
-                <h2 className="section-title">What the policies say</h2>
+                <h2 className="section-title">Policy summary</h2>
                 <span className="muted">Found by keyword rules, not a language model. Check against the text.</span>
               </div>
               <div className="card-body">
-                {reading.buyer.length > 0 && <TopicList title="The buyer asks for" topics={reading.buyer} />}
-                {reading.infosys.length > 0 && <TopicList title="Infosys policy already covers" topics={reading.infosys} />}
+                {reading.buyer.length > 0 && <TopicList title="Buyer priorities" topics={reading.buyer} />}
+                {reading.infosys.length > 0 && <TopicList title="Covered by Infosys policy" topics={reading.infosys} />}
               </div>
             </section>
           )}
 
           {checks.length + aiChecks.length > 0 && (
-            <ul className="notice">
-              {[...checks, ...aiChecks.map((c) => `Backend: ${c}`)].map((c) => (
-                <li key={c}>{c}</li>
-              ))}
-            </ul>
+            <details className="notice gen-checks">
+              <summary>Points to review ({checks.length + aiChecks.length})</summary>
+              <ul>
+                {[...checks, ...aiChecks.map(undashText)].map((c) => (
+                  <li key={c}>{c}</li>
+                ))}
+              </ul>
+            </details>
           )}
 
           {/* Every initiative stays on screen; an unticked one is left out of the totals, not removed. */}

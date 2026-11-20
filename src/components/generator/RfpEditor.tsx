@@ -323,7 +323,7 @@ const SectionEditor: React.FC<{ number: string; section: DraftSection; onChange:
     </div>
     <TextList label="Paragraphs" items={s.paragraphs ?? []} onChange={(paragraphs) => onChange({ ...s, paragraphs })} />
     <label className="rfp-texts">
-      <span className="gen-label">List — one item per line, shown as (a), (b)…</span>
+      <span className="gen-label">List items, one per line, shown as (a), (b)</span>
       <textarea
         className="rfp-textarea"
         rows={Math.max(2, (s.bullets ?? []).length + 1)}

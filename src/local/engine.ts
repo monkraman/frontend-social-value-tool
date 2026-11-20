@@ -154,6 +154,14 @@ export function amountIn(n: number, unit: string): string {
 
 /** "12 apprentices, 78 weeks each", "10 people", "£300,000 spent": a line's quantity in words. */
 export function quantityPhrase(l: InitiativeLine): string {
+  const shown = l.factors.filter((f) => !f.fixed && f.label !== 'Years');
+  // Several numbers that multiply into one target read as the target, then how it is made up:
+  // "2,400 hours (12 sessions × 5 hours × 40 attendees)". People × "weeks each" already reads well.
+  if (shown.length > 2 || (shown.length === 2 && !shown.some((f) => /each$/i.test(f.label)))) {
+    const unit = plainMeasure(l.code, l.name, l.unit).unit;
+    const parts = shown.map((f) => `${f.value.toLocaleString('en-GB', { maximumFractionDigits: 1 })}${f.percent ? '%' : ''} ${lower(f.label)}`);
+    return `${amountIn(unitsOf(l), unit)} (${parts.join(' × ')})`;
+  }
   return l.factors
     .filter((f) => !f.fixed && f.label !== 'Years')
     .map((f) => {
@@ -178,7 +186,7 @@ export function commitmentOf(ini: Initiative): string {
 
 /** Take the figures out of the AI's description, so it cannot contradict the table.
  *
- * The AI used to write "recruit 40 people" while its own line said 20 — and after any edit
+ * The AI used to write "recruit 40 people" while its own line said 20 - and after any edit
  * both are wrong. The quantity is shown from the lines; the description keeps only the who,
  * where and how. "Level 3/4" and durations like "over 5 years" are left alone.
  */
@@ -191,11 +199,11 @@ export const withoutQuantities = (text: string): string =>
 /** The wording to show: the AI's until a volume changes under it, then one built from the numbers.
  *
  * The AI writes its volumes into the prose. Change sixteen apprentices to twenty and the table,
- * the value and the paragraph stop agreeing — so once a volume moves, the paragraph is rebuilt
+ * the value and the paragraph stop agreeing - so once a volume moves, the paragraph is rebuilt
  * from the lines. Wording the bid team typed themselves is always kept.
  */
 export function wordingFor(ini: Initiative, form: TenderForm): string {
-  if (ini.edited && ini.wording) return ini.wording;
+  if ((ini.wording_edited ?? ini.edited) && ini.wording) return ini.wording;
   if (ini.wording && !volumesEdited(ini)) return ini.wording;
   return bidParagraph(ini, form);
 }

@@ -154,7 +154,7 @@ export const PromptStudio: React.FC<PromptStudioProps> = ({
     const governance = currentPkg.governance;
 
     const tenderText = `
-SOCIAL VALUE BID RESPONSE WORKING DRAFT — REVIEW BEFORE USE
+SOCIAL VALUE BID RESPONSE WORKING DRAFT - REVIEW BEFORE USE
 =====================================================
 Client: ${opp.client} (${opp.location})
 Contract Value: ${formatGbp(opp.contract_value_gbp)}

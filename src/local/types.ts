@@ -107,7 +107,7 @@ export interface DeliveryStep {
   cycle: string;
   /** "Cumulative" steps carry a real quantity; "Percentage" and "Milestone" ones are gates. */
   kind?: string;
-  /** How much that step delivered on the past contract — the size of that cohort or tranche. */
+  /** How much that step delivered on the past contract - the size of that cohort or tranche. */
   target?: number | null;
 }
 
@@ -277,7 +277,9 @@ export interface Initiative {
   done_before?: PastInitiative[];
   /** True once the user has edited the name, description or wording. */
   edited?: boolean;
-  /** A partner the AI proposed. It stays a suggestion — it is not named in the bid until chosen. */
+  /** True when the user wrote the wording themselves; it then stays as written when targets change. */
+  wording_edited?: boolean;
+  /** A partner the AI proposed. It stays a suggestion - it is not named in the bid until chosen. */
   partner_suggested?: string;
   /** What the bid team settled on: a partner's name, or '' for Infosys alone. Undefined until they decide. */
   partner_choice?: string;
