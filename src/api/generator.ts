@@ -130,9 +130,10 @@ export async function fetchGeneratorOptions(): Promise<GeneratorOptions> {
   return res.json();
 }
 
-export async function runGenerator(form: GeneratorForm): Promise<GeneratorResult> {
+export async function runGenerator(form: GeneratorForm, signal?: AbortSignal): Promise<GeneratorResult> {
   const res = await apiFetch(`${API_BASE_URL}/generator/run`, {
     method: 'POST',
+    signal,
     headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(form)
   });

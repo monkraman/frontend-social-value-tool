@@ -90,7 +90,9 @@ export async function apiFetch(url: string, init?: RequestInit): Promise<Respons
   let res: Response;
   try {
     res = await fetch(url, init);
-  } catch {
+  } catch (e) {
+    // Stopped on purpose: let the caller tell a cancel from a failure.
+    if (e instanceof DOMException && e.name === 'AbortError') throw e;
     // Network failure (server down, offline, CORS): the browser only says "Failed to fetch".
     throw new Error("Can't reach the server right now. Please check your connection and try again.");
   }

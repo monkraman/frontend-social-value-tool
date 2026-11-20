@@ -1,6 +1,6 @@
 import { undashText } from '../../utils/undash';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { FilePenLine, LoaderCircle, MessageSquare, RotateCcw, Sliders, Sparkles, Upload, X } from 'lucide-react';
+import { CheckCircle2, FilePenLine, LoaderCircle, MessageSquare, Square, RotateCcw, Sliders, Sparkles, Upload, X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { createRun, getRun, runGenerator, updateRun, type RunInput } from '../../api/generator';
 import { backendRequest, fromBackend, searchTerms, valueChecks } from '../../local/backendAi';
@@ -147,6 +147,9 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
   const [reading, setReading] = useState<PolicyReading>({ buyer: [], infosys: [] });
   const [resultForm, setResultForm] = useState<TenderForm>(INITIAL_FORM);
   const [isAsking, setIsAsking] = useState(false);
+  // Lets the user stop a generation that is taking too long or was started by mistake.
+  const askAbort = useRef<AbortController | null>(null);
+  const [generatedCount, setGeneratedCount] = useState<number | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiChecks, setAiChecks] = useState<string[]>([]);
   /** The prompt as it was when the result on screen was generated. */
@@ -200,11 +203,15 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
     if (!knowledge?.connected) return;
     setIsAsking(true);
     setAiError(null);
+    const abort = new AbortController();
+    askAbort.current = abort;
     try {
       const policy: PolicyReading = { buyer: readPolicy(policyText(buyer)), infosys: readPolicy(policyText(infosys)) };
-      const result = await runGenerator(backendRequest(tender, knowledge, policy));
+      const result = await runGenerator(backendRequest(tender, knowledge, policy), abort.signal);
+      if (abort.signal.aborted) return;
       // Past-response passages come with the result from the backend; the local folder is a dev-only extra.
       const localEvidence = knowledge.origin === 'local' ? await fetchEvidence(searchTerms(result)) : {};
+      if (abort.signal.aborted) return;
       const built = fromBackend(result, knowledge, tender, localEvidence);
       const checksFromBackend = [...result.checks, ...valueChecks(result, built)];
       setReading(policy);
@@ -212,14 +219,24 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
       setResultPrompt(prompt);
       setAiChecks(checksFromBackend);
       setInitiatives(built);
+      setGeneratedCount(built.length);
       setRunId(null);
       onActiveRunChange?.(null);
       await saveNewRun({ version: 1, prompt, form: tender, reading: policy, aiChecks: checksFromBackend, initiatives: built });
     } catch (e) {
+      if (abort.signal.aborted) return;
       setAiError((e as Error).message);
     } finally {
+      if (askAbort.current === abort) askAbort.current = null;
       setIsAsking(false);
     }
+  };
+
+  /** Stop the AI. Nothing on screen changes: the previous initiatives, if any, stay as they were. */
+  const stopAsking = () => {
+    askAbort.current?.abort();
+    setIsAsking(false);
+    toast.info('Generation stopped. Nothing was changed.');
   };
 
   /** A fresh result goes into history straight away. A failed save never loses the result on screen. */
@@ -562,6 +579,11 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
             Sends the contract value, target %, duration, region and the selected criteria to the AI. The client name, your documents and any policy text are not
             sent to the AI. Each result is saved to your history, which only you can see.
           </span>
+          {isAsking && (
+            <button className="btn-secondary" onClick={stopAsking} title="Stop generating initiatives">
+              <Square size={14} /> Stop
+            </button>
+          )}
           <button className="btn-primary" onClick={handleAskAi} disabled={isAsking || !form.region || !(form.contract_value_gbp > 0)}>
             {isAsking ? <LoaderCircle size={16} className="spin-icon" /> : <Sparkles size={16} />}
             {isAsking ? 'Writing initiatives…' : 'Ask the AI'}
@@ -660,6 +682,17 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
             </details>
           )}
 
+          {generatedCount != null && (
+            <GeneratedDialog
+              count={generatedCount}
+              onClose={() => setGeneratedCount(null)}
+              onView={() => {
+                setGeneratedCount(null);
+                document.querySelector('.gen-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+            />
+          )}
+
           {/* Every initiative stays on screen; an unticked one is left out of the totals, not removed. */}
           {(initiatives ?? []).map((ini, i) => (
             <InitiativeCard
@@ -687,6 +720,34 @@ export const LocalGenerator: React.FC<LocalGeneratorProps> = ({ openRun, onRunsC
           <Footnote />
         </>
       )}
+    </div>
+  );
+};
+
+/** Tells the user the run has finished, so they need not watch the screen while it works. */
+const GeneratedDialog: React.FC<{ count: number; onClose: () => void; onView: () => void }> = ({ count, onClose, onView }) => {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className="gen-overlay" onClick={onClose}>
+      <div className="gen-dialog gen-done" role="dialog" aria-modal="true" aria-label="Initiatives generated" onClick={(e) => e.stopPropagation()}>
+        <CheckCircle2 size={36} className="gen-done-icon" />
+        <h2 className="section-title">Your initiatives have been generated</h2>
+        <p className="body-text">
+          {count} initiative{count === 1 ? ' is' : 's are'} ready to review. Check the targets, choose a delivery partner and enter the costs for each one.
+        </p>
+        <div className="gen-actions">
+          <button className="btn-secondary" onClick={onClose}>
+            Close
+          </button>
+          <button className="btn-primary" onClick={onView} autoFocus>
+            View initiatives
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
