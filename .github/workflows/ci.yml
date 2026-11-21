@@ -29,4 +29,7 @@ jobs:
         run: npm run lint
 
       - name: Build
+        # Placeholder backend: this build is only checked, never deployed.
+        env:
+          VITE_API_URL: https://api.example.invalid
         run: npm run build

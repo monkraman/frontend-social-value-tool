@@ -20,7 +20,7 @@ Use this checklist to record the results of pre-delivery validation. Mark an ite
 - [ ] Confirm that sample fallback data is disabled or clearly identified in the client delivery environment.
 - [ ] Confirm error handling for unavailable services, invalid requests, and backend errors.
 
-The production build calls the backend named in `VITE_API_URL` (`.env.production`), falling back to the Render backend; see `src/api/client.ts`. Confirm this points at the intended backend before handover.
+The production build calls the backend named in `VITE_API_URL`, set in the hosting platform (no fallback; the build stops without it); see `vite.config.ts` and `src/api/client.ts`. Confirm it points at the intended backend before handover.
 
 ## 3. User interface verification
 

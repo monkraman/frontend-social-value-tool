@@ -1,0 +1,52 @@
+name: Deploy frontend to Azure Static Web Apps (UK South)
+
+# Runs only when started by hand (Actions > this workflow > Run workflow). Vercel keeps deploying
+# from main on its own; Azure takes a release only through this workflow, after lint and build pass
+# and a reviewer of the "azure" environment approves it.
+#
+# Needs, in Settings > Environments > azure:
+#   Variable VITE_API_URL                  URL of the Azure backend, e.g. https://app-socialvalue-uks.azurewebsites.net
+#   Secret   AZURE_STATIC_WEB_APPS_TOKEN   deployment token of the new Static Web App (Azure portal > Static Web App > Manage deployment token)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-azure-frontend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: azure
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # vite.config.ts stops the build if VITE_API_URL is missing or not https.
+      - name: Build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+        run: npm run build
+
+      - name: Deploy to Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_TOKEN }}
+          action: upload
+          app_location: dist
+          skip_app_build: true
+          skip_api_build: true

@@ -36,8 +36,11 @@ For complete setup, backend, troubleshooting, and validation instructions, see t
 The API base URL is resolved in [`src/api/client.ts`](./src/api/client.ts):
 
 - In development (`npm run dev`), requests go to `/api-proxy`, which Vite forwards to the local backend.
-- In a production build, `VITE_API_URL` is used when set (see `.env.production`).
-- Otherwise a deployed site calls `https://social-value-infoproj.onrender.com`, and a local build calls `http://127.0.0.1:8000`.
+- A production build uses `VITE_API_URL`, which each host sets for itself; no URL is kept in the repository:
+  - Vercel: Project Settings > Environment Variables (the Render backend).
+  - Azure Static Web Apps: the `VITE_API_URL` variable of the GitHub `azure` environment (the Azure backend).
+  - A local production build: put it in `.env.production.local` (git-ignored).
+- `npm run build` stops with an error if `VITE_API_URL` is missing, or is not `https://` (except `localhost`), so a site can never be built against the wrong backend.
 
 Sign-in is required; the JWT is kept in the browser's local storage. AI keys are never held by the frontend: the backend calls the AI providers, and a super-administrator chooses the primary model from the diagnostics panel.
 
